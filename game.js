@@ -157,47 +157,50 @@ const MAP_CONFIGS={
   thanh_van_thon:{
     id:'thanh_van_thon',
     name:'Thanh Vân Thôn',
-    folder:'assets/maps/thanh_van_thon',
+    folder:'assets/maps/common',
     clearColor:'#698679',
     fogColor:'#698679',
     fogStart:45,
     fogEnd:95,
-    groundTexture:'assets/maps/thanh_van_thon/ground/ground.png',
+    groundTexture:'assets/maps/common/grounds/ground_village_01.png',
     groundScale:80,
     river:{enabled:false},
     trees:[
-      {file:'assets/maps/thanh_van_thon/trees/tree_01.png',width:4.8,height:5.8,yRatio:0.36},
-      {file:'assets/maps/thanh_van_thon/trees/tree_02.png',width:4.6,height:5.6,yRatio:0.36},
-      {file:'assets/maps/thanh_van_thon/trees/tree_03.png',width:4.4,height:5.4,yRatio:0.36}
+      {file:'assets/maps/common/trees/tree_01.png',width:4.8,height:5.8,yRatio:0.36},
+      {file:'assets/maps/common/trees/tree_02.png',width:4.6,height:5.6,yRatio:0.36},
+      {file:'assets/maps/common/trees/tree_03.png',width:4.4,height:5.4,yRatio:0.36},
+      {file:'assets/maps/common/trees/tree_sakura_01.png',width:4.8,height:6.0,yRatio:0.36},
+      {file:'assets/maps/common/trees/tree_pine_01.png',width:4.2,height:5.8,yRatio:0.36},
+      {file:'assets/maps/common/trees/tree_autumn_01.png',width:4.4,height:5.6,yRatio:0.36}
     ],
     rocks:[
-      {file:'assets/maps/thanh_van_thon/rocks/rock_01.png',width:3.2,height:3.0,yRatio:0.38},
-      {file:'assets/maps/thanh_van_thon/rocks/rock_02.png',width:2.8,height:2.8,yRatio:0.38},
-      {file:'assets/maps/thanh_van_thon/rocks/rock_03.png',width:2.6,height:3.2,yRatio:0.38},
-      {file:'assets/maps/thanh_van_thon/rocks/rock_04.png',width:3.6,height:4.2,yRatio:0.36},
-      {file:'assets/maps/thanh_van_thon/rocks/rock_05.png',width:3.2,height:3.4,yRatio:0.38}
+      {file:'assets/maps/common/rocks/rock_01.png',width:3.2,height:3.0,yRatio:0.38},
+      {file:'assets/maps/common/rocks/rock_02.png',width:2.8,height:2.8,yRatio:0.38},
+      {file:'assets/maps/common/rocks/rock_03.png',width:2.6,height:3.2,yRatio:0.38},
+      {file:'assets/maps/common/rocks/rock_04.png',width:3.6,height:4.2,yRatio:0.36},
+      {file:'assets/maps/common/rocks/rock_05.png',width:3.2,height:3.4,yRatio:0.38},
+      {file:'assets/maps/common/rocks/rock_cliff_cluster_01.png',width:4.0,height:3.8,yRatio:0.38},
+      {file:'assets/maps/common/rocks/rock_large_vine_01.png',width:3.8,height:4.0,yRatio:0.38}
     ],
     decor:[
-      {file:'assets/maps/thanh_van_thon/decor/lantern.png',width:2.2,height:3.2,yRatio:0.46},
-      {file:'assets/maps/thanh_van_thon/decor/grass_01.png',width:1.8,height:1.8,yRatio:0.36},
-      {file:'assets/maps/thanh_van_thon/decor/grass_02.png',width:1.6,height:2.2,yRatio:0.36},
-      {file:'assets/maps/thanh_van_thon/decor/bush_01.png',width:2.2,height:2.2,yRatio:0.36},
-      {file:'assets/maps/thanh_van_thon/decor/bush_02.png',width:2.0,height:2.0,yRatio:0.36},
-      {file:'assets/maps/thanh_van_thon/decor/flower_pink_01.png',width:1.9,height:1.9,yRatio:0.36},
-      {file:'assets/maps/thanh_van_thon/decor/flower_purple_01.png',width:1.9,height:1.9,yRatio:0.36}
+      {file:'assets/maps/common/lanterns/lantern_post_village_01.png',width:2.2,height:3.2,yRatio:0.46},
+      {file:'assets/maps/common/plants/grass_mixed_01.png',width:1.8,height:1.8,yRatio:0.36},
+      {file:'assets/maps/common/plants/grass_tall_01.png',width:1.6,height:2.2,yRatio:0.36},
+      {file:'assets/maps/common/plants/bush_rose_01.png',width:2.2,height:2.2,yRatio:0.36},
+      {file:'assets/maps/common/plants/bush_ivy_01.png',width:2.0,height:2.0,yRatio:0.36},
+      {file:'assets/maps/common/plants/flower_pink_01.png',width:1.9,height:1.9,yRatio:0.36},
+      {file:'assets/maps/common/plants/flower_purple_01.png',width:1.9,height:1.9,yRatio:0.36},
+      {file:'assets/maps/common/plants/bush_berry_01.png',width:2.0,height:1.8,yRatio:0.36},
+      {file:'assets/maps/common/plants/grass_flower_01.png',width:1.8,height:1.6,yRatio:0.36}
     ],
-    // ──────────────────────────────────────────────────────────────────────────
-    // THÔN TRẤN THANH VÂN THÔN — mở rộng bán kính 40m, tường thành bao quanh
-    // Bố cục 4 khu: Quảng trường trung tâm | Dược Phố (NE) | Thương Phố (NW)
-    //               Dân Cư (SE) | Tu Luyện Viện (SW) + Cổng Nam & Cổng Bắc
-    // ──────────────────────────────────────────────────────────────────────────
+    // Trung tâm thôn — sử dụng hoàn toàn common assets
     villageProps:[
-      // ── QUẢNG TRƯỜNG TRUNG TÂM ── (clear zone, landmark giữ nguyên)
-      {file:'assets/maps/thanh_van_thon/decor/village_sign_stone_01.png',width:2.4,height:3.2,x:0,z:-8,yRatio:0.40},
-      {file:'assets/maps/thanh_van_thon/decor/well_01.png',width:2.6,height:2.8,x:0,z:0,yRatio:0.42},
-      {file:'assets/maps/thanh_van_thon/decor/shrine_small_01.png',width:2.5,height:3.0,x:-9,z:8,yRatio:0.42},
-      {file:'assets/maps/thanh_van_thon/decor/cart_wood_01.png',width:2.6,height:2.0,x:7,z:-6,yRatio:0.44},
-      {file:'assets/maps/thanh_van_thon/decor/barrel_stack_01.png',width:2.2,height:2.2,x:-7,z:-5,yRatio:0.42},
+      // ── QUẢNG TRƯỜNG TRUNG TÂM ──
+      {file:'assets/maps/common/signs/sign_stone_yinyang_01.png',width:2.4,height:3.2,x:0,z:-8,yRatio:0.40},
+      {file:'assets/maps/common/props/well_01.png',width:2.6,height:2.8,x:0,z:0,yRatio:0.42},
+      {file:'assets/maps/common/buildings/shrine_small_01.png',width:2.5,height:3.0,x:-9,z:8,yRatio:0.42},
+      {file:'assets/maps/common/props/cart_wood_01.png',width:2.6,height:2.0,x:7,z:-6,yRatio:0.44},
+      {file:'assets/maps/common/props/barrel_stack_01.png',width:2.2,height:2.2,x:-7,z:-5,yRatio:0.42},
 
       // ── KHU DƯỢC PHỐ (Đông Bắc, x>0, z<0) ── Thảo Dược Đường & hàng hóa
       {file:'assets/maps/common/buildings/house_herbal_01.png',width:5.6,height:5.2,x:18,z:-16,yRatio:0.44},
@@ -691,7 +694,7 @@ let softShadowMat = null;
 function getSoftShadowMaterial(){
   if(softShadowMat) return softShadowMat;
   softShadowMat = new BABYLON.StandardMaterial('soft_shadow_mat', scene);
-  let t = new BABYLON.Texture('assets/maps/thanh_van_thon/ground/soft_shadow.png', scene, false, true);
+  let t = new BABYLON.Texture('assets/maps/common/grounds/soft_shadow.png', scene, false, true);
   t.hasAlpha = true;
   softShadowMat.diffuseTexture = t;
   softShadowMat.emissiveTexture = t;
