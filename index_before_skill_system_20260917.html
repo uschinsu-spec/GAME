@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<meta name="theme-color" content="#0b1820" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Tu Tiên Chi Lộ</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="stylesheet" href="styles.css?v=6" />
+<link rel="stylesheet" href="style.css?v=6" />
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+</head>
+<body>
+<div id="gameWrap">
+  <canvas id="renderCanvas" aria-label="Tu Tiên Chi Lộ"></canvas>
+  <div id="loading">
+    <img src="assets/concept.png" alt="Tu Tiên Chi Lộ">
+    <div class="loadShade"></div>
+    <div class="loadText">
+      <b>TU TIÊN CHI LỘ</b>
+      <span id="loadMsg">Đang khai mở tiên đồ…</span>
+      <div class="bar"><i id="loadBar"></i></div>
+      <button id="startBtn" hidden>VÀO TIÊN ĐỒ</button>
+    </div>
+  </div>
+  <div id="hud" hidden>
+    <section class="profile glass">
+      <div class="avatar">仙</div>
+      <div class="pinfo">
+        <b id="pname">Linh Phong</b>
+        <span id="realm">Luyện Khí · Tầng 1</span>
+        <div class="hp"><i id="hpFill"></i><em id="hpText"></em></div>
+        <div class="mp"><i id="mpFill"></i></div>
+      </div>
+    </section>
+    <div class="power">⚔ <span id="power">1,280</span></div>
+    <section class="quest glass">
+      <b>NHIỆM VỤ</b>
+      <div id="questText">[Chính] Diệt Yêu Thú <span>0/20</span></div>
+      <small id="questSub">Phần thưởng: Linh thạch + Tu vi</small>
+    </section>
+    <div class="topMenu">
+      <button data-panel="daily" title="Phúc Lợi">🎁<span>Phúc Lợi</span></button>
+      <button data-panel="shop" title="Tiên Phường">🏮<span>Shop</span></button>
+      <button data-panel="cultivate" title="Tu Vi">☯<span>Tu Vi</span></button>
+      <button data-panel="inventory" title="Túi Đồ">🎒<span>Túi Đồ</span></button>
+    </div>
+    <div class="minimap glass">
+      <canvas id="mini" width="150" height="110"></canvas>
+      <span id="miniName">Thanh Vân Thôn</span>
+    </div>
+    <div id="bossBar" class="boss glass" hidden>
+      <b id="bossName">Xích Viêm Ma Lang</b>
+      <div><i id="bossFill"></i></div>
+    </div>
+    <div id="lootToast"></div>
+    <div id="floatLayer"></div>
+    <div class="joystick" id="joy">
+      <div class="joyKnob" id="joyKnob"></div>
+    </div>
+    <div class="skills">
+      <button class="skill s1" data-skill="1" title="Chiêu 1 (Phím 1)"><b>⚡</b><span id="cd1"></span></button>
+      <button class="skill s2" data-skill="2" title="Chiêu 2 (Phím 2)"><b>❄</b><span id="cd2"></span></button>
+      <button class="skill s3" data-skill="3" title="Chiêu 3 (Phím 3)"><b>🔥</b><span id="cd3"></span></button>
+      <button class="skill ult" data-skill="4" title="Tuyệt Kỹ (Phím 4)"><b>劍</b><span id="cd4"></span></button>
+      <button class="skill dash" id="dashBtn" title="Thân Pháp Lướt (Phím Space)"><b>💨</b><span id="cdDash"></span></button>
+      <button id="autoBtn" class="auto on">TỰ<br>ĐỘNG</button>
+    </div>
+    <div class="bottomInfo glass">
+      <span>Lv.<b id="level">1</b></span>
+      <div class="xp"><i id="xpFill"></i></div>
+      <span>💎 <b id="stones">500</b></span>
+      <span>🪙 <b id="gold">1200</b></span>
+    </div>
+    <button id="menuBtn" class="menuBtn" title="Menu">☰</button>
+    <div id="menuGrid" class="menuGrid glass" hidden>
+      <button data-panel="character">👤<span>Nhân Vật</span></button>
+      <button data-panel="skills">⚔<span>Kỹ Năng</span></button>
+      <button data-panel="equipment">🛡<span>Trang Bị</span></button>
+      <button data-panel="pet">🦊<span>Linh Thú</span></button>
+      <button data-panel="map">🗺<span>Bản Đồ</span></button>
+      <button data-panel="settings">⚙<span>Cài Đặt</span></button>
+    </div>
+  </div>
+  <div id="panel" class="panel" hidden>
+    <div class="panelBox">
+      <header>
+        <b id="panelTitle">Túi Đồ</b>
+        <button id="closePanel">✕</button>
+      </header>
+      <div id="panelBody"></div>
+    </div>
+  </div>
+</div>
+<script src="game.js?v=15"></script>
+</body>
+</html>
