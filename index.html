@@ -9,7 +9,7 @@
 <title>Tu Tiên Chi Lộ</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="stylesheet" href="styles.css?v=6" />
-<link rel="stylesheet" href="style.css?v=7" />
+<link rel="stylesheet" href="style.css?v=9" />
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
   </div>
   <div id="hud" hidden>
     <section class="profile glass">
-      <div class="avatar">仙</div>
+      <div class="avatar"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/avatar.png');--ui-fallback:url('assets/ui/icons/avatar.svg')"></span></div>
       <div class="pinfo">
         <b id="pname">Linh Phong</b>
         <span id="realm">Luyện Khí · Tầng 1</span>
@@ -35,17 +35,17 @@
         <div class="mp"><i id="mpFill"></i></div>
       </div>
     </section>
-    <div class="power">⚔ <span id="power">1,280</span></div>
+    <div class="power"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/power.png');--ui-fallback:url('assets/ui/icons/power.svg')"></span><span id="power">1,280</span></div>
     <section class="quest glass">
-      <b>NHIỆM VỤ</b>
+      <div class="questTitle"><span class="uiIcon questIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/quest.png');--ui-fallback:url('assets/ui/icons/quest.svg')"></span><b>NHIỆM VỤ</b></div>
       <div id="questText">[Chính] Diệt Yêu Thú <span>0/20</span></div>
       <small id="questSub">Phần thưởng: Linh thạch + Tu vi</small>
     </section>
     <div class="topMenu">
-      <button data-panel="daily" title="Phúc Lợi">🎁<span>Phúc Lợi</span></button>
-      <button data-panel="shop" title="Tiên Phường">🏮<span>Shop</span></button>
-      <button data-panel="cultivate" title="Tu Vi">☯<span>Tu Vi</span></button>
-      <button data-panel="inventory" title="Túi Đồ">🎒<span>Túi Đồ</span></button>
+      <button data-panel="daily" title="Phúc Lợi"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/daily.png');--ui-fallback:url('assets/ui/icons/daily.svg')"></span><span>Phúc Lợi</span></button>
+      <button data-panel="shop" title="Tiên Phường"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/shop.png');--ui-fallback:url('assets/ui/icons/shop.svg')"></span><span>Shop</span></button>
+      <button data-panel="cultivate" title="Tu Vi"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/cultivate.png');--ui-fallback:url('assets/ui/icons/cultivate.svg')"></span><span>Tu Vi</span></button>
+      <button data-panel="inventory" title="Túi Đồ"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/inventory.png');--ui-fallback:url('assets/ui/icons/inventory.svg')"></span><span>Túi Đồ</span></button>
     </div>
     <div class="minimap glass">
       <canvas id="mini" width="150" height="110"></canvas>
@@ -65,30 +65,30 @@
       <button class="skill s2" data-skill="2" title="Chiêu 2 (Phím 2)"><b>❄</b><span id="cd2"></span></button>
       <button class="skill s3" data-skill="3" title="Chiêu 3 (Phím 3)"><b>🔥</b><span id="cd3"></span></button>
       <button class="skill ult" data-skill="4" title="Tuyệt Kỹ (Phím 4)"><b>劍</b><span id="cd4"></span></button>
-      <button class="skill dash" id="dashBtn" title="Thân Pháp Lướt (Phím Space)"><b>💨</b><span id="cdDash"></span></button>
-      <button id="autoBtn" class="auto on">TỰ<br>ĐỘNG</button>
+      <button class="skill dash" id="dashBtn" title="Thân Pháp Lướt (Phím Space)"><span class="uiIcon actionIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/dash.png');--ui-fallback:url('assets/ui/icons/dash.svg')"></span><span id="cdDash"></span></button>
+      <button id="autoBtn" class="auto on"><span class="uiIcon actionIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/auto.png');--ui-fallback:url('assets/ui/icons/auto.svg')"></span><small>TỰ ĐỘNG</small></button>
     </div>
     <div class="bottomInfo glass">
-      <span>Lv.<b id="level">1</b></span>
+      <span class="levelBadge"><span class="uiIcon levelIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/level.png');--ui-fallback:url('assets/ui/icons/level.svg')"></span>Lv.<b id="level">1</b></span>
       <div class="xp"><i id="xpFill"></i></div>
-      <span>💎 <b id="stones">500</b></span>
-      <span>🪙 <b id="gold">1200</b></span>
+      <span class="resource"><span class="uiIcon resourceIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/stones.png');--ui-fallback:url('assets/ui/icons/stones.svg')"></span><b id="stones">500</b></span>
+      <span class="resource"><span class="uiIcon resourceIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/gold.png');--ui-fallback:url('assets/ui/icons/gold.svg')"></span><b id="gold">1200</b></span>
     </div>
-    <button id="menuBtn" class="menuBtn" title="Menu">☰</button>
+    <button id="menuBtn" class="menuBtn" title="Menu"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/menu.png');--ui-fallback:url('assets/ui/icons/menu.svg')"></span></button>
     <div id="menuGrid" class="menuGrid glass" hidden>
-      <button data-panel="character">👤<span>Nhân Vật</span></button>
-      <button data-panel="skills">⚔<span>Kỹ Năng</span></button>
-      <button data-panel="equipment">🛡<span>Trang Bị</span></button>
-      <button data-panel="pet">🦊<span>Linh Thú</span></button>
-      <button data-panel="map">🗺<span>Bản Đồ</span></button>
-      <button data-panel="settings">⚙<span>Cài Đặt</span></button>
+      <button data-panel="character"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/character.png');--ui-fallback:url('assets/ui/icons/character.svg')"></span><span>Nhân Vật</span></button>
+      <button data-panel="skills"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/skills.png');--ui-fallback:url('assets/ui/icons/skills.svg')"></span><span>Kỹ Năng</span></button>
+      <button data-panel="equipment"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/equipment.png');--ui-fallback:url('assets/ui/icons/equipment.svg')"></span><span>Trang Bị</span></button>
+      <button data-panel="pet"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/pet.png');--ui-fallback:url('assets/ui/icons/pet.svg')"></span><span>Linh Thú</span></button>
+      <button data-panel="map"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/map.png');--ui-fallback:url('assets/ui/icons/map.svg')"></span><span>Bản Đồ</span></button>
+      <button data-panel="settings"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/settings.png');--ui-fallback:url('assets/ui/icons/settings.svg')"></span><span>Cài Đặt</span></button>
     </div>
   </div>
   <div id="panel" class="panel" hidden>
     <div class="panelBox">
       <header>
         <b id="panelTitle">Túi Đồ</b>
-        <button id="closePanel">✕</button>
+        <button id="closePanel" aria-label="Đóng"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/close.png');--ui-fallback:url('assets/ui/icons/close.svg')"></span></button>
       </header>
       <div id="panelBody"></div>
     </div>
