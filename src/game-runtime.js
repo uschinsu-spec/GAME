@@ -473,7 +473,7 @@ const defaultState={
   gold:1200,stones:500,
   realm:0,realmStage:1,cultivation:0,
   kills:0,questKills:0,bossKills:0,
-  auto:true,quality:1,daily:false,pet:false,
+  auto:true,quality:'HIGH',daily:false,pet:false,
   items:{'Linh Thạch':5,'Hồi Khí Đan':3},
   equipment:{weapon:null,armor:null,ring:null},
   period:0,cultivationTechniques:makeDefaultTechniqueCultivation(),activeCultivationTechnique:'physical',heartMethod:0,heartMethodLevels:{0:1},region:0,skillElement:'Kiếm',
@@ -3158,7 +3158,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-mobile-clarity-v5.3').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-mobile-clarity-v5.4').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
