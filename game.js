@@ -191,11 +191,55 @@ function getActorSuppressionVsPlayer(actor){
 }
 
 const techniques=[
-  ['Hoàng','Thanh Tâm Quyết',1.05],
-  ['Huyền','Huyền Nguyên Công',1.18],
-  ['Địa','Địa Sát Chân Kinh',1.38],
-  ['Thiên','Cửu Thiên Tiên Quyết',1.65]
+  {id:'thanh_tam',grade:'Hoàng',name:'Thanh Tâm Quyết',minRealm:0,baseDamage:1.05,perLevel:0.025,physicalBonus:0,elementBonus:0,desc:'Công pháp nhập môn, tăng toàn bộ sát thương ổn định.'},
+  {id:'huyen_nguyen',grade:'Huyền',name:'Huyền Nguyên Công',minRealm:1,baseDamage:1.12,perLevel:0.035,physicalBonus:0.05,elementBonus:0.05,desc:'Chân nguyên cô đọng, đồng thời cường hóa vật lý và ngũ hành.'},
+  {id:'dia_sat',grade:'Địa',name:'Địa Sát Chân Kinh',minRealm:2,baseDamage:1.22,perLevel:0.045,physicalBonus:0.10,elementBonus:0.12,desc:'Địa sát nhập thể, tăng mạnh uy lực chiến đấu.'},
+  {id:'cuu_thien',grade:'Thiên',name:'Cửu Thiên Tiên Quyết',minRealm:3,baseDamage:1.38,perLevel:0.06,physicalBonus:0.16,elementBonus:0.20,desc:'Dẫn lực Cửu Thiên, đại tăng sát thương và uy lực pháp thuật.'},
+  {id:'thai_hu',grade:'Tiên',name:'Thái Hư Vô Cực Kinh',minRealm:4,baseDamage:1.60,perLevel:0.08,physicalBonus:0.25,elementBonus:0.30,desc:'Vô cực sinh vạn pháp, công pháp đỉnh cấp của Hóa Thần.'}
 ];
+
+const heartMethods=[
+  {id:'duong_khi',grade:'Hoàng',name:'Dưỡng Khí Tâm Pháp',minRealm:0,regen:1.15,spirit:1.05,move:1.00,attack:1.00,cast:1.00,cultivation:1.10,defense:1.03,perLevel:0.018,desc:'Ôn dưỡng khí hải, tăng hồi phục và tốc độ tích lũy tu vi.'},
+  {id:'tinh_tam',grade:'Huyền',name:'Tĩnh Tâm Huyền Pháp',minRealm:1,regen:1.25,spirit:1.12,move:1.02,attack:1.03,cast:1.06,cultivation:1.18,defense:1.08,perLevel:0.024,desc:'Tâm như chỉ thủy, tăng Thần thức và tốc độ thi triển.'},
+  {id:'kim_cang',grade:'Địa',name:'Kim Cang Hộ Tâm Kinh',minRealm:2,regen:1.35,spirit:1.16,move:1.02,attack:1.05,cast:1.05,cultivation:1.25,defense:1.18,perLevel:0.030,desc:'Tâm mạch như kim cang, tăng mạnh phòng thủ và hồi phục.'},
+  {id:'thai_thuong',grade:'Thiên',name:'Thái Thượng Vong Tình Quyết',minRealm:3,regen:1.48,spirit:1.28,move:1.05,attack:1.08,cast:1.12,cultivation:1.38,defense:1.25,perLevel:0.038,desc:'Tâm cảnh siêu nhiên, toàn diện tăng tốc độ và tu luyện.'},
+  {id:'vo_cuc_tam',grade:'Tiên',name:'Vô Cực Đạo Tâm',minRealm:4,regen:1.65,spirit:1.45,move:1.08,attack:1.12,cast:1.18,cultivation:1.55,defense:1.35,perLevel:0.05,desc:'Đạo tâm vô cực, tâm pháp tối thượng của Hóa Thần.'}
+];
+
+function getTechniqueDef(){return techniques[clamp(S.technique||0,0,techniques.length-1)]||techniques[0]}
+function getHeartMethodDef(){return heartMethods[clamp(S.heartMethod||0,0,heartMethods.length-1)]||heartMethods[0]}
+function getTechniqueLevel(i=S.technique||0){return Math.max(1,Number((S.techniqueLevels||{})[i])||1)}
+function getHeartMethodLevel(i=S.heartMethod||0){return Math.max(1,Number((S.heartMethodLevels||{})[i])||1)}
+
+function getTechniqueMultiplier(type='physical'){
+  const t=getTechniqueDef(),lv=getTechniqueLevel();
+  const levelMult=1+(lv-1)*t.perLevel;
+  const schoolBonus=type==='physical'?t.physicalBonus:t.elementBonus;
+  return t.baseDamage*levelMult*(1+schoolBonus);
+}
+
+function getHeartMethodEffects(){
+  const h=getHeartMethodDef(),lv=getHeartMethodLevel();
+  const grow=1+(lv-1)*h.perLevel;
+  return {
+    regen:h.regen*grow,
+    spirit:h.spirit*grow,
+    move:1+(h.move-1)*grow,
+    attack:1+(h.attack-1)*grow,
+    cast:1+(h.cast-1)*grow,
+    cultivation:h.cultivation*grow,
+    defense:h.defense*grow
+  };
+}
+
+function techniqueUpgradeCost(i=S.technique||0){
+  const lv=getTechniqueLevel(i),t=techniques[i]||techniques[0];
+  return {cult:Math.round(220*Math.pow(1.75,lv)*(1+t.minRealm*1.8)),stones:Math.round(8*Math.pow(1.42,lv)*(1+t.minRealm))};
+}
+function heartUpgradeCost(i=S.heartMethod||0){
+  const lv=getHeartMethodLevel(i),h=heartMethods[i]||heartMethods[0];
+  return {cult:Math.round(260*Math.pow(1.8,lv)*(1+h.minRealm*1.9)),stones:Math.round(10*Math.pow(1.45,lv)*(1+h.minRealm))};
+}
 const elements=[
   ['Kim','⚜'],['Hỏa','🔥'],['Thủy','💧'],
   ['Thổ','⛰'],['Mộc','🌿'],['Phong','🌪'],
@@ -529,7 +573,7 @@ const defaultState={
   auto:true,quality:1,daily:false,pet:false,
   items:{'Linh Thạch':5,'Hồi Khí Đan':3},
   equipment:{weapon:null,armor:null,ring:null},
-  period:0,technique:0,region:0,skillElement:'Kiếm',
+  period:0,technique:0,techniqueLevels:{0:1},heartMethod:0,heartMethodLevels:{0:1},region:0,skillElement:'Kiếm',
   equippedSkills:['kiem_0_0','kiem_0_1',null,null],
   learnedSkills:{'kiem_0_0':1,'kiem_0_1':1},
   skillTierTab:0,
@@ -608,6 +652,12 @@ try{
   if(typeof S.castSpeed!=='number')S.castSpeed=1.0;
   if(typeof S.hpRegenPct!=='number')S.hpRegenPct=0.015;
   if(typeof S.mpRegenPct!=='number')S.mpRegenPct=0.035;
+  if(typeof S.technique!=='number')S.technique=0;
+  if(!S.techniqueLevels||typeof S.techniqueLevels!=='object')S.techniqueLevels={0:1};
+  if(typeof S.techniqueLevels[S.technique]!=='number')S.techniqueLevels[S.technique]=1;
+  if(typeof S.heartMethod!=='number')S.heartMethod=0;
+  if(!S.heartMethodLevels||typeof S.heartMethodLevels!=='object')S.heartMethodLevels={0:1};
+  if(typeof S.heartMethodLevels[S.heartMethod]!=='number')S.heartMethodLevels[S.heartMethod]=1;
 
   delete S.atk;
   delete S.def;
@@ -1237,7 +1287,7 @@ function getPlayerDamageStat(type='physical'){
 function getPlayerDefenseStat(type='physical'){
   type=normalizeDamageType(type);
   const base=Math.max(0,(S.defense&&Number(S.defense[type]))||0);
-  return base*getRealmPowerMultiplier();
+  return base*getRealmPowerMultiplier()*getHeartMethodEffects().defense;
 }
 
 function getSkillPower(skill,mult=1,crit=false){
@@ -1247,8 +1297,9 @@ function getSkillPower(skill,mult=1,crit=false){
   // Kiếm/Đao được normalize thành Vật lý.
   let base=getPlayerDamageStat(type);
   // Chỉ Kim/Hỏa/Thủy/Mộc/Thổ/Phong/Lôi nhận thêm hệ số Thần thức.
-  let spiritMult=type==='physical'?1:(1+Math.max(0,S.spiritSense||0)/1000);
-  let techMult=techniques[S.technique||0][2];
+  const heartFx=getHeartMethodEffects();
+  let spiritMult=type==='physical'?1:(1+(Math.max(0,S.spiritSense||0)*heartFx.spirit)/1000);
+  let techMult=getTechniqueMultiplier(type);
   let petMult=S.pet?1.08:1.0;
   let critMult=crit?(S.critDamage||1.8):1;
   // Cảnh giới chỉ tăng stat vừa phải; áp chế được áp riêng khi damage chạm mục tiêu.
@@ -1291,7 +1342,7 @@ function kill(a){
   S.kills++;
   S.questKills++;
   gainXP(a.xp);
-  S.cultivation+=Math.round(a.xp*.85);
+  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation);
   
   // Loot
   if(Math.random()<.75){
@@ -1409,7 +1460,7 @@ function useSkill(n){
   }
 
   S.mp=Math.max(0,S.mp-skill.mp);
-  cooldown[n]=skill.cd/Math.max(0.35,S.castSpeed||1);
+  cooldown[n]=skill.cd/Math.max(0.35,(S.castSpeed||1)*getHeartMethodEffects().cast);
   triggerPlayerAttack();
 
   let lv=(S.learnedSkills&&S.learnedSkills[skillId])||1;
@@ -1729,7 +1780,7 @@ function updatePlayer(dt){
   if(l>.05){
     let nx=mx/Math.max(1,l);
     let nz=mz/Math.max(1,l);
-    let sp=Math.max(2.5,S.moveSpeed||6.2);
+    let sp=Math.max(2.5,(S.moveSpeed||6.2)*getHeartMethodEffects().move);
     let nextX=clamp(player.x+nx*sp*dt,-MAP_BOUND,MAP_BOUND);
     let nextZ=clamp(player.z+nz*sp*dt,-MAP_BOUND,MAP_BOUND);
     let wallMove=resolveVillageWallMove(player.x,player.z,nextX,nextZ);
@@ -1741,7 +1792,7 @@ function updatePlayer(dt){
   if(player.state==='attack'){
     let anim=PLAYER_ANIMS.attack;
     player.animTimer+=dt;
-    let step=1.0/(anim.fps*Math.max(0.35,S.attackSpeed||1));
+    let step=1.0/(anim.fps*Math.max(0.35,(S.attackSpeed||1)*getHeartMethodEffects().attack));
     if(player.animTimer>=step){
       player.animTimer-=step;
       player.frame++;
@@ -1847,7 +1898,7 @@ function autoCombat(dt){
   if(!S.auto)return;
   autoTimer-=dt;
   if(autoTimer<=0){
-    autoTimer=.52/Math.max(0.35,S.attackSpeed||1);
+    autoTimer=.52/Math.max(0.35,(S.attackSpeed||1)*getHeartMethodEffects().attack);
     let t=nearest(7.5);
     if(t)playerAttack(t,1);
     else if(actors.length<10)spawnPack();
@@ -1885,8 +1936,9 @@ function tick(){
     regenTimer-=dt;
     if(regenTimer<=0){
       regenTimer=1.2;
-      S.hp=Math.min(S.maxHp,S.hp+S.maxHp*Math.max(0,S.hpRegenPct||0)+2);
-      S.mp=Math.min(S.maxMp,S.mp+S.maxMp*Math.max(0,S.mpRegenPct||0)+3);
+      const heartFx=getHeartMethodEffects();
+      S.hp=Math.min(S.maxHp,S.hp+(S.maxHp*Math.max(0,S.hpRegenPct||0)+2)*heartFx.regen);
+      S.mp=Math.min(S.maxMp,S.mp+(S.maxMp*Math.max(0,S.mpRegenPct||0)+3)*heartFx.regen);
       updateHUD();
     }
 
@@ -1930,7 +1982,8 @@ function updateHUD(){
   $('#stones').textContent=S.stones.toLocaleString();
   let petMult=S.pet?1.08:1.0;
   let defScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.defense&&S.defense[t])||0),0);
-  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+defScore*18)*getRealmPowerMultiplier()*petMult).toLocaleString();
+  let cultivationPower=getTechniqueMultiplier('physical')*getHeartMethodEffects().defense;
+  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+defScore*18)*getRealmPowerMultiplier()*petMult*cultivationPower).toLocaleString();
   $('#questText').innerHTML=`[Chính] Diệt Yêu Thú <span>${Math.min(20,S.questKills)}/20</span>`;
   $('#autoBtn').classList.toggle('on',S.auto);
   $('#miniName').textContent=region().name;
@@ -2201,6 +2254,8 @@ function openPanel(kind){
           <div class="stat"><span>Pháp lực (MP)</span><b>${Math.round(S.mp)} / ${S.maxMp}</b></div>
           <div class="stat"><span>Thần thức</span><b>${Math.round(S.spiritSense)}</b></div>
           <div class="stat"><span>Hệ số stat cảnh giới</span><b>${getRealmPowerText()}</b></div>
+          <div class="stat"><span>Công pháp</span><b>${getTechniqueDef().name} · Lv.${getTechniqueLevel()}</b></div>
+          <div class="stat"><span>Tâm pháp</span><b>${getHeartMethodDef().name} · Lv.${getHeartMethodLevel()}</b></div>
           <div class="stat"><span>Áp chế cảnh giới</span><b>+35% / tiểu cảnh · +75% / đại cảnh</b></div>
         </div>
         <div class="card" style="margin-top:8px"><b>⚔ Sát Thương</b>
@@ -2427,12 +2482,58 @@ function openPanel(kind){
       }, 0);
 
     }else if(kind==='cultivate'){
-      title='Tu Vi · Cảnh Giới · Công Pháp';
+      title='Tu Vi · Cảnh Giới · Công Pháp · Tâm Pháp';
       let need=S.realm===0
         ?Math.round(350*Math.pow(1.55,Math.max(0,(S.realmStage||1)-1)))
         :Math.round(9000*Math.pow(4,S.realm-1)*Math.pow(2.4,S.period||0));
-      let tech=techniques[S.technique||0];
-      html=`<div class="card"><b>☯ Cảnh giới: ${realmName()}</b><p>Tu vi: ${S.cultivation} / ${need}</p><p>Hệ số stat cảnh giới: <b>${getRealmPowerText()}</b></p><p>Áp chế: <b>+35% mỗi tiểu cảnh · +75% mỗi đại cảnh chênh lệch</b></p><p>Công pháp: <b>${tech[0]} phẩm · ${tech[1]}</b> (Hệ số ${tech[2]}x sức mạnh)</p><button class="action" id="breakBtn">Đột Phá Cảnh Giới</button></div><div class="cards">${techniques.map((t,i)=>`<div class="card"><b>${t[0]} phẩm · ${t[1]}</b><p>Tăng ${t[2]}x sát thương</p><button data-tech="${i}" ${i>S.technique||i>S.realm?'disabled':''}>${i===S.technique?'Đang tu':'Tu luyện'}</button></div>`).join('')}</div>`;
+
+      let tech=getTechniqueDef(),techLv=getTechniqueLevel(),techCost=techniqueUpgradeCost();
+      let heart=getHeartMethodDef(),heartLv=getHeartMethodLevel(),heartCost=heartUpgradeCost();
+      let heartFx=getHeartMethodEffects();
+
+      let techniqueCards=techniques.map((t,i)=>{
+        let lv=getTechniqueLevel(i),locked=(S.realm||0)<t.minRealm,cost=techniqueUpgradeCost(i);
+        return `<div class="card">
+          <b>📜 ${t.grade} phẩm · ${t.name}</b>
+          <p>${t.desc}</p>
+          <p>Lv.${lv}/10 · Sát thương nền ${Math.round(t.baseDamage*100)}% · mỗi cấp +${(t.perLevel*100).toFixed(1)}%</p>
+          <p>Vật lý +${Math.round(t.physicalBonus*100)}% · Pháp hệ +${Math.round(t.elementBonus*100)}%</p>
+          <button data-tech-select="${i}" ${locked?'disabled':''}>${i===S.technique?'Đang tu luyện':'Chọn công pháp'}</button>
+          <button data-tech-up="${i}" ${locked||lv>=10?'disabled':''}>Nâng cấp · ${cost.cult} Tu vi + ${cost.stones} Linh Thạch</button>
+        </div>`;
+      }).join('');
+
+      let heartCards=heartMethods.map((h,i)=>{
+        let lv=getHeartMethodLevel(i),locked=(S.realm||0)<h.minRealm,cost=heartUpgradeCost(i);
+        return `<div class="card">
+          <b>🧘 ${h.grade} phẩm · ${h.name}</b>
+          <p>${h.desc}</p>
+          <p>Lv.${lv}/10 · Hồi phục ×${h.regen.toFixed(2)} · Thần thức ×${h.spirit.toFixed(2)} · Phòng thủ ×${h.defense.toFixed(2)}</p>
+          <p>Tu vi ×${h.cultivation.toFixed(2)} · Tốc đánh/thi triển/di chuyển được tăng theo cấp.</p>
+          <button data-heart-select="${i}" ${locked?'disabled':''}>${i===S.heartMethod?'Đang vận hành':'Vận hành tâm pháp'}</button>
+          <button data-heart-up="${i}" ${locked||lv>=10?'disabled':''}>Nâng cấp · ${cost.cult} Tu vi + ${cost.stones} Linh Thạch</button>
+        </div>`;
+      }).join('');
+
+      html=`
+        <div class="card">
+          <b>☯ Cảnh giới: ${realmName()}</b>
+          <p>Tu vi: ${S.cultivation} / ${need}</p>
+          <p>Hệ số stat cảnh giới: <b>${getRealmPowerText()}</b></p>
+          <p>Áp chế: <b>+35% mỗi tiểu cảnh · +75% mỗi đại cảnh chênh lệch</b></p>
+          <button class="action" id="breakBtn">Đột Phá Cảnh Giới</button>
+        </div>
+        <div class="card" style="margin-top:8px">
+          <b>📜 Công pháp đang tu: ${tech.grade} phẩm · ${tech.name} · Lv.${techLv}</b>
+          <p>Hệ số sát thương hiện tại: ×${getTechniqueMultiplier('physical').toFixed(2)} Vật lý · ×${getTechniqueMultiplier('Hỏa').toFixed(2)} Pháp hệ</p>
+        </div>
+        <div class="cards">${techniqueCards}</div>
+        <div class="card" style="margin-top:10px">
+          <b>🧘 Tâm pháp đang vận hành: ${heart.grade} phẩm · ${heart.name} · Lv.${heartLv}</b>
+          <p>Hồi phục ×${heartFx.regen.toFixed(2)} · Thần thức ×${heartFx.spirit.toFixed(2)} · Tu vi ×${heartFx.cultivation.toFixed(2)} · Phòng thủ ×${heartFx.defense.toFixed(2)}</p>
+        </div>
+        <div class="cards">${heartCards}</div>`;
+
       setTimeout(()=>{
         let bb=$('#breakBtn');
         if(bb)bb.onclick=()=>{
@@ -2460,12 +2561,45 @@ function openPanel(kind){
           sfx('breakthrough');
           updateHUD();
         };
-        $$('[data-tech]').forEach(b=>b.onclick=()=>{
-          S.technique=+b.dataset.tech;
-          save();
-          openPanel('cultivate');
-          toast('📜 Đã chuyển công pháp tu luyện');
-          sfx('item');
+
+        $$('[data-tech-select]').forEach(b=>b.onclick=()=>{
+          let i=+b.dataset.techSelect,t=techniques[i];
+          if(!t||(S.realm||0)<t.minRealm)return toast('Cảnh giới chưa đủ để tu công pháp này');
+          S.technique=i;
+          if(!S.techniqueLevels[i])S.techniqueLevels[i]=1;
+          save(); openPanel('cultivate'); updateHUD();
+          toast('📜 Đã chuyển sang '+t.name); sfx('item');
+        });
+
+        $$('[data-tech-up]').forEach(b=>b.onclick=()=>{
+          let i=+b.dataset.techUp,t=techniques[i],lv=getTechniqueLevel(i),cost=techniqueUpgradeCost(i);
+          if(!t||(S.realm||0)<t.minRealm)return toast('Cảnh giới chưa đủ');
+          if(lv>=10)return toast('Công pháp đã đạt Lv.10');
+          if(S.cultivation<cost.cult||S.stones<cost.stones)return toast('Không đủ Tu vi hoặc Linh Thạch');
+          S.cultivation-=cost.cult; S.stones-=cost.stones;
+          S.techniqueLevels[i]=lv+1;
+          save(); openPanel('cultivate'); updateHUD();
+          toast('📜 '+t.name+' tăng lên Lv.'+(lv+1)); sfx('levelUp');
+        });
+
+        $$('[data-heart-select]').forEach(b=>b.onclick=()=>{
+          let i=+b.dataset.heartSelect,h=heartMethods[i];
+          if(!h||(S.realm||0)<h.minRealm)return toast('Cảnh giới chưa đủ để vận hành tâm pháp này');
+          S.heartMethod=i;
+          if(!S.heartMethodLevels[i])S.heartMethodLevels[i]=1;
+          save(); openPanel('cultivate'); updateHUD();
+          toast('🧘 Đã vận hành '+h.name); sfx('item');
+        });
+
+        $$('[data-heart-up]').forEach(b=>b.onclick=()=>{
+          let i=+b.dataset.heartUp,h=heartMethods[i],lv=getHeartMethodLevel(i),cost=heartUpgradeCost(i);
+          if(!h||(S.realm||0)<h.minRealm)return toast('Cảnh giới chưa đủ');
+          if(lv>=10)return toast('Tâm pháp đã đạt Lv.10');
+          if(S.cultivation<cost.cult||S.stones<cost.stones)return toast('Không đủ Tu vi hoặc Linh Thạch');
+          S.cultivation-=cost.cult; S.stones-=cost.stones;
+          S.heartMethodLevels[i]=lv+1;
+          save(); openPanel('cultivate'); updateHUD();
+          toast('🧘 '+h.name+' tăng lên Lv.'+(lv+1)); sfx('levelUp');
         });
       },0);
 
