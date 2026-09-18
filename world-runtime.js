@@ -1,17 +1,36 @@
 (()=>{'use strict';
-const PATCH_VERSION='20260918-world-v4';
+const PATCH_VERSION='20260918-world-v5';
 
+function sourceSyntaxOK(src,label){
+  try{new Function(src);return true;}
+  catch(err){console.error('[WorldPatch] Patch làm hỏng cú pháp:',label,err);return false;}
+}
 function patchOnce(src,needle,replacement,label){
   const before=src;
-  if(needle instanceof RegExp)src=src.replace(needle,replacement);
-  else src=src.replace(needle,replacement);
-  if(src===before)console.warn('[WorldPatch] Không tìm thấy điểm vá:',label);
-  return src;
+  let candidate;
+  if(needle instanceof RegExp)candidate=src.replace(needle,replacement);
+  else candidate=src.replace(needle,replacement);
+  if(candidate===before){
+    console.warn('[WorldPatch] Không tìm thấy điểm vá:',label);
+    return before;
+  }
+  if(!sourceSyntaxOK(candidate,label)){
+    if(!Array.isArray(window.TuTienWorldPatchErrors))window.TuTienWorldPatchErrors=[];
+    window.TuTienWorldPatchErrors.push(label);
+    return before;
+  }
+  console.info('[WorldPatch] OK:',label);
+  return candidate;
 }
 
 function applyWorldPatch(src){
+  window.TuTienWorldPatchErrors=[];
   if(typeof src!=='string'||!src.includes("const DEFAULT_MAP_ID='thanh_van_thon'")){
     console.warn('[WorldPatch] game.js không đúng phiên bản kỳ vọng; bỏ qua.');
+    return src;
+  }
+  if(!sourceSyntaxOK(src,'game.js đầu vào')){
+    console.error('[WorldPatch] game.js đầu vào đã lỗi cú pháp; không patch world.');
     return src;
   }
 
@@ -193,6 +212,9 @@ function renderWorldMapCards(){
 
   src=patchOnce(src,"toast('☯ Chào mừng đạo hữu đến Thanh Vân Thôn');","toast('☯ Chào mừng đạo hữu đến '+region().name);",'dynamic welcome');
 
+  if(window.TuTienWorldPatchErrors.length){
+    console.warn('[WorldPatch] Đã bỏ qua các patch lỗi:',window.TuTienWorldPatchErrors);
+  }
   console.info('[WorldPatch] Đã áp dụng',PATCH_VERSION);
   return src;
 }
