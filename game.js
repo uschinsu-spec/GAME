@@ -442,12 +442,12 @@ function getSkillDef(skillId){
 const defaultState={
   name:'Linh Phong',level:1,xp:0,xpNeed:120,
   hp:620,maxHp:620,mp:180,maxMp:180,
-  // Thuộc tính chiến đấu nền. atk/def/crit giữ lại để tương thích save cũ.
-  atk:42,def:8,crit:.12,critDamage:1.8,
+  // Hệ thuộc tính chiến đấu chính thức — không còn atk/def/crit cũ.
+  damage:{physical:42,Kim:42,Hỏa:42,Thủy:42,Mộc:42,Thổ:42,Phong:42,Lôi:42},
+  defense:{physical:8,Kim:0,Hỏa:0,Thủy:0,Mộc:0,Thổ:0,Phong:0,Lôi:0},
+  critChance:.12,critDamage:1.8,
   spiritSense:100,moveSpeed:6.2,attackSpeed:1.0,castSpeed:1.0,
   hpRegenPct:0.015,mpRegenPct:0.035,
-  damageBonus:{physical:0,Kim:0,Hỏa:0,Thủy:0,Mộc:0,Thổ:0,Phong:0,Lôi:0,Kiếm:0,Đao:0},
-  defenseBonus:{physical:0,Kim:0,Hỏa:0,Thủy:0,Mộc:0,Thổ:0,Phong:0,Lôi:0,Kiếm:0,Đao:0},
   gold:1200,stones:500,
   realm:0,realmStage:1,cultivation:0,
   kills:0,questKills:0,bossKills:0,
@@ -483,14 +483,28 @@ try{
   }
   if(typeof S.skillTierTab!=='number')S.skillTierTab=0;
 
-  // Migration cho save cũ: bổ sung hệ thống thuộc tính mà không xóa tiến trình.
-  const statTypes=['physical','Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi','Kiếm','Đao'];
-  if(!S.damageBonus||typeof S.damageBonus!=='object')S.damageBonus={};
-  if(!S.defenseBonus||typeof S.defenseBonus!=='object')S.defenseBonus={};
+  // Migration save cũ -> hệ thuộc tính mới hoàn toàn.
+  const statTypes=['physical','Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi'];
+  const legacyAtk=typeof S.atk==='number'?S.atk:42;
+  const legacyDef=typeof S.def==='number'?S.def:8;
+  const legacyCrit=typeof S.crit==='number'?S.crit:.12;
+  const legacyDamageBonus=(S.damageBonus&&typeof S.damageBonus==='object')?S.damageBonus:{};
+  const legacyDefenseBonus=(S.defenseBonus&&typeof S.defenseBonus==='object')?S.defenseBonus:{};
+
+  if(!S.damage||typeof S.damage!=='object')S.damage={};
+  if(!S.defense||typeof S.defense!=='object')S.defense={};
   for(const t of statTypes){
-    if(typeof S.damageBonus[t]!=='number')S.damageBonus[t]=0;
-    if(typeof S.defenseBonus[t]!=='number')S.defenseBonus[t]=0;
+    if(typeof S.damage[t]!=='number')S.damage[t]=legacyAtk+(Number(legacyDamageBonus[t])||0);
+    if(typeof S.defense[t]!=='number')S.defense[t]=(t==='physical'?legacyDef:0)+(Number(legacyDefenseBonus[t])||0);
   }
+
+  // Kiếm/Đao dùng damage Vật lý, không còn stat riêng.
+  delete S.damage.Kiếm;
+  delete S.damage.Đao;
+  delete S.defense.Kiếm;
+  delete S.defense.Đao;
+
+  if(typeof S.critChance!=='number')S.critChance=legacyCrit;
   if(typeof S.critDamage!=='number')S.critDamage=1.8;
   if(typeof S.spiritSense!=='number')S.spiritSense=100;
   if(typeof S.moveSpeed!=='number')S.moveSpeed=6.2;
@@ -498,6 +512,12 @@ try{
   if(typeof S.castSpeed!=='number')S.castSpeed=1.0;
   if(typeof S.hpRegenPct!=='number')S.hpRegenPct=0.015;
   if(typeof S.mpRegenPct!=='number')S.mpRegenPct=0.035;
+
+  delete S.atk;
+  delete S.def;
+  delete S.crit;
+  delete S.damageBonus;
+  delete S.defenseBonus;
 }catch(e){
   S=structuredClone(defaultState);
 }
@@ -1083,31 +1103,35 @@ function spawnBoss(){
   sfx('breakthrough');
 }
 
-const COMBAT_DAMAGE_TYPES=['physical','Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi','Kiếm','Đao'];
+const COMBAT_DAMAGE_TYPES=['physical','Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi'];
 const DAMAGE_LABELS={
   physical:'Vật lý',Kim:'Kim',Hỏa:'Hỏa',Thủy:'Thủy',Mộc:'Mộc',
-  Thổ:'Thổ',Phong:'Phong',Lôi:'Lôi',Kiếm:'Kiếm',Đao:'Đao'
+  Thổ:'Thổ',Phong:'Phong',Lôi:'Lôi'
 };
 const DAMAGE_COLORS={
   physical:'#ffd08a',Kim:'#ffd86b',Hỏa:'#ff6b3d',Thủy:'#64cfff',Mộc:'#68df8b',
-  Thổ:'#c9a56b',Phong:'#a7f3dc',Lôi:'#9d8cff',Kiếm:'#7ceaff',Đao:'#ff776d'
+  Thổ:'#c9a56b',Phong:'#a7f3dc',Lôi:'#9d8cff'
 };
 
+function normalizeDamageType(type='physical'){
+  return type==='Kiếm'||type==='Đao'?'physical':type;
+}
+
 function getPlayerDamageStat(type='physical'){
-  let bonus=(S.damageBonus&&Number(S.damageBonus[type]))||0;
-  return Math.max(0,S.atk+bonus);
+  type=normalizeDamageType(type);
+  return Math.max(0,(S.damage&&Number(S.damage[type]))||0);
 }
 
 function getPlayerDefenseStat(type='physical'){
-  let bonus=(S.defenseBonus&&Number(S.defenseBonus[type]))||0;
-  // def là phòng thủ vật lý nền; phòng thủ hệ dùng bonus riêng.
-  return Math.max(0,(type==='physical'?S.def:0)+bonus);
+  type=normalizeDamageType(type);
+  return Math.max(0,(S.defense&&Number(S.defense[type]))||0);
 }
 
 function getSkillPower(skill,mult=1,crit=false){
-  let type=skill&&skill.element?skill.element:'physical';
+  let rawType=skill&&skill.element?skill.element:'physical';
+  let type=normalizeDamageType(rawType);
   let base=getPlayerDamageStat(type);
-  // Thần thức tăng sức mạnh kỹ năng hệ, nhưng không tăng đòn đánh vật lý thường.
+  // Kiếm/Đao là vật lý; chỉ Kim/Hỏa/Thủy/Mộc/Thổ/Phong/Lôi nhận hệ số Thần thức.
   let spiritMult=type==='physical'?1:(1+Math.max(0,S.spiritSense||0)/1000);
   let techMult=techniques[S.technique||0][2];
   let petMult=S.pet?1.08:1.0;
@@ -1128,6 +1152,7 @@ function takePlayerDamage(raw,type='physical'){
 
 function damage(a,d,crit=false,type='physical'){
   if(!a||a.dead)return;
+  type=normalizeDamageType(type);
   d=Math.max(1,Math.round(d));
   a.hp-=d;
   sfx(crit?'slash':'hit');
@@ -1188,8 +1213,8 @@ function gainXP(v){
     S.hp=S.maxHp;
     S.maxMp+=15;
     S.mp=S.maxMp;
-    S.atk+=8;
-    S.def+=2;
+    for(const t of COMBAT_DAMAGE_TYPES)S.damage[t]=(S.damage[t]||0)+8;
+    S.defense.physical=(S.defense.physical||0)+2;
     S.spiritSense+=3;
     toast(`✨ Đột phá cấp độ Lv.${S.level}!`);
     sfx('levelUp');
@@ -1214,7 +1239,7 @@ function dropEquipment(){
 function playerAttack(target,mult=1){
   if(!target)return;
   triggerPlayerAttack();
-  let crit=Math.random()<S.crit;
+  let crit=Math.random()<(S.critChance||0);
   let d=getSkillPower({element:'physical'},mult,crit);
   slash(target.x,target.z,crit?'#ffe777':'#78dfff');
   damage(target,d,crit,'physical');
@@ -1222,9 +1247,9 @@ function playerAttack(target,mult=1){
 
 function skillAttack(target,skill,mult=1,forceCrit=false){
   if(!target||!skill)return;
-  let crit=forceCrit||Math.random()<S.crit;
+  let crit=forceCrit||Math.random()<(S.critChance||0);
   let d=getSkillPower(skill,mult,crit);
-  damage(target,d,crit,skill.element);
+  damage(target,d,crit,normalizeDamageType(skill.element));
 }
 
 function nearest(range=9){
@@ -1301,7 +1326,7 @@ function useSkill(n){
       setTimeout(()=>{if(camera){camera.position.x=ox;camera.position.z=oz;}},120);
     }
 
-    let isCrit=skill.tierIdx>=2||Math.random()<S.crit;
+    let isCrit=skill.tierIdx>=2||Math.random()<(S.critChance||0);
     targets.forEach((a,i)=>{
       setTimeout(()=>skillAttack(a,skill,dmgMult,isCrit),i*22);
     });
@@ -1663,7 +1688,7 @@ function updatePlayer(dt){
       let target=nearest(8);
       if(target){
         slash(target.x,target.z,'#ff9944');
-        damage(target,S.atk*0.45);
+        damage(target,getPlayerDamageStat('physical')*0.45,false,'physical');
       }
     }
   }
@@ -1782,9 +1807,9 @@ function updateHUD(){
   $('#gold').textContent=Math.floor(S.gold).toLocaleString();
   $('#stones').textContent=S.stones.toLocaleString();
   let petMult=S.pet?1.08:1.0;
-  let dmgScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.damageBonus&&S.damageBonus[t])||0),0);
-  let defScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.defenseBonus&&S.defenseBonus[t])||0),0);
-  $('#power').textContent=Math.round((S.atk*22+S.maxHp*1.2+S.maxMp*.8+S.def*30+S.spiritSense*4+dmgScore*8+defScore*10)*(1+S.realm*.35)*petMult).toLocaleString();
+  let dmgScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.damage&&S.damage[t])||0),0);
+  let defScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.defense&&S.defense[t])||0),0);
+  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+dmgScore*12+defScore*18)*(1+S.realm*.35)*petMult).toLocaleString();
   $('#questText').innerHTML=`[Chính] Diệt Yêu Thú <span>${Math.min(20,S.questKills)}/20</span>`;
   $('#autoBtn').classList.toggle('on',S.auto);
   $('#miniName').textContent=region().name;
@@ -2010,10 +2035,10 @@ function useInventoryItem(name){
     toast('💎 Hấp thụ Linh Thạch: +50 Tu vi, +30 Vàng');
     sfx('item');
   }else if(name.includes('Boss Hồn Tinh')){
-    S.atk+=15;
+    for(const t of COMBAT_DAMAGE_TYPES)S.damage[t]=(S.damage[t]||0)+15;
     S.maxHp+=100;
     S.hp=S.maxHp;
-    toast('🔥 Dung hợp Hồn Tinh: Vĩnh viễn +15 Công kích, +100 Khí Huyết!');
+    toast('🔥 Dung hợp Hồn Tinh: +15 toàn bộ Sát thương, +100 Sinh lực!');
     sfx('breakthrough');
   }else{
     toast('Đã sử dụng '+name);
@@ -2056,7 +2081,7 @@ function openPanel(kind){
           <div class="stat"><span>Thần thức</span><b>${Math.round(S.spiritSense)}</b></div>
         </div>
         <div class="card" style="margin-top:8px"><b>⚔ Sát Thương</b>${dmgRows}
-          <div class="stat"><span>Tỷ lệ bạo kích</span><b>${Math.round(S.crit*100)}%</b></div>
+          <div class="stat"><span>Tỷ lệ bạo kích</span><b>${Math.round((S.critChance||0)*100)}%</b></div>
           <div class="stat"><span>Sát thương bạo kích</span><b>${Math.round((S.critDamage||1.8)*100)}%</b></div>
         </div>
         <div class="card" style="margin-top:8px"><b>🛡 Phòng Thủ</b>${defRows}</div>
@@ -2294,8 +2319,8 @@ function openPanel(kind){
           }
           S.maxHp+=240;
           S.hp=S.maxHp;
-          S.atk+=24;
-          S.def+=7;
+          for(const t of COMBAT_DAMAGE_TYPES)S.damage[t]=(S.damage[t]||0)+24;
+          S.defense.physical=(S.defense.physical||0)+7;
           save();
           closePanel();
           burst(player.x,player.z,'#f6dd7c',50,8);
@@ -2418,14 +2443,13 @@ function equipBest(slot){
   if(!S.equipment)S.equipment={};
   S.equipment[slot]=key;
   if(slot==='weapon'){
-    S.atk+=15;
-    S.damageBonus.physical=(S.damageBonus.physical||0)+5;
+    S.damage.physical=(S.damage.physical||0)+20;
   }else if(slot==='armor'){
     S.maxHp+=150;
-    S.def+=5;
-    for(const t of ['Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi'])S.defenseBonus[t]=(S.defenseBonus[t]||0)+2;
+    S.defense.physical=(S.defense.physical||0)+5;
+    for(const t of ['Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi'])S.defense[t]=(S.defense[t]||0)+2;
   }else{
-    S.crit+=.03;
+    S.critChance=(S.critChance||0)+.03;
     S.spiritSense+=12;
   }
   save();
