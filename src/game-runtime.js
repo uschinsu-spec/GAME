@@ -3093,7 +3093,7 @@ async function init(){
     stencil:false,
     antialias:!MOBILE_RUNTIME,
     powerPreference:'high-performance',
-    adaptToDeviceRatio:false
+    adaptToDeviceRatio:true
   });
   applyEngineScaling();
 
@@ -3154,7 +3154,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-visual-restore-v5.8').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-retina-fix-v5.9').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
