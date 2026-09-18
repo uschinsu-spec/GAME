@@ -1,7 +1,7 @@
 {
-  "buildVersion": "20260918-mobile-clarity-v5.1",
+  "buildVersion": "20260918-mobile-clarity-v5.2",
   "saveVersion": 5,
-  "shellCache": "game-shell-v6",
-  "assetCache": "game-assets-v6",
-  "mapCache": "game-maps-v6"
+  "shellCache": "game-shell-v7",
+  "assetCache": "game-assets-v7",
+  "mapCache": "game-maps-v7"
 }
