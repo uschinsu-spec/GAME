@@ -1,5 +1,5 @@
-const BUILD='20260918-morning-visual-baseline-v6.0';
-const CACHE={shell:'game-shell-v15',assets:'game-assets-v15',maps:'game-maps-v15'};
+const BUILD='20260918-safe-runtime-opt-v6.1';
+const CACHE={shell:'game-shell-v16',assets:'game-assets-v16',maps:'game-maps-v16'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
