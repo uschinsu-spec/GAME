@@ -655,7 +655,8 @@ const defaultState={
   skillTierTab:0,
   pills:{1:3,2:0,3:0,4:0,5:0},
   talismans:{1:1,2:0,3:0,4:0,5:0},
-  artifacts:{1:0,2:0,3:0,4:0,5:0}
+  artifacts:{1:0,2:0,3:0,4:0,5:0},
+  progressionSystems:(window.TuTienSystems?window.TuTienSystems.defaultState():{})
 };
 
 let S;
@@ -748,6 +749,7 @@ try{
   if(typeof S.heartMethod!=='number')S.heartMethod=0;
   if(!S.heartMethodLevels||typeof S.heartMethodLevels!=='object')S.heartMethodLevels={0:1};
   if(typeof S.heartMethodLevels[S.heartMethod]!=='number')S.heartMethodLevels[S.heartMethod]=1;
+  if(window.TuTienSystems)window.TuTienSystems.migrate(S);
 
   delete S.atk;
   delete S.def;
@@ -1444,7 +1446,8 @@ function getPlayerDamageStat(type='physical'){
 function getPlayerDefenseStat(type='physical'){
   type=normalizeDamageType(type);
   const base=Math.max(0,(S.defense&&Number(S.defense[type]))||0);
-  return base*getTechniqueStatMultiplier(type)*getRealmPowerMultiplier()*getHeartMethodEffects().defense;
+  const systemDef=window.TuTienSystems?window.TuTienSystems.getDefenseMultiplier(S,player):1;
+  return base*getTechniqueStatMultiplier(type)*getRealmPowerMultiplier()*getHeartMethodEffects().defense*systemDef;
 }
 
 function getSkillPower(skill,mult=1,crit=false){
@@ -1470,6 +1473,16 @@ function takePlayerDamage(raw,type='physical',attacker=null){
   // Nếu quái cao cảnh giới hơn: damage của quái được nhân bởi áp chế.
   // Nếu người chơi cao hơn: damage nhận vào bị chia bởi áp chế của người chơi.
   let realmFactor=enemySuppress/Math.max(1,playerSuppress);
+  if(window.TuTienSystems&&attacker){
+    const ward=window.TuTienSystems.getWardInfo(S);
+    if(ward){
+      const info=attacker.realmInfo||getEnemyRealmInfo(attacker.enemyLv||1);
+      const wardSuppress=getRealmSuppressionByScores(ward.score,ward.major,info.score,info.major);
+      const enemyVsWard=getRealmSuppressionByScores(info.score,info.major,ward.score,ward.major);
+      realmFactor*=enemyVsWard/Math.max(1,wardSuppress);
+      realmFactor/=Math.max(1,ward.quality||1);
+    }
+  }
   let reduced=Math.max(1,raw*realmFactor-defense*rnd(.65,1.0));
   S.hp-=reduced;
   sfx('hit');
@@ -1491,6 +1504,33 @@ function damage(a,d,crit=false,type='physical'){
   if(a.hp<=0)kill(a);
 }
 
+function damageFromRealmSource(a,d,sourceMajor,type='physical',crit=false,label=''){
+  if(!a||a.dead)return;
+  type=normalizeDamageType(type);
+  sourceMajor=clamp(Number(sourceMajor)||0,0,realms.length-1);
+  const sourceScore=sourceMajor===0?11:12+(sourceMajor-1)*4+3;
+  const info=a.realmInfo||getEnemyRealmInfo(a.enemyLv||1);
+  const sourceSuppress=getRealmSuppressionByScores(sourceScore,sourceMajor,info.score,info.major);
+  const defenderSuppress=getRealmSuppressionByScores(info.score,info.major,sourceScore,sourceMajor);
+  d=Math.max(1,Math.round(d*sourceSuppress/Math.max(1,defenderSuppress)));
+  a.hp-=d;
+  sfx(crit?'slash':'hit');
+  floatText(a.mesh.position,(label?label+' ':'')+'-'+d+' '+(DAMAGE_LABELS[type]||''),crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
+  flash(a.mesh);
+  if(a===boss)$('#bossFill').style.width=clamp(a.hp/a.maxHp*100,0,100)+'%';
+  if(a.hp<=0)kill(a);
+}
+
+function getSystemContext(){
+  return {
+    save,updateHUD,toast,sfx,openPanel,closePanel,
+    getActors:()=>actors,
+    getPlayer:()=>player,
+    realmDamage:damageFromRealmSource,
+    burst,ring,slash
+  };
+}
+
 function kill(a){
   a.dead=true;
   a.mesh.setEnabled(false);
@@ -1498,7 +1538,8 @@ function kill(a){
   S.kills++;
   S.questKills++;
   gainXP(a.xp);
-  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation*getTechniqueCultivationMultiplier());
+  const formationCult=window.TuTienSystems?window.TuTienSystems.getCultivationMultiplier(S,player):1;
+  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation*getTechniqueCultivationMultiplier()*formationCult);
   
   // Loot
   if(Math.random()<.75){
@@ -1512,6 +1553,7 @@ function kill(a){
     }
     if(Math.random()<.1)dropEquipment();
   }
+  if(window.TuTienSystems)window.TuTienSystems.onKill(S,{boss:a===boss},getSystemContext());
   if(a===boss){
     S.bossKills++;
     S.stones+=35;
@@ -1828,6 +1870,10 @@ function toast(t){
 
 function updateActor(a,dt){
   if(a.dead)return;
+  if((a.stunT||0)>0){
+    a.stunT=Math.max(0,(a.stunT||0)-dt);
+    return;
+  }
 
   // Khu an toàn tuyệt đối: actor nào lọt vào sẽ bị đẩy ra ngoài ngay.
   ejectEnemyFromVillage(a);
@@ -1946,7 +1992,8 @@ function updatePlayer(dt){
   if(l>.05){
     let nx=mx/Math.max(1,l);
     let nz=mz/Math.max(1,l);
-    let sp=Math.max(2.5,(S.moveSpeed||6.2)*getHeartMethodEffects().move);
+    let systemMove=window.TuTienSystems?window.TuTienSystems.getMoveMultiplier(S):1;
+    let sp=Math.max(2.5,(S.moveSpeed||6.2)*getHeartMethodEffects().move*systemMove);
     let nextX=clamp(player.x+nx*sp*dt,-MAP_BOUND,MAP_BOUND);
     let nextZ=clamp(player.z+nz*sp*dt,-MAP_BOUND,MAP_BOUND);
     let wallMove=resolveVillageWallMove(player.x,player.z,nextX,nextZ);
@@ -2097,6 +2144,7 @@ function tick(){
     for(let i=1;i<=4;i++)cooldown[i]=Math.max(0,cooldown[i]-dt);
     dashCd.t=Math.max(0,dashCd.t-dt);
     autoCombat(dt);
+    if(window.TuTienSystems)window.TuTienSystems.update(S,dt,getSystemContext());
     
     // Passive HP/MP Regen
     regenTimer-=dt;
@@ -2405,7 +2453,11 @@ function openPanel(kind){
         let canUse=n.includes('Đan')||n.includes('Linh Thạch')||n.includes('Hồn Tinh');
         return `<div class="card"><div class="slot"><div class="icon">${n.includes('Kiếm')?'⚔':n.includes('Giáp')?'🛡':n.includes('Đan')?'🔴':n.includes('Hồn')?'🔥':'💎'}</div><div><b>${n}</b><br><small>Số lượng: ${q}</small></div></div>${canUse?`<button class="btn-use" data-use="${n}">Sử Dụng</button>`:''}</div>`;
       }).join(''):'<div class="card"><p>Túi đồ hiện đang trống</p></div>')+'</div>'+`<div class="card" style="margin-top:12px"><b>Phẩm cấp trang bị hiện tại: ${grade} phẩm</b><p>Nhất → Ngũ phẩm mở dần theo cảnh giới và cấp độ nhân vật.</p></div>`;
-      setTimeout(()=>$$('[data-use]').forEach(b=>b.onclick=()=>useInventoryItem(b.dataset.use)),0);
+      setTimeout(()=>$('[data-use]').forEach(b=>b.onclick=()=>useInventoryItem(b.dataset.use)),0);
+      if(window.TuTienSystems){
+        const extInv=window.TuTienSystems.renderInventory(S,getSystemContext());
+        if(extInv){html+=extInv.html;setTimeout(()=>extInv.bind&&extInv.bind(),0);}
+      }
 
     }else if(kind==='character'){
       title='Thông Tin Nhân Vật';
@@ -2443,6 +2495,8 @@ function openPanel(kind){
           <div class="stat"><span>Linh Thú hỗ trợ</span><b>${S.pet?'Cửu Vĩ Linh Hồ (+8% sát thương)':'Không'}</b></div>
           <div class="stat"><span>Yêu thú đã diệt</span><b>${S.kills}</b></div>
         </div>`;
+
+      if(window.TuTienSystems)html+=window.TuTienSystems.professionSummary(S);
 
     }else if(kind==='skills'){
       title='Tàng Kinh Các · Kỹ Năng Cửu Hệ';
@@ -2651,9 +2705,10 @@ function openPanel(kind){
 
     }else if(kind==='cultivate'){
       title='Tu Vi · Cảnh Giới · Công Pháp · Tâm Pháp';
-      let need=S.realm===0
+      let rawNeed=S.realm===0
         ?Math.round(350*Math.pow(1.55,Math.max(0,(S.realmStage||1)-1)))
         :Math.round(9000*Math.pow(4,S.realm-1)*Math.pow(2.4,S.period||0));
+      let need=window.TuTienSystems?window.TuTienSystems.getBreakthroughNeed(S,rawNeed):rawNeed;
       const activeTech=getActiveTechnique();
       const heart=getHeartMethodDef(),heartLv=getHeartMethodLevel(),heartFx=getHeartMethodEffects();
 
@@ -2718,6 +2773,7 @@ function openPanel(kind){
           if(S.realm>=realms.length-1&&(S.period||0)>=3)return toast('Đã đạt Hóa Thần · Đỉnh Phong');
           if(S.cultivation<need)return toast('Chưa đủ tu vi để đột phá');
           S.cultivation-=need;
+          if(window.TuTienSystems)window.TuTienSystems.consumeBreakthroughAid(S);
           if(S.realm===0){
             S.realmStage++;
             if(S.realmStage>12){S.realm=1;S.realmStage=0;S.period=0}
@@ -2793,6 +2849,14 @@ function openPanel(kind){
           toast('🧘 '+h.name+' tăng lên Lv.'+(lv+1)); sfx('levelUp');
         });
       },0);
+
+    }else if((kind==='crafting'||kind==='formations')&&window.TuTienSystems){
+      const extPanel=window.TuTienSystems.renderPanel(kind,S,getSystemContext());
+      if(extPanel){
+        title=extPanel.title;
+        html=extPanel.html;
+        setTimeout(()=>extPanel.bind&&extPanel.bind(),0);
+      }
 
     }else if(kind==='shop'){
       title='Tiên Phường';
