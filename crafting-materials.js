@@ -1,10 +1,7 @@
 (()=>{'use strict';
-const GRADES=[
- {id:1,name:'Nhất Phẩm',realm:0},{id:2,name:'Nhị Phẩm',realm:1},{id:3,name:'Tam Phẩm',realm:2},{id:4,name:'Tứ Phẩm',realm:3},{id:5,name:'Ngũ Phẩm',realm:4}
-];
-const QUALITIES=[
- {id:'ha',name:'Hạ phẩm',yield:1.00,purity:.70},{id:'trung',name:'Trung phẩm',yield:1.08,purity:.80},{id:'thuong',name:'Thượng phẩm',yield:1.16,purity:.90},{id:'cuc',name:'Cực phẩm',yield:1.25,purity:1.00}
-];
+const GRADES=window.GameConstants.GRADES.map(x=>({...x}));
+const QUALITY_RULES={ha:[1,.70],trung:[1.08,.80],thuong:[1.16,.90],cuc:[1.25,1]};
+const QUALITIES=window.GameConstants.QUALITIES.map(x=>({...x,yield:QUALITY_RULES[x.id][0],purity:QUALITY_RULES[x.id][1]}));
 const MINERALS=[
  {id:'huyen_thiet_khoang',name:'Huyền Thiết Khoáng',grade:1,element:'Vô',refined:'huyen_thiet_tinh',product:'huyen_thiet_phoi'},
  {id:'hoa_van_thach',name:'Hỏa Văn Thạch',grade:1,element:'Hỏa',refined:'hoa_van_tinh',product:'hoa_van_phoi'},

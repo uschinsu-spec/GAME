@@ -8,8 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Tu Tiên Chi Lộ</title>
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=6" />
-<link rel="stylesheet" href="style.css?v=9" />
+<link rel="stylesheet" href="style.css?v=20260918-architecture-v5" />
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
 <body>
@@ -94,9 +93,10 @@
     </div>
   </div>
 </div>
-<script src="systems-progression.js?v=2"></script>
+<script src="src/runtime-core.js?v=20260918-architecture-v5"></script>
+<script src="systems-progression.js?v=3"></script>
 <script src="item-master-data.js?v=1"></script>
-<script src="item-runtime.js?v=2"></script>
+<script src="item-runtime.js?v=3"></script>
 <script src="crafting-materials.js?v=2"></script>
 <script src="crafting-world-data.js?v=1"></script>
 <script src="crafting-professions.js?v=1"></script>
@@ -107,11 +107,12 @@
 <script src="spirit-field-system.js?v=1"></script>
 <script src="artifact-growth-system.js?v=1"></script>
 <script src="crafting-gathering-patch.js?v=1"></script>
-<script src="crafting-gameplay-integration.js?v=2"></script>
+<script src="crafting-gameplay-integration.js?v=3"></script>
 <script>
 window.addEventListener('error',function(e){var m=document.getElementById('loadMsg');if(m)m.textContent='Lỗi GAME: '+(e.message||'Không xác định');});
 </script>
-<script src="skill-master-data.js?v=3"></script>
-<script src="game.js?v=39"></script>
+<script src="skill-master-data.js?v=4"></script>
+<script src="src/skills/skill-system.js?v=20260918-architecture-v5"></script>
+<script src="game.js?v=40"></script>
 </body>
 </html>
