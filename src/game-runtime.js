@@ -597,7 +597,7 @@ const save=(force=false)=>{
 
 let engine,scene,camera,player,petActor=null,actors=[],projectiles=[],effects=[],decor=[],boss=null;
 let worldGround=null,worldRiver=null;
-let last=performance.now(),spawnTimer=0,autoTimer=0,regenTimer=0,miniTimer=0,gameStarted=false,paused=false;
+let last=performance.now(),spawnTimer=0,autoTimer=0,regenTimer=0,miniTimer=0,cooldownUiTimer=0,gameStarted=false,paused=false;
 const keys={}, joy={x:0,y:0,active:false,pid:null}, cooldown=[0,0,0,0,0], dashCd={t:0};
 const spriteMats={}, matCache={}, mapPropMaterials={}, skillVfxMats={};
 if(window.RuntimeTelemetry)window.RuntimeTelemetry.register('runtime',()=>({
@@ -2262,7 +2262,11 @@ function tick(){
       drawMini();
       updateHUD();
     }
-    updateCooldownUI();
+    cooldownUiTimer-=dt;
+    if(cooldownUiTimer<=0){
+      cooldownUiTimer=0.05;
+      updateCooldownUI();
+    }
   }
   scene.render();
 }
@@ -3158,7 +3162,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-morning-visual-baseline-v6.0').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-safe-runtime-opt-v6.1').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
