@@ -1,0 +1,2 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=editormap.html"><title>Đang mở Map Editor…</title></head><body><p>Đang mở <a href="editormap.html">Map Editor</a>…</p><script>location.replace('editormap.html')</script></body></html>
