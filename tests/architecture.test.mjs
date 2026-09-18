@@ -36,6 +36,41 @@ assert.equal(added,1);
 assert.equal(context.InventorySystem.remove('hoa_van_thach',2,'materials'),true);
 assert.equal(context.InventorySystem.count('hoa_van_thach','materials'),1);
 
+// CraftingCore phải mutate đúng object inventory canonical, không thay reference.
+run('crafting-recipes.js');
+run('crafting-core.js');
+const craftInventory={tu_linh_tinh_hoa:3,huyet_sam_tinh_hoa:1};
+const craftResult=context.TuTienCraftingCore.craft('tu_linh_dan',{
+ playerRealm:4,
+ professions:{alchemy:{grade:5,mastery:0}},
+ inventory:craftInventory,
+ roll:0,
+ qualityRoll:0
+});
+assert.equal(craftResult.ok,true);
+assert.equal(craftResult.inventory,craftInventory,'crafting không được tạo inventory song song');
+assert.equal(craftInventory.tu_linh_tinh_hoa,undefined);
+assert.equal(craftInventory.huyet_sam_tinh_hoa,undefined);
+
+// Progression mới chỉ giữ progression/buff/formation compatibility; crafting legacy phải được archive và ngừng drop.
+state.progressionSystems={
+ professions:{alchemy:{grade:4},forging:{grade:4},talisman:{grade:4}},
+ materials:{linhThao:9,khoangThach:8,phuChi:7},
+ pillInventory:{'hoi_khi|0|0':2},
+ activeFormation:null
+};
+run('systems-progression.js');
+const progression=context.TuTienSystems.migrate(state);
+assert.equal(progression.professions,undefined);
+assert.equal(progression.materials,undefined);
+assert.ok(progression.legacyCraftingArchived);
+assert.equal(progression.legacyCrafting.materials.linhThao,9);
+const inventoryBeforeKill=JSON.stringify(state.inventory);
+context.TuTienSystems.onKill(state,{boss:true},{toast(){}});
+assert.equal(JSON.stringify(state.inventory),inventoryBeforeKill,'progression legacy không được drop vật phẩm lần hai');
+assert.match(context.TuTienSystems.professionSummary(state),/Tinh Luyện Sư/);
+assert.match(context.TuTienSystems.professionSummary(state),/Trận Pháp Sư/);
+
 run('skill-master-data.js');run('src/skills/skill-system.js');
 assert.deepEqual(JSON.parse(JSON.stringify(context.SkillSystem.validate())),{ok:true,count:144});
 assert.equal(context.SkillSystem.get('hoa_0_0').element,'Hỏa');
