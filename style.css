@@ -1,6 +1,6 @@
 [hidden],.panel[hidden],#panel[hidden],#hud[hidden],#loading[hidden],#bossBar[hidden],#menuGrid[hidden]{display:none!important}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-html,body,#gameWrap,#renderCanvas{width:100%;height:100%;margin:0;overflow:hidden;background:#091116;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#fff;touch-action:none}
+html,body,#gameWrap,#renderCanvas{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#091116;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#fff;touch-action:none}
 #renderCanvas{display:block;outline:none}
 
 /* iOS/Chrome mobile: khóa chiều cao game theo small viewport ổn định.
@@ -81,7 +81,7 @@ html,body,#gameWrap,#renderCanvas{width:100%;height:100%;margin:0;overflow:hidde
 .menuGrid button{border-radius:10px;width:54px;height:54px}
 
 .panel{position:absolute;inset:0;background:rgba(0,0,0,.78);z-index:90;display:grid;place-items:center;padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));touch-action:pan-y}
-.panelBox{width:min(700px,96vw);max-height:88vh;overflow-y:auto;background:linear-gradient(165deg,#122631,#081319);border:1px solid #d9bd73;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.85);padding:16px}
+.panelBox{width:min(700px,96vw);max-height:88vh;max-height:88svh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:linear-gradient(165deg,#122631,#081319);border:1px solid #d9bd73;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.85);padding:16px}
 .panelBox header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:10px;color:#f0d88c;font-size:18px}
 .panelBox header button{background:none;border:0;color:#fff;font-size:24px;cursor:pointer;padding:4px 10px;border-radius:6px}
 .panelBox header button:hover{background:rgba(255,255,255,.15)}
@@ -156,6 +156,16 @@ html,body,#gameWrap,#renderCanvas{width:100%;height:100%;margin:0;overflow:hidde
   .skills{transform:scale(.88);transform-origin:bottom right}
   .joystick{transform:scale(.88);transform-origin:bottom left}
   .minimap{transform:scale(.68);transform-origin:top right;right:6px;top:6px}
+}
+
+@media (orientation:portrait) and (max-width:768px){
+  .skills{transform:scale(.78);transform-origin:bottom right}
+  .joystick{transform:scale(.78);transform-origin:bottom left}
+  .panelBox{width:94vw;max-height:82svh}
+}
+
+@media (pointer:coarse){
+  button,.menuBtn,.topMenu button,.menuGrid button{min-width:44px;min-height:44px}
 }
 
 

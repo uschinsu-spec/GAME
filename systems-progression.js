@@ -1,18 +1,8 @@
 (()=>{'use strict';
 
-const GRADES=[
-  {name:'Nhất Phẩm',realm:0},
-  {name:'Nhị Phẩm',realm:1},
-  {name:'Tam Phẩm',realm:2},
-  {name:'Tứ Phẩm',realm:3},
-  {name:'Ngũ Phẩm',realm:4}
-];
-const QUALITIES=[
-  {id:'ha',name:'Hạ phẩm',mult:.70},
-  {id:'trung',name:'Trung phẩm',mult:.85},
-  {id:'thuong',name:'Thượng phẩm',mult:1.00},
-  {id:'cuc',name:'Cực phẩm',mult:1.20}
-];
+const GRADES=window.GameConstants.GRADES.map(x=>({name:x.name,realm:x.realm}));
+const QUALITY_MULT={ha:.7,trung:.85,thuong:1,cuc:1.2};
+const QUALITIES=window.GameConstants.QUALITIES.map(x=>({...x,mult:QUALITY_MULT[x.id]}));
 const PROF_NAMES={alchemy:'Luyện Đan Sư',forging:'Luyện Khí Sư',talisman:'Chế Phù Sư'};
 const PROF_ICONS={alchemy:'💊',forging:'⚒️',talisman:'🧿'};
 const PROF_MAT={alchemy:'linhThao',forging:'khoangThach',talisman:'phuChi'};
@@ -179,6 +169,7 @@ function actorInfo(a){
   return {major:0,score:Math.max(0,Math.min(11,(a.enemyLv||1)-1))};
 }
 function suppression(attScore,attMajor,defScore,defMajor){
+  if(window.RealmSystem)return window.RealmSystem.getSuppression({score:attScore,major:attMajor},{score:defScore,major:defMajor});
   var diff=attScore-defScore;
   if(diff<=0)return 1;
   var majorDiff=Math.max(0,attMajor-defMajor);

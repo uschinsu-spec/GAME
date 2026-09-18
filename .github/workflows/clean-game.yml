@@ -4,6 +4,11 @@ on:
   push:
     paths:
       - 'scripts/clean-game.mjs'
+      - 'src/**'
+      - '*.js'
+      - '*.html'
+      - '*.css'
+      - 'maps/**'
       - '.github/workflows/clean-game.yml'
   workflow_dispatch:
 
@@ -24,26 +29,14 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Build clean game source
+      - name: Audit architecture and data
         run: node scripts/clean-game.mjs
 
       - name: Syntax audit
         run: |
+          node tests/architecture.test.mjs
           node --check game.js
           node --check skill-master-data.js
           node --check systems-progression.js
-          node --check world-runtime.js
-          node --check skill-runtime.js
+          find src -name '*.js' -print0 | xargs -0 -n1 node --check
           git diff --check
-
-      - name: Commit generated clean source
-        run: |
-          if git diff --quiet -- game.js index.html; then
-            echo 'No generated changes.'
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add game.js index.html
-          git commit -m 'build: compile clean optimized game runtime'
-          git push

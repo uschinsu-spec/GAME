@@ -1,14 +1,9 @@
 (()=>{'use strict';
-const GRADES=[
-{id:1,name:'Nhất Phẩm',realm:0,mult:1.00},{id:2,name:'Nhị Phẩm',realm:1,mult:1.80},{id:3,name:'Tam Phẩm',realm:2,mult:3.25},{id:4,name:'Tứ Phẩm',realm:3,mult:5.85},{id:5,name:'Ngũ Phẩm',realm:4,mult:10.50}
-];
-const QUALITIES=[
-{id:'ha',name:'Hạ phẩm',mult:1.00,affixes:1,color:'#aeb7c2'},
-{id:'trung',name:'Trung phẩm',mult:1.15,affixes:2,color:'#5fcf8b'},
-{id:'thuong',name:'Thượng phẩm',mult:1.30,affixes:3,color:'#b582ff'},
-{id:'cuc',name:'Cực phẩm',mult:1.50,affixes:4,color:'#ffd76a'}
-];
-const ELEMENTS=['Vô','Kim','Mộc','Thủy','Hỏa','Thổ'];
+const GRADE_MULT=[1,1.8,3.25,5.85,10.5];
+const GRADES=window.GameConstants.GRADES.map((x,i)=>({...x,mult:GRADE_MULT[i]}));
+const QUALITY_RULES={ha:[1,1,'#aeb7c2'],trung:[1.15,2,'#5fcf8b'],thuong:[1.3,3,'#b582ff'],cuc:[1.5,4,'#ffd76a']};
+const QUALITIES=window.GameConstants.QUALITIES.map(x=>({...x,mult:QUALITY_RULES[x.id][0],affixes:QUALITY_RULES[x.id][1],color:QUALITY_RULES[x.id][2]}));
+const ELEMENTS=window.GameConstants.ELEMENTS.filter(x=>['Vô','Kim','Mộc','Thủy','Hỏa','Thổ'].includes(x));
 const SLOTS={
 weapon:'Vũ khí',head:'Đầu quan',armor:'Pháp bào',hands:'Hộ thủ',boots:'Giày',belt:'Đai lưng',necklace:'Hạng liên',ring1:'Nhẫn trái',ring2:'Nhẫn phải',jade:'Ngọc bội'
 };
