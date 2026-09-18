@@ -3,6 +3,14 @@
 html,body,#gameWrap,#renderCanvas{width:100%;height:100%;margin:0;overflow:hidden;background:#091116;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#fff;touch-action:none}
 #renderCanvas{display:block;outline:none}
 
+/* iOS/Chrome mobile: khóa chiều cao game theo small viewport ổn định.
+   Thanh địa chỉ co/giãn sẽ không làm canvas đổi kích thước và khiến map nhảy. */
+@supports (height:100svh){
+  @media (max-width:768px){
+    html,body,#gameWrap,#renderCanvas{height:100svh;min-height:100svh;max-height:100svh}
+  }
+}
+
 .glass{background:linear-gradient(180deg,rgba(13,28,37,.9),rgba(5,13,19,.82));border:1px solid rgba(232,203,132,.38);box-shadow:0 4px 16px rgba(0,0,0,.6);border-radius:12px;backdrop-filter:blur(6px)}
 #loading{position:absolute;inset:0;background:#071016;z-index:99;overflow:hidden;display:flex;align-items:center;justify-content:center}
 #loading img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.85) brightness(.7)}
