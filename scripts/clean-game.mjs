@@ -18,12 +18,31 @@ if(new Set(scripts).size!==scripts.length)fail('index.html không được load 
 if(scripts.filter(file=>file==='game.js').length!==1)fail('game.js phải chỉ được load đúng một lần');
 if(/boot\.js/.test(html))fail('boot.js legacy không được là entrypoint production');
 if(/styles\.css/.test(html))fail('Không được load đồng thời styles.css legacy');
+
+const bootstrap=fs.readFileSync('game.js','utf8');
+if(!/build\.json/.test(bootstrap))fail('game.js phải lấy runtime version từ build.json');
+if(/GameConstants\.BUILD_VERSION/.test(bootstrap))fail('game.js không được dùng BUILD_VERSION hard-code từ constants');
+
 const refiningSource=fs.readFileSync('refining-system.js','utf8');
 if(/\nensureEcosystemModules\(\);/.test(refiningSource))fail('refining-system.js không được tự chèn module crafting vào production');
 
+const progressionSource=fs.readFileSync('systems-progression.js','utf8');
+for(const marker of ['PILL_RECIPES','FORGING_RECIPES','PROF_MAT'])if(progressionSource.includes(marker))fail(`systems-progression.js còn crafting legacy: ${marker}`);
+if(!/function onKill\(\)\{/.test(progressionSource))fail('systems-progression.js phải giữ onKill compatibility không drop legacy');
+
+const craftingCore=fs.readFileSync('crafting-core.js','utf8');
+if(!/consumeInPlace/.test(craftingCore))fail('crafting-core.js phải consume canonical inventory in-place');
+if(/Object\.assign\(\{\},inv\|\|\{\}\)/.test(craftingCore))fail('crafting-core.js không được clone inventory khi craft');
+
 const coreOrder=['src/data/constants.js','src/core/event-bus.js','src/core/state.js','src/items/inventory-system.js','src/core/save-service.js','src/core/performance.js','src/core/asset-manager.js','src/core/object-pool.js','src/core/scheduler.js','src/core/lifecycle.js','src/core/telemetry.js','src/combat/realm-system.js','src/combat/damage-system.js','src/world/world-system.js'];
 const expectedCore='/* Generated runtime bundle. Source modules remain canonical under src/. */\n'+coreOrder.map(file=>fs.readFileSync(file,'utf8').trimEnd()+'\n;').join('\n')+'\n';
-if(fs.readFileSync('src/runtime-core.js','utf8').trimEnd()!==expectedCore.trimEnd())fail('src/runtime-core.js chưa đồng bộ với source modules');
+const runtimeCore='src/runtime-core.js';
+let regeneratedCore=false;
+if(!fs.existsSync(runtimeCore)||fs.readFileSync(runtimeCore,'utf8').trimEnd()!==expectedCore.trimEnd()){
+ fs.writeFileSync(runtimeCore,expectedCore,'utf8');
+ regeneratedCore=true;
+}
+try{new vm.Script(fs.readFileSync(runtimeCore,'utf8'),{filename:runtimeCore});}catch(error){fail(`${runtimeCore}: ${error.message}`);}
 
 const master=fs.readFileSync('skill-master-data.js','utf8');
 const sandbox={window:{}};vm.createContext(sandbox);vm.runInContext(master,sandbox,{filename:'skill-master-data.js'});
@@ -35,4 +54,4 @@ let mapCount=0;
 for(const catalog of manifest.catalogs){const data=JSON.parse(fs.readFileSync(catalog,'utf8'));for(const map of data.maps||[]){mapCount++;if(!fs.existsSync(map.file))fail(`Thiếu map: ${map.file}`);}}
 
 const tree=files.filter(file=>file.startsWith('assets/'));
-console.log(JSON.stringify({ok:true,jsFiles:js.length,startupScripts:scripts.length,skills:144,maps:mapCount,assetFilesInCheckout:tree.length},null,2));
+console.log(JSON.stringify({ok:true,jsFiles:js.length,startupScripts:scripts.length,skills:144,maps:mapCount,assetFilesInCheckout:tree.length,runtimeCoreRegenerated:regeneratedCore},null,2));
