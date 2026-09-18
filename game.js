@@ -442,7 +442,13 @@ function getSkillDef(skillId){
 const defaultState={
   name:'Linh Phong',level:1,xp:0,xpNeed:120,
   hp:620,maxHp:620,mp:180,maxMp:180,
-  atk:42,def:8,crit:.12,gold:1200,stones:500,
+  // Thuộc tính chiến đấu nền. atk/def/crit giữ lại để tương thích save cũ.
+  atk:42,def:8,crit:.12,critDamage:1.8,
+  spiritSense:100,moveSpeed:6.2,attackSpeed:1.0,castSpeed:1.0,
+  hpRegenPct:0.015,mpRegenPct:0.035,
+  damageBonus:{physical:0,Kim:0,Hỏa:0,Thủy:0,Mộc:0,Thổ:0,Phong:0,Lôi:0,Kiếm:0,Đao:0},
+  defenseBonus:{physical:0,Kim:0,Hỏa:0,Thủy:0,Mộc:0,Thổ:0,Phong:0,Lôi:0,Kiếm:0,Đao:0},
+  gold:1200,stones:500,
   realm:0,realmStage:1,cultivation:0,
   kills:0,questKills:0,bossKills:0,
   auto:true,quality:1,daily:false,pet:false,
@@ -476,6 +482,22 @@ try{
     S.learnedSkills={[`${k}_0_0`]:1,[`${k}_0_1`]:1};
   }
   if(typeof S.skillTierTab!=='number')S.skillTierTab=0;
+
+  // Migration cho save cũ: bổ sung hệ thống thuộc tính mà không xóa tiến trình.
+  const statTypes=['physical','Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi','Kiếm','Đao'];
+  if(!S.damageBonus||typeof S.damageBonus!=='object')S.damageBonus={};
+  if(!S.defenseBonus||typeof S.defenseBonus!=='object')S.defenseBonus={};
+  for(const t of statTypes){
+    if(typeof S.damageBonus[t]!=='number')S.damageBonus[t]=0;
+    if(typeof S.defenseBonus[t]!=='number')S.defenseBonus[t]=0;
+  }
+  if(typeof S.critDamage!=='number')S.critDamage=1.8;
+  if(typeof S.spiritSense!=='number')S.spiritSense=100;
+  if(typeof S.moveSpeed!=='number')S.moveSpeed=6.2;
+  if(typeof S.attackSpeed!=='number')S.attackSpeed=1.0;
+  if(typeof S.castSpeed!=='number')S.castSpeed=1.0;
+  if(typeof S.hpRegenPct!=='number')S.hpRegenPct=0.015;
+  if(typeof S.mpRegenPct!=='number')S.mpRegenPct=0.035;
 }catch(e){
   S=structuredClone(defaultState);
 }
@@ -951,6 +973,7 @@ function makeActor(type,x,z,elite=false){
     size:d.size*(elite?1.22:1),xp:d.xp,
     name:(elite?'Tinh Anh ':'')+d.name+' Lv.'+enemyLv,
     enemyLv,elite,dead:false,
+    damageType:({ice_wolf:'Thủy',fox:'Hỏa',golem:'Thổ',shadow:'Lôi',undead:'Mộc'}[type]||'physical'),
     attackCd:rnd(0,.7),bossSkillCd:4.5,
     frame:0,frameT:0
   };
@@ -1060,12 +1083,55 @@ function spawnBoss(){
   sfx('breakthrough');
 }
 
-function damage(a,d,crit=false){
+const COMBAT_DAMAGE_TYPES=['physical','Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi','Kiếm','Đao'];
+const DAMAGE_LABELS={
+  physical:'Vật lý',Kim:'Kim',Hỏa:'Hỏa',Thủy:'Thủy',Mộc:'Mộc',
+  Thổ:'Thổ',Phong:'Phong',Lôi:'Lôi',Kiếm:'Kiếm',Đao:'Đao'
+};
+const DAMAGE_COLORS={
+  physical:'#ffd08a',Kim:'#ffd86b',Hỏa:'#ff6b3d',Thủy:'#64cfff',Mộc:'#68df8b',
+  Thổ:'#c9a56b',Phong:'#a7f3dc',Lôi:'#9d8cff',Kiếm:'#7ceaff',Đao:'#ff776d'
+};
+
+function getPlayerDamageStat(type='physical'){
+  let bonus=(S.damageBonus&&Number(S.damageBonus[type]))||0;
+  return Math.max(0,S.atk+bonus);
+}
+
+function getPlayerDefenseStat(type='physical'){
+  let bonus=(S.defenseBonus&&Number(S.defenseBonus[type]))||0;
+  // def là phòng thủ vật lý nền; phòng thủ hệ dùng bonus riêng.
+  return Math.max(0,(type==='physical'?S.def:0)+bonus);
+}
+
+function getSkillPower(skill,mult=1,crit=false){
+  let type=skill&&skill.element?skill.element:'physical';
+  let base=getPlayerDamageStat(type);
+  // Thần thức tăng sức mạnh kỹ năng hệ, nhưng không tăng đòn đánh vật lý thường.
+  let spiritMult=type==='physical'?1:(1+Math.max(0,S.spiritSense||0)/1000);
+  let techMult=techniques[S.technique||0][2];
+  let petMult=S.pet?1.08:1.0;
+  let critMult=crit?(S.critDamage||1.8):1;
+  return base*mult*techMult*spiritMult*petMult*critMult*rnd(.92,1.08);
+}
+
+function takePlayerDamage(raw,type='physical'){
+  let defense=getPlayerDefenseStat(type);
+  // Giảm phẳng mềm: giữ cảm giác combat cũ nhưng áp dụng được cho mọi hệ.
+  let reduced=Math.max(1,raw-defense*rnd(.65,1.0));
+  S.hp-=reduced;
+  sfx('hit');
+  floatText(player.mesh.position,`-${Math.round(reduced)} ${DAMAGE_LABELS[type]||type}`,DAMAGE_COLORS[type]||'#ff776d');
+  if(S.hp<=0)playerDeath();
+  return reduced;
+}
+
+function damage(a,d,crit=false,type='physical'){
   if(!a||a.dead)return;
   d=Math.max(1,Math.round(d));
   a.hp-=d;
   sfx(crit?'slash':'hit');
-  floatText(a.mesh.position,`${crit?'Bạo ':''}-${d}`,crit?'#fff08b':'#ffd08a');
+  floatText(a.mesh.position,`${crit?'Bạo ':''}-${d} ${DAMAGE_LABELS[type]||''}`,crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
   flash(a.mesh);
   if(a===boss)$('#bossFill').style.width=clamp(a.hp/a.maxHp*100,0,100)+'%';
   if(a.hp<=0)kill(a);
@@ -1124,6 +1190,7 @@ function gainXP(v){
     S.mp=S.maxMp;
     S.atk+=8;
     S.def+=2;
+    S.spiritSense+=3;
     toast(`✨ Đột phá cấp độ Lv.${S.level}!`);
     sfx('levelUp');
     burst(player.x,player.z,'#7eeaff',24,5);
@@ -1148,10 +1215,16 @@ function playerAttack(target,mult=1){
   if(!target)return;
   triggerPlayerAttack();
   let crit=Math.random()<S.crit;
-  let petBuff=S.pet?1.08:1.0;
-  let d=S.atk*mult*techniques[S.technique||0][2]*(crit?1.8:1)*petBuff*rnd(.92,1.08);
+  let d=getSkillPower({element:'physical'},mult,crit);
   slash(target.x,target.z,crit?'#ffe777':'#78dfff');
-  damage(target,d,crit);
+  damage(target,d,crit,'physical');
+}
+
+function skillAttack(target,skill,mult=1,forceCrit=false){
+  if(!target||!skill)return;
+  let crit=forceCrit||Math.random()<S.crit;
+  let d=getSkillPower(skill,mult,crit);
+  damage(target,d,crit,skill.element);
 }
 
 function nearest(range=9){
@@ -1189,7 +1262,7 @@ function useSkill(n){
   }
 
   S.mp=Math.max(0,S.mp-skill.mp);
-  cooldown[n]=skill.cd;
+  cooldown[n]=skill.cd/Math.max(0.35,S.castSpeed||1);
   triggerPlayerAttack();
 
   let lv=(S.learnedSkills&&S.learnedSkills[skillId])||1;
@@ -1204,7 +1277,7 @@ function useSkill(n){
     let t=nearest(11);
     if(t){
       for(let i=0;i<3;i++){
-        setTimeout(()=>playerAttack(t,dmgMult/2.4),i*75);
+        setTimeout(()=>skillAttack(t,skill,dmgMult/2.4),i*75);
       }
       playSkillVfx(skill,t.x,t.z,3.4+skill.tierIdx*0.45,t.x-player.x,t.z-player.z,false);
       slash(t.x,t.z,ec);
@@ -1230,7 +1303,7 @@ function useSkill(n){
 
     let isCrit=skill.tierIdx>=2||Math.random()<S.crit;
     targets.forEach((a,i)=>{
-      setTimeout(()=>damage(a,S.atk*dmgMult,isCrit),i*22);
+      setTimeout(()=>skillAttack(a,skill,dmgMult,isCrit),i*22);
     });
   }
 
@@ -1408,10 +1481,7 @@ function updateActor(a,dt){
     setTimeout(()=>{
       if(!a.dead&&!isVillageSafe(player.x,player.z)&&dist(player,{x:player.x,z:player.z})<4.5){
         if(player.invuln<=0){
-          let dmg=Math.max(5,a.atk*1.6-S.def);
-          S.hp-=dmg;
-          floatText(player.mesh.position,`-${Math.round(dmg)}`,'#ff3322');
-          if(S.hp<=0)playerDeath();
+          takePlayerDamage(a.atk*1.6,'Hỏa');
         }
       }
     },1100);
@@ -1433,11 +1503,7 @@ function updateActor(a,dt){
   }else if(!playerSafe && a.attackCd<=0 && d<=1.7){
     a.attackCd=1.2+rnd(0,.4);
     if(player.invuln<=0){
-      let dmg=Math.max(1,a.atk-S.def*rnd(.5,1));
-      S.hp-=dmg;
-      sfx('hit');
-      floatText(player.mesh.position,`-${Math.round(dmg)}`,'#ff776d');
-      if(S.hp<=0)playerDeath();
+      takePlayerDamage(a.atk,a.damageType||'physical');
     }
   }
 
@@ -1516,7 +1582,7 @@ function updatePlayer(dt){
   if(l>.05){
     let nx=mx/Math.max(1,l);
     let nz=mz/Math.max(1,l);
-    let sp=6.2;
+    let sp=Math.max(2.5,S.moveSpeed||6.2);
     let nextX=clamp(player.x+nx*sp*dt,-MAP_BOUND,MAP_BOUND);
     let nextZ=clamp(player.z+nz*sp*dt,-MAP_BOUND,MAP_BOUND);
     let wallMove=resolveVillageWallMove(player.x,player.z,nextX,nextZ);
@@ -1528,7 +1594,7 @@ function updatePlayer(dt){
   if(player.state==='attack'){
     let anim=PLAYER_ANIMS.attack;
     player.animTimer+=dt;
-    let step=1.0/anim.fps;
+    let step=1.0/(anim.fps*Math.max(0.35,S.attackSpeed||1));
     if(player.animTimer>=step){
       player.animTimer-=step;
       player.frame++;
@@ -1634,7 +1700,7 @@ function autoCombat(dt){
   if(!S.auto)return;
   autoTimer-=dt;
   if(autoTimer<=0){
-    autoTimer=.52;
+    autoTimer=.52/Math.max(0.35,S.attackSpeed||1);
     let t=nearest(7.5);
     if(t)playerAttack(t,1);
     else if(actors.length<10)spawnPack();
@@ -1672,8 +1738,8 @@ function tick(){
     regenTimer-=dt;
     if(regenTimer<=0){
       regenTimer=1.2;
-      S.hp=Math.min(S.maxHp,S.hp+S.maxHp*0.015+2);
-      S.mp=Math.min(S.maxMp,S.mp+S.maxMp*0.035+3);
+      S.hp=Math.min(S.maxHp,S.hp+S.maxHp*Math.max(0,S.hpRegenPct||0)+2);
+      S.mp=Math.min(S.maxMp,S.mp+S.maxMp*Math.max(0,S.mpRegenPct||0)+3);
       updateHUD();
     }
 
@@ -1716,7 +1782,9 @@ function updateHUD(){
   $('#gold').textContent=Math.floor(S.gold).toLocaleString();
   $('#stones').textContent=S.stones.toLocaleString();
   let petMult=S.pet?1.08:1.0;
-  $('#power').textContent=Math.round((S.atk*22+S.maxHp*1.2+S.def*30)*(1+S.realm*.35)*petMult).toLocaleString();
+  let dmgScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.damageBonus&&S.damageBonus[t])||0),0);
+  let defScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.defenseBonus&&S.defenseBonus[t])||0),0);
+  $('#power').textContent=Math.round((S.atk*22+S.maxHp*1.2+S.maxMp*.8+S.def*30+S.spiritSense*4+dmgScore*8+defScore*10)*(1+S.realm*.35)*petMult).toLocaleString();
   $('#questText').innerHTML=`[Chính] Diệt Yêu Thú <span>${Math.min(20,S.questKills)}/20</span>`;
   $('#autoBtn').classList.toggle('on',S.auto);
   $('#miniName').textContent=region().name;
@@ -1975,7 +2043,32 @@ function openPanel(kind){
 
     }else if(kind==='character'){
       title='Thông Tin Nhân Vật';
-      html=`<div class="stat"><span>Tên nhân vật</span><b>${S.name}</b></div><div class="stat"><span>Cảnh giới</span><b>${realmName()}</b></div><div class="stat"><span>Khu vực</span><b>${region().name}</b></div><div class="stat"><span>Hệ kỹ năng</span><b>${S.skillElement}</b></div><div class="stat"><span>Khí huyết (HP)</span><b>${Math.round(S.hp)} / ${S.maxHp}</b></div><div class="stat"><span>Linh lực (MP)</span><b>${Math.round(S.mp)} / ${S.maxMp}</b></div><div class="stat"><span>Công kích</span><b>${S.atk}</b></div><div class="stat"><span>Phòng ngự</span><b>${S.def}</b></div><div class="stat"><span>Bạo kích</span><b>${Math.round(S.crit*100)}%</b></div><div class="stat"><span>Linh Thú hỗ trợ</span><b>${S.pet?'Cửu Vĩ Linh Hồ (+8% Công)':'Không'}</b></div><div class="stat"><span>Yêu thú đã diệt</span><b>${S.kills}</b></div>`;
+      let dmgRows=COMBAT_DAMAGE_TYPES.map(t=>`<div class="stat"><span>Sát thương ${DAMAGE_LABELS[t]}</span><b>${Math.round(getPlayerDamageStat(t))}</b></div>`).join('');
+      let defRows=COMBAT_DAMAGE_TYPES.map(t=>`<div class="stat"><span>Phòng thủ ${DAMAGE_LABELS[t]}</span><b>${Math.round(getPlayerDefenseStat(t))}</b></div>`).join('');
+      html=`
+        <div class="card"><b>👤 Cơ Bản</b>
+          <div class="stat"><span>Tên nhân vật</span><b>${S.name}</b></div>
+          <div class="stat"><span>Cảnh giới</span><b>${realmName()}</b></div>
+          <div class="stat"><span>Khu vực</span><b>${region().name}</b></div>
+          <div class="stat"><span>Hệ kỹ năng</span><b>${S.skillElement}</b></div>
+          <div class="stat"><span>Sinh lực (HP)</span><b>${Math.round(S.hp)} / ${S.maxHp}</b></div>
+          <div class="stat"><span>Pháp lực (MP)</span><b>${Math.round(S.mp)} / ${S.maxMp}</b></div>
+          <div class="stat"><span>Thần thức</span><b>${Math.round(S.spiritSense)}</b></div>
+        </div>
+        <div class="card" style="margin-top:8px"><b>⚔ Sát Thương</b>${dmgRows}
+          <div class="stat"><span>Tỷ lệ bạo kích</span><b>${Math.round(S.crit*100)}%</b></div>
+          <div class="stat"><span>Sát thương bạo kích</span><b>${Math.round((S.critDamage||1.8)*100)}%</b></div>
+        </div>
+        <div class="card" style="margin-top:8px"><b>🛡 Phòng Thủ</b>${defRows}</div>
+        <div class="card" style="margin-top:8px"><b>☯ Tốc Độ & Hồi Phục</b>
+          <div class="stat"><span>Tốc độ di chuyển</span><b>${(S.moveSpeed||6.2).toFixed(2)} m/s</b></div>
+          <div class="stat"><span>Tốc độ đánh</span><b>${Math.round((S.attackSpeed||1)*100)}%</b></div>
+          <div class="stat"><span>Tốc độ thi triển</span><b>${Math.round((S.castSpeed||1)*100)}%</b></div>
+          <div class="stat"><span>Hồi Sinh lực</span><b>${((S.hpRegenPct||0)*100).toFixed(1)}% / nhịp</b></div>
+          <div class="stat"><span>Hồi Pháp lực</span><b>${((S.mpRegenPct||0)*100).toFixed(1)}% / nhịp</b></div>
+          <div class="stat"><span>Linh Thú hỗ trợ</span><b>${S.pet?'Cửu Vĩ Linh Hồ (+8% sát thương)':'Không'}</b></div>
+          <div class="stat"><span>Yêu thú đã diệt</span><b>${S.kills}</b></div>
+        </div>`;
 
     }else if(kind==='skills'){
       title='Tàng Kinh Các · Kỹ Năng Cửu Hệ';
@@ -2324,9 +2417,17 @@ function equipBest(slot){
   if(!key)return toast('Không có trang bị phù hợp trong túi');
   if(!S.equipment)S.equipment={};
   S.equipment[slot]=key;
-  if(slot==='weapon')S.atk+=15;
-  else if(slot==='armor'){S.maxHp+=150;S.def+=5;}
-  else S.crit+=.03;
+  if(slot==='weapon'){
+    S.atk+=15;
+    S.damageBonus.physical=(S.damageBonus.physical||0)+5;
+  }else if(slot==='armor'){
+    S.maxHp+=150;
+    S.def+=5;
+    for(const t of ['Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi'])S.defenseBonus[t]=(S.defenseBonus[t]||0)+2;
+  }else{
+    S.crit+=.03;
+    S.spiritSense+=12;
+  }
   save();
   updateHUD();
   openPanel('equipment');
