@@ -486,7 +486,7 @@ let engine,scene,camera,player,petActor=null,actors=[],projectiles=[],effects=[]
 let worldGround=null,worldRiver=null;
 let last=performance.now(),spawnTimer=0,autoTimer=0,regenTimer=0,miniTimer=0,gameStarted=false,paused=false;
 const keys={}, joy={x:0,y:0,active:false,pid:null}, cooldown=[0,0,0,0,0], dashCd={t:0};
-const spriteMats={}, matCache={}, mapPropMaterials={};
+const spriteMats={}, matCache={}, mapPropMaterials={}, skillVfxMats={};
 
 // ===== VLTK-STYLE CAMERA STANDARD =====
 // Toàn bộ sprite/prop dùng chung một projection: orthographic 3/4 top-down,
@@ -1206,7 +1206,7 @@ function useSkill(n){
       for(let i=0;i<3;i++){
         setTimeout(()=>playerAttack(t,dmgMult/2.4),i*75);
       }
-      playSkillVfx(skill,t.x,t.z,3.4+skill.tierIdx*0.45);
+      playSkillVfx(skill,t.x,t.z,3.4+skill.tierIdx*0.45,t.x-player.x,t.z-player.z,false);
       slash(t.x,t.z,ec);
     }
   }else{
@@ -1214,7 +1214,7 @@ function useSkill(n){
     let range=skill.aoe;
     let targets=actors.filter(a=>!a.dead&&!isVillageSafe(a.x,a.z)&&Math.hypot(a.x-player.x,a.z-player.z)<range);
 
-    playSkillVfx(skill,player.x,player.z,Math.max(4.2,Math.min(10,range*0.95)));
+    playSkillVfx(skill,player.x,player.z,Math.max(4.2,Math.min(10,range*0.95)),0,0,true);
     ring(player.x,player.z,ec,range*0.65);
     let particleCount=skill.tierIdx===3?60:skill.tierIdx===2?40:24;
     burst(player.x,player.z,ec,particleCount,range*0.75);
@@ -1292,20 +1292,70 @@ function burst(x,z,color,count=18,r=5){
   }
 }
 
-function preloadSkillVfx(skill){
-  if(!skill||!skill.vfx)return null;
-  return makeSpriteMaterial(skill.vfx,`skill_vfx_${skill.id}`);
+function vfxDirectionCell(dx,dz,center=false){
+  // Sprite sheet 3x3:
+  // NW | N | NE
+  // W  | C | E
+  // SW | S | SE
+  if(center)return {row:1,col:1,key:'c'};
+  let len=Math.hypot(dx,dz);
+  if(len<0.001)return {row:1,col:1,key:'c'};
+  dx/=len; dz/=len;
+  const t=0.38;
+  let col=dx<-t?0:(dx>t?2:1);
+  let row=dz>t?0:(dz<-t?2:1);
+  const keys=[
+    ['nw','n','ne'],
+    ['w','c','e'],
+    ['sw','s','se']
+  ];
+  return {row,col,key:keys[row][col]};
 }
 
-function playSkillVfx(skill,x,z,size=3.4){
+function skillVfxMaterial(skill,row,col){
+  if(!skill||!skill.vfx)return null;
+  let key=`skill_vfx_${skill.id}_${row}_${col}`;
+  if(skillVfxMats[key])return skillVfxMats[key];
+
+  let m=new BABYLON.StandardMaterial('sm_'+key,scene);
+  let t=new BABYLON.Texture(skill.vfx,scene,false,true,BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+  t.hasAlpha=true;
+
+  // Mỗi PNG skill là sprite sheet 3x3. Chỉ hiển thị đúng 1 ô.
+  t.uScale=1/3;
+  t.vScale=1/3;
+  t.uOffset=col/3;
+  // Babylon UV đi từ dưới lên; đảo row để row=0 luôn là hàng trên của ảnh PNG.
+  t.vOffset=(2-row)/3;
+
+  m.diffuseTexture=t;
+  m.emissiveTexture=t;
+  m.useAlphaFromDiffuseTexture=true;
+  m.emissiveColor=new BABYLON.Color3(1,1,1);
+  m.specularColor=BABYLON.Color3.Black();
+  m.disableLighting=true;
+  m.backFaceCulling=false;
+  m.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
+  skillVfxMats[key]=m;
+  return m;
+}
+
+function preloadSkillVfx(skill){
   if(!skill||!skill.vfx)return;
-  let fxMat=preloadSkillVfx(skill);
+  // Preload đủ 9 ô của tối đa 4 skill đang trang bị.
+  for(let row=0;row<3;row++){
+    for(let col=0;col<3;col++) skillVfxMaterial(skill,row,col);
+  }
+}
+
+function playSkillVfx(skill,x,z,size=3.4,dx=0,dz=0,center=false){
+  if(!skill||!skill.vfx)return;
+  let cell=vfxDirectionCell(dx,dz,center);
+  let fxMat=skillVfxMaterial(skill,cell.row,cell.col);
   if(!fxMat)return;
 
-  // Mỗi skill đọc đúng 1 PNG vật lý riêng trong assets/vfx/skills/<hệ>/.
-  // Người dùng chỉ cần chép đè PNG tương ứng là đổi được VFX, không sửa code.
   let plane=BABYLON.MeshBuilder.CreatePlane(
-    'skill_vfx_'+skill.id,
+    'skill_vfx_'+skill.id+'_'+cell.key,
     {size:1,sideOrientation:BABYLON.Mesh.DOUBLESIDE},
     scene
   );
