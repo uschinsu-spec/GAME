@@ -1,5 +1,5 @@
-const BUILD='20260918-retina-fix-v5.9';
-const CACHE={shell:'game-shell-v14',assets:'game-assets-v14',maps:'game-maps-v14'};
+const BUILD='20260918-morning-visual-baseline-v6.0';
+const CACHE={shell:'game-shell-v15',assets:'game-assets-v15',maps:'game-maps-v15'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
