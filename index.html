@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Tu Tiên Chi Lộ</title>
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="style.css?v=20260918-iphone-minimap-fix-v6.6" />
+<link rel="stylesheet" href="style.css?v=20260918-minimap-hardfix-v6.7" />
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
 <body>
@@ -46,8 +46,8 @@
       <button data-panel="cultivate" title="Tu Vi"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/cultivate.png');--ui-fallback:url('assets/ui/icons/cultivate.svg')"></span><span>Tu Vi</span></button>
       <button data-panel="inventory" title="Túi Đồ"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/inventory.png');--ui-fallback:url('assets/ui/icons/inventory.svg')"></span><span>Túi Đồ</span></button>
     </div>
-    <div class="minimap glass">
-      <canvas id="mini" width="150" height="110"></canvas>
+    <div class="minimap glass" id="gameMinimap" style="display:block!important;position:absolute!important;right:max(112px,calc(env(safe-area-inset-right) + 104px))!important;top:max(8px,env(safe-area-inset-top))!important;width:104px!important;padding:3px!important;z-index:80!important;visibility:visible!important;opacity:1!important;transform:none!important;pointer-events:none!important">
+      <canvas id="mini" width="150" height="110" style="display:block!important;width:96px!important;height:68px!important;visibility:visible!important;opacity:1!important"></canvas>
       <span id="miniName">Thanh Vân Thôn</span>
     </div>
     <div id="bossBar" class="boss glass" hidden>
@@ -93,8 +93,8 @@
     </div>
   </div>
 </div>
-<script src="src/runtime-core.js?v=20260918-iphone-minimap-fix-v6.6"></script>
-<script src="src/config/render-quality.js?v=20260918-iphone-minimap-fix-v6.6"></script>
+<script src="src/runtime-core.js?v=20260918-minimap-hardfix-v6.7"></script>
+<script src="src/config/render-quality.js?v=20260918-minimap-hardfix-v6.7"></script>
 <script src="systems-progression.js?v=3"></script>
 <script src="item-master-data.js?v=1"></script>
 <script src="item-runtime.js?v=3"></script>
@@ -113,7 +113,7 @@
 window.addEventListener('error',function(e){var m=document.getElementById('loadMsg');if(m)m.textContent='Lỗi GAME: '+(e.message||'Không xác định');});
 </script>
 <script src="skill-master-data.js?v=4"></script>
-<script src="src/skills/skill-system.js?v=20260918-iphone-minimap-fix-v6.6"></script>
-<script src="game.js?v=55"></script>
+<script src="src/skills/skill-system.js?v=20260918-minimap-hardfix-v6.7"></script>
+<script src="game.js?v=56"></script>
 </body>
 </html>
