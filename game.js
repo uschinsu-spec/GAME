@@ -195,12 +195,17 @@ const CULTIVATION_TECH_LABELS={
   physical:'Thể Tu / Vật lý',Kim:'Kim',Hỏa:'Hỏa',Thủy:'Thủy',Mộc:'Mộc',Thổ:'Thổ',Phong:'Phong',Lôi:'Lôi'
 };
 const TECHNIQUE_GRADES=[
-  {id:'hoang',name:'Hoàng',minRealm:0,maxLevel:10,base:1.05,perLevel:0.025,unlockCost:0},
-  {id:'huyen',name:'Huyền',minRealm:1,maxLevel:10,base:1.18,perLevel:0.035,unlockCost:120},
-  {id:'dia',name:'Địa',minRealm:2,maxLevel:10,base:1.38,perLevel:0.050,unlockCost:420},
-  {id:'thien',name:'Thiên',minRealm:3,maxLevel:10,base:1.68,perLevel:0.070,unlockCost:1200}
+  {id:'hoang',name:'Hoàng',minRealm:0,cultivation:1.00,unlockCost:0},
+  {id:'huyen',name:'Huyền',minRealm:1,cultivation:1.55,unlockCost:120},
+  {id:'dia',name:'Địa',minRealm:2,cultivation:2.40,unlockCost:420},
+  {id:'thien',name:'Thiên',minRealm:3,cultivation:3.60,unlockCost:1200}
 ];
-
+const TECHNIQUE_RANKS=[
+  {id:'ha',name:'Hạ phẩm',cultivation:1.00},
+  {id:'trung',name:'Trung phẩm',cultivation:1.18},
+  {id:'thuong',name:'Thượng phẩm',cultivation:1.42},
+  {id:'cuc',name:'Cực phẩm',cultivation:1.75}
+];
 const TECHNIQUE_NAMES={
   physical:['Luyện Thể Quyết','Huyền Cương Bá Thể','Địa Sát Luyện Thể Kinh','Thiên Cương Bất Diệt Thể'],
   Kim:['Kim Linh Quyết','Huyền Kim Chân Kinh','Địa Kim Thần Điển','Thiên Kim Vạn Kiếp Kinh'],
@@ -211,63 +216,58 @@ const TECHNIQUE_NAMES={
   Phong:['Thanh Phong Quyết','Huyền Phong Chân Kinh','Địa Phong Vô Ảnh Kinh','Thiên Phong Cửu Tiêu Kinh'],
   Lôi:['Dẫn Lôi Quyết','Huyền Lôi Chân Kinh','Địa Lôi Thần Điển','Thiên Lôi Vạn Kiếp Kinh']
 };
-
 function makeDefaultTechniqueCultivation(){
   const out={};
-  for(const type of CULTIVATION_TECH_TYPES)out[type]={grade:0,level:1};
+  for(const type of CULTIVATION_TECH_TYPES)out[type]={grade:0,rank:0};
   return out;
 }
-
-function getTechniqueState(type='physical'){
+function normalizeTechniqueType(type='physical'){
   type=normalizeDamageType(type);
-  if(!CULTIVATION_TECH_TYPES.includes(type))type='physical';
+  return CULTIVATION_TECH_TYPES.includes(type)?type:'physical';
+}
+function getTechniqueState(type='physical'){
+  type=normalizeTechniqueType(type);
   if(!S.cultivationTechniques||typeof S.cultivationTechniques!=='object')S.cultivationTechniques=makeDefaultTechniqueCultivation();
-  if(!S.cultivationTechniques[type]||typeof S.cultivationTechniques[type]!=='object')S.cultivationTechniques[type]={grade:0,level:1};
+  if(!S.cultivationTechniques[type]||typeof S.cultivationTechniques[type]!=='object')S.cultivationTechniques[type]={grade:0,rank:0};
   const st=S.cultivationTechniques[type];
+  if(typeof st.rank!=='number'){
+    const oldLv=Math.max(1,Number(st.level)||1);
+    st.rank=oldLv>=8?3:oldLv>=5?2:oldLv>=3?1:0;
+    delete st.level;
+  }
   st.grade=clamp(Number(st.grade)||0,0,TECHNIQUE_GRADES.length-1);
-  st.level=clamp(Number(st.level)||1,1,TECHNIQUE_GRADES[st.grade].maxLevel);
+  st.rank=clamp(Number(st.rank)||0,0,TECHNIQUE_RANKS.length-1);
   return st;
 }
-
 function getTechniqueDef(type='physical'){
-  type=normalizeDamageType(type);
-  if(!CULTIVATION_TECH_TYPES.includes(type))type='physical';
-  const st=getTechniqueState(type),grade=TECHNIQUE_GRADES[st.grade];
+  type=normalizeTechniqueType(type);
+  const st=getTechniqueState(type);
   return {
-    type,gradeIndex:st.grade,level:st.level,grade,
+    type,gradeIndex:st.grade,rankIndex:st.rank,
+    grade:TECHNIQUE_GRADES[st.grade],rank:TECHNIQUE_RANKS[st.rank],
     name:(TECHNIQUE_NAMES[type]||TECHNIQUE_NAMES.physical)[st.grade]
   };
 }
-
-function getTechniqueMultiplier(type='physical'){
+function getActiveTechniqueType(){return normalizeTechniqueType(S.activeCultivationTechnique||'physical')}
+function getActiveTechnique(){return getTechniqueDef(getActiveTechniqueType())}
+function getTechniqueCultivationMultiplier(type=getActiveTechniqueType()){
   const t=getTechniqueDef(type);
-  return t.grade.base*(1+(t.level-1)*t.grade.perLevel);
+  return t.grade.cultivation*t.rank.cultivation;
 }
-
-function techniqueUpgradeCost(type='physical'){
+function techniqueRankUpgradeCost(type='physical'){
   const t=getTechniqueDef(type);
-  const grade=t.gradeIndex,lv=t.level;
-  return {
-    cult:Math.round(180*Math.pow(1.72,lv)*(1+grade*2.4)),
-    stones:Math.round(6*Math.pow(1.38,lv)*(1+grade*1.6))
-  };
+  return {cult:Math.round(300*Math.pow(2,t.rankIndex)*(1+t.gradeIndex*2.2)),stones:Math.round(10*Math.pow(1.7,t.rankIndex)*(1+t.gradeIndex*1.6))};
 }
-
 function canBreakTechniqueGrade(type='physical'){
   const t=getTechniqueDef(type);
   if(t.gradeIndex>=TECHNIQUE_GRADES.length-1)return false;
-  const next=TECHNIQUE_GRADES[t.gradeIndex+1];
-  return t.level>=t.grade.maxLevel&&(S.realm||0)>=next.minRealm;
+  return t.rankIndex===TECHNIQUE_RANKS.length-1&&(S.realm||0)>=TECHNIQUE_GRADES[t.gradeIndex+1].minRealm;
 }
-
 function techniqueBreakthroughCost(type='physical'){
   const t=getTechniqueDef(type);
   if(t.gradeIndex>=TECHNIQUE_GRADES.length-1)return null;
   const next=TECHNIQUE_GRADES[t.gradeIndex+1];
-  return {
-    cult:Math.round(3000*Math.pow(4,t.gradeIndex)),
-    stones:next.unlockCost
-  };
+  return {cult:Math.round(3000*Math.pow(4,t.gradeIndex)),stones:next.unlockCost};
 }
 
 const heartMethods=[
@@ -282,12 +282,7 @@ function getHeartMethodDef(){return heartMethods[clamp(S.heartMethod||0,0,heartM
 function getTechniqueLevel(i=S.technique||0){return Math.max(1,Number((S.techniqueLevels||{})[i])||1)}
 function getHeartMethodLevel(i=S.heartMethod||0){return Math.max(1,Number((S.heartMethodLevels||{})[i])||1)}
 
-function getTechniqueMultiplier(type='physical'){
-  const t=getTechniqueDef(),lv=getTechniqueLevel();
-  const levelMult=1+(lv-1)*t.perLevel;
-  const schoolBonus=type==='physical'?t.physicalBonus:t.elementBonus;
-  return t.baseDamage*levelMult*(1+schoolBonus);
-}
+
 
 function getHeartMethodEffects(){
   const h=getHeartMethodDef(),lv=getHeartMethodLevel();
@@ -640,7 +635,7 @@ const defaultState={
   auto:true,quality:1,daily:false,pet:false,
   items:{'Linh Thạch':5,'Hồi Khí Đan':3},
   equipment:{weapon:null,armor:null,ring:null},
-  period:0,cultivationTechniques:makeDefaultTechniqueCultivation(),heartMethod:0,heartMethodLevels:{0:1},region:0,skillElement:'Kiếm',
+  period:0,cultivationTechniques:makeDefaultTechniqueCultivation(),activeCultivationTechnique:'physical',heartMethod:0,heartMethodLevels:{0:1},region:0,skillElement:'Kiếm',
   equippedSkills:['kiem_0_0','kiem_0_1',null,null],
   learnedSkills:{'kiem_0_0':1,'kiem_0_1':1},
   skillTierTab:0,
@@ -729,6 +724,9 @@ try{
   for(const type of CULTIVATION_TECH_TYPES)getTechniqueState(type);
   delete S.technique;
   delete S.techniqueLevels;
+  if(typeof S.activeCultivationTechnique!=='string')S.activeCultivationTechnique='physical';
+  S.activeCultivationTechnique=normalizeTechniqueType(S.activeCultivationTechnique);
+  for(const type of CULTIVATION_TECH_TYPES)getTechniqueState(type);
   if(typeof S.heartMethod!=='number')S.heartMethod=0;
   if(!S.heartMethodLevels||typeof S.heartMethodLevels!=='object')S.heartMethodLevels={0:1};
   if(typeof S.heartMethodLevels[S.heartMethod]!=='number')S.heartMethodLevels[S.heartMethod]=1;
@@ -1373,12 +1371,11 @@ function getSkillPower(skill,mult=1,crit=false){
   // Chỉ Kim/Hỏa/Thủy/Mộc/Thổ/Phong/Lôi nhận thêm hệ số Thần thức.
   const heartFx=getHeartMethodEffects();
   let spiritMult=type==='physical'?1:(1+(Math.max(0,S.spiritSense||0)*heartFx.spirit)/1000);
-  let techMult=getTechniqueMultiplier(type);
   let petMult=S.pet?1.08:1.0;
   let critMult=crit?(S.critDamage||1.8):1;
   // Cảnh giới chỉ tăng stat vừa phải; áp chế được áp riêng khi damage chạm mục tiêu.
   let realmMult=getRealmPowerMultiplier();
-  return base*realmMult*mult*techMult*spiritMult*petMult*critMult*rnd(.92,1.08);
+  return base*realmMult*mult*spiritMult*petMult*critMult*rnd(.92,1.08);
 }
 
 function takePlayerDamage(raw,type='physical',attacker=null){
@@ -1416,7 +1413,7 @@ function kill(a){
   S.kills++;
   S.questKills++;
   gainXP(a.xp);
-  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation);
+  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation*getTechniqueCultivationMultiplier());
   
   // Loot
   if(Math.random()<.75){
@@ -2056,8 +2053,8 @@ function updateHUD(){
   $('#stones').textContent=S.stones.toLocaleString();
   let petMult=S.pet?1.08:1.0;
   let defScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.defense&&S.defense[t])||0),0);
-  let cultivationPower=getTechniqueMultiplier('physical')*getHeartMethodEffects().defense;
-  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+defScore*18)*getRealmPowerMultiplier()*petMult*cultivationPower).toLocaleString();
+  let heartPower=getHeartMethodEffects().defense;
+  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+defScore*18)*getRealmPowerMultiplier()*petMult*heartPower).toLocaleString();
   $('#questText').innerHTML=`[Chính] Diệt Yêu Thú <span>${Math.min(20,S.questKills)}/20</span>`;
   $('#autoBtn').classList.toggle('on',S.auto);
   $('#miniName').textContent=region().name;
@@ -2278,9 +2275,10 @@ function useInventoryItem(name){
     toast('🔴 Đã dùng Hồi Khí Đan: Phục hồi 100% Khí Huyết & Linh Lực!');
     sfx('item');
   }else if(name.includes('Linh Thạch')){
-    S.cultivation+=50;
+    const cultivateGain=Math.round(50*getTechniqueCultivationMultiplier()*getHeartMethodEffects().cultivation);
+    S.cultivation+=cultivateGain;
     S.gold+=30;
-    toast('💎 Hấp thụ Linh Thạch: +50 Tu vi, +30 Vàng');
+    toast('💎 Hấp thụ Linh Thạch: +'+cultivateGain+' Tu vi, +30 Vàng');
     sfx('item');
   }else if(name.includes('Boss Hồn Tinh')){
     for(const t of COMBAT_DAMAGE_TYPES)S.damage[t]=(S.damage[t]||0)+3;
@@ -2328,7 +2326,7 @@ function openPanel(kind){
           <div class="stat"><span>Pháp lực (MP)</span><b>${Math.round(S.mp)} / ${S.maxMp}</b></div>
           <div class="stat"><span>Thần thức</span><b>${Math.round(S.spiritSense)}</b></div>
           <div class="stat"><span>Hệ số stat cảnh giới</span><b>${getRealmPowerText()}</b></div>
-          <div class="stat"><span>Công pháp chủ hệ</span><b>${getTechniqueDef(S.skillElement).grade.name} · ${getTechniqueDef(S.skillElement).name} · Lv.${getTechniqueDef(S.skillElement).level}</b></div>
+          <div class="stat"><span>Công pháp tu luyện</span><b>${getActiveTechnique().grade.name} · ${getActiveTechnique().rank.name} · ${getActiveTechnique().name}</b></div>
           <div class="stat"><span>Tâm pháp</span><b>${getHeartMethodDef().name} · Lv.${getHeartMethodLevel()}</b></div>
           <div class="stat"><span>Áp chế cảnh giới</span><b>+35% / tiểu cảnh · +75% / đại cảnh</b></div>
         </div>
@@ -2560,21 +2558,23 @@ function openPanel(kind){
       let need=S.realm===0
         ?Math.round(350*Math.pow(1.55,Math.max(0,(S.realmStage||1)-1)))
         :Math.round(9000*Math.pow(4,S.realm-1)*Math.pow(2.4,S.period||0));
-
-      let heart=getHeartMethodDef(),heartLv=getHeartMethodLevel(),heartFx=getHeartMethodEffects();
+      const activeTech=getActiveTechnique();
+      const heart=getHeartMethodDef(),heartLv=getHeartMethodLevel(),heartFx=getHeartMethodEffects();
 
       let techniqueCards=CULTIVATION_TECH_TYPES.map(type=>{
-        let t=getTechniqueDef(type),cost=techniqueUpgradeCost(type),breakCost=techniqueBreakthroughCost(type);
-        let next=t.gradeIndex<TECHNIQUE_GRADES.length-1?TECHNIQUE_GRADES[t.gradeIndex+1]:null;
-        let canBreak=canBreakTechniqueGrade(type);
-        let maxed=t.level>=t.grade.maxLevel;
+        const t=getTechniqueDef(type),cost=techniqueRankUpgradeCost(type),breakCost=techniqueBreakthroughCost(type);
+        const next=t.gradeIndex<TECHNIQUE_GRADES.length-1?TECHNIQUE_GRADES[t.gradeIndex+1]:null;
+        const canBreak=canBreakTechniqueGrade(type);
+        const maxed=t.rankIndex>=TECHNIQUE_RANKS.length-1;
+        const nextRank=TECHNIQUE_RANKS[Math.min(t.rankIndex+1,TECHNIQUE_RANKS.length-1)];
         return `<div class="card">
-          <b>📜 ${CULTIVATION_TECH_LABELS[type]} · ${t.grade.name} phẩm</b>
+          <b>📜 ${CULTIVATION_TECH_LABELS[type]} · ${t.grade.name} · ${t.rank.name}</b>
           <p><b>${t.name}</b></p>
-          <p>Cấp công pháp: Lv.${t.level}/${t.grade.maxLevel}</p>
-          <p>Uy lực đúng hệ: ×${getTechniqueMultiplier(type).toFixed(2)}</p>
-          <button data-tech-up="${type}" ${maxed?'disabled':''}>Tu luyện +1 · ${cost.cult} Tu vi + ${cost.stones} Linh Thạch</button>
-          ${next?`<button data-tech-break="${type}" ${canBreak?'':'disabled'}>Đột phá → ${next.name} phẩm · ${breakCost.cult} Tu vi + ${breakCost.stones} Linh Thạch</button>`:'<p>Đã đạt Thiên phẩm tối đa</p>'}
+          <p>Hiệu suất nhận Tu vi: ×${getTechniqueCultivationMultiplier(type).toFixed(2)}</p>
+          <p>Không cộng damage, phòng thủ hay sức mạnh combat.</p>
+          <button data-tech-select="${type}">${getActiveTechniqueType()===type?'Đang vận hành':'Vận hành tu luyện'}</button>
+          <button data-tech-up="${type}" ${maxed?'disabled':''}>Tu luyện → ${nextRank.name} · ${cost.cult} Tu vi + ${cost.stones} Linh Thạch</button>
+          ${next?`<button data-tech-break="${type}" ${canBreak?'':'disabled'}>Đột phá → ${next.name} · Hạ phẩm · ${breakCost.cult} Tu vi + ${breakCost.stones} Linh Thạch</button>`:'<p>Đã đạt Thiên · Cực phẩm</p>'}
         </div>`;
       }).join('');
 
@@ -2596,12 +2596,15 @@ function openPanel(kind){
           <p>Tu vi: ${S.cultivation} / ${need}</p>
           <p>Hệ số stat cảnh giới: <b>${getRealmPowerText()}</b></p>
           <p>Áp chế: <b>+35% mỗi tiểu cảnh · +75% mỗi đại cảnh chênh lệch</b></p>
+          <p>Công pháp đang vận hành: <b>${activeTech.grade.name} · ${activeTech.rank.name} · ${activeTech.name}</b></p>
+          <p>Hiệu suất Công pháp: <b>×${getTechniqueCultivationMultiplier().toFixed(2)} Tu vi</b></p>
           <button class="action" id="breakBtn">Đột Phá Cảnh Giới</button>
         </div>
         <div class="card" style="margin-top:8px">
-          <b>📚 Công pháp tu luyện theo từng hệ</b>
-          <p>Mỗi hệ có cấp riêng và phẩm chất riêng: Hoàng → Huyền → Địa → Thiên.</p>
-          <p>Skill dùng hệ nào sẽ lấy uy lực Công pháp đúng hệ đó. Kiếm/Đao dùng Công pháp Thể Tu/Vật lý.</p>
+          <b>📚 Công pháp tu luyện</b>
+          <p>Đại phẩm: Hoàng → Huyền → Địa → Thiên.</p>
+          <p>Mỗi đại phẩm: Hạ phẩm → Trung phẩm → Thượng phẩm → Cực phẩm.</p>
+          <p>Công pháp chỉ dùng để tăng hiệu suất nhận Tu vi/EXP và phục vụ đột phá cảnh giới.</p>
         </div>
         <div class="cards">${techniqueCards}</div>
         <div class="card" style="margin-top:10px">
@@ -2625,8 +2628,7 @@ function openPanel(kind){
           }
           S.maxHp=Math.round(S.maxHp*1.22+120);
           S.maxMp=Math.round(S.maxMp*1.18+35);
-          S.hp=S.maxHp;
-          S.mp=S.maxMp;
+          S.hp=S.maxHp; S.mp=S.maxMp;
           S.damage.physical=Math.round((S.damage.physical||0)*1.15+12);
           S.defense.physical=Math.round((S.defense.physical||0)*1.18+4);
           S.spiritSense=Math.round((S.spiritSense||0)*1.12+8);
@@ -2636,25 +2638,37 @@ function openPanel(kind){
           sfx('breakthrough'); updateHUD();
         };
 
+        $$('[data-tech-select]').forEach(b=>b.onclick=()=>{
+          const type=normalizeTechniqueType(b.dataset.techSelect);
+          S.activeCultivationTechnique=type;
+          save(); openPanel('cultivate'); updateHUD();
+          const t=getTechniqueDef(type);
+          toast('📚 Đang vận hành '+t.name+' · '+t.grade.name+' · '+t.rank.name);
+          sfx('item');
+        });
+
         $$('[data-tech-up]').forEach(b=>b.onclick=()=>{
-          let type=b.dataset.techUp,t=getTechniqueDef(type),cost=techniqueUpgradeCost(type);
-          if(t.level>=t.grade.maxLevel)return toast('Công pháp đã đạt cấp tối đa của phẩm hiện tại');
+          const type=normalizeTechniqueType(b.dataset.techUp);
+          const t=getTechniqueDef(type),cost=techniqueRankUpgradeCost(type);
+          if(t.rankIndex>=TECHNIQUE_RANKS.length-1)return toast('Đã đạt Cực phẩm của đại phẩm hiện tại');
           if(S.cultivation<cost.cult||S.stones<cost.stones)return toast('Không đủ Tu vi hoặc Linh Thạch');
           S.cultivation-=cost.cult; S.stones-=cost.stones;
-          getTechniqueState(type).level++;
+          getTechniqueState(type).rank++;
+          const nt=getTechniqueDef(type);
           save(); openPanel('cultivate'); updateHUD();
-          toast('📜 '+t.name+' tăng lên Lv.'+getTechniqueState(type).level); sfx('levelUp');
+          toast('📜 '+nt.name+' đạt '+nt.rank.name); sfx('levelUp');
         });
 
         $$('[data-tech-break]').forEach(b=>b.onclick=()=>{
-          let type=b.dataset.techBreak,t=getTechniqueDef(type),cost=techniqueBreakthroughCost(type);
-          if(!canBreakTechniqueGrade(type))return toast('Cần đạt cấp tối đa và đủ cảnh giới để đột phá phẩm chất');
+          const type=normalizeTechniqueType(b.dataset.techBreak);
+          const cost=techniqueBreakthroughCost(type);
+          if(!canBreakTechniqueGrade(type))return toast('Cần đạt Cực phẩm và đủ cảnh giới để đột phá đại phẩm');
           if(!cost||S.cultivation<cost.cult||S.stones<cost.stones)return toast('Không đủ Tu vi hoặc Linh Thạch');
           S.cultivation-=cost.cult; S.stones-=cost.stones;
-          const st=getTechniqueState(type); st.grade++; st.level=1;
+          const st=getTechniqueState(type); st.grade++; st.rank=0;
           const nt=getTechniqueDef(type);
           save(); openPanel('cultivate'); updateHUD();
-          toast('✨ Công pháp '+CULTIVATION_TECH_LABELS[type]+' đột phá '+nt.grade.name+' phẩm: '+nt.name);
+          toast('✨ '+nt.name+' đột phá '+nt.grade.name+' · Hạ phẩm');
           sfx('breakthrough');
         });
 
