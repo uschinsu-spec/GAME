@@ -1,5 +1,5 @@
-const BUILD='20260918-native-sharp-v5.6';
-const CACHE={shell:'game-shell-v11',assets:'game-assets-v11',maps:'game-maps-v11'};
+const BUILD='20260918-stable-motion-v5.7';
+const CACHE={shell:'game-shell-v12',assets:'game-assets-v12',maps:'game-maps-v12'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
