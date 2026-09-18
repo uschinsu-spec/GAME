@@ -76,8 +76,8 @@ function optimize(src){
     src=src.replace("(()=>{'use strict';",`(()=>{'use strict';\nconst MOBILE_RUNTIME=/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints||0)>1||Math.min(innerWidth||9999,innerHeight||9999)<820;`);
   }
 
-  // Thanh Vân Thôn: khi người chơi còn ở khu an toàn, quái tuần tra quanh cổng/vòng ngoài
-  // thay vì bị đẩy ngẫu nhiên sang đoạn tường xa. Khi ra khỏi thôn, spawn gần người chơi hơn.
+  // Thanh Vân Thôn: khi người chơi còn ở khu an toàn, quái tuần tra quanh cổng/vòng ngoài.
+  // Khi ra khỏi thôn, quái spawn gần người chơi hơn để luôn nhìn thấy và giao chiến được.
   src=applyOnce(src,/function spawnPack\(\)\{[\s\S]*?\n\}\n\nfunction spawnBoss\(\)\{/,
 `function spawnPack(){
   if(actors.filter(a=>!a.dead).length>(MOBILE_RUNTIME?22:30))return;
@@ -133,12 +133,17 @@ function spawnBoss(){`, 'Thanh Van Thon patrol spawn');
 }
 
 let src=repair(read('game.js'));
-const worldPatch=loadPatcher('world-runtime.js','TuTienWorldPatch');
-src=worldPatch(src);
-syntax(src,'game.js + world');
-const skillPatch=loadPatcher('skill-runtime.js','TuTienSkillPatch');
-src=skillPatch(src);
-syntax(src,'game.js + 144 skill');
+const alreadyCompiled=src.includes('const SKILL_MASTER=window.TuTienSkillMaster');
+if(!alreadyCompiled){
+  const worldPatch=loadPatcher('world-runtime.js','TuTienWorldPatch');
+  src=worldPatch(src);
+  syntax(src,'game.js + world');
+  const skillPatch=loadPatcher('skill-runtime.js','TuTienSkillPatch');
+  src=skillPatch(src);
+  syntax(src,'game.js + 144 skill');
+}else{
+  console.log('✓ game.js đã compile world + skill trước đó; bỏ qua patch build-time lặp lại');
+}
 src=optimize(src);
 src=src.replace(/[ \t]+$/gm,'');
 syntax(src,'game.js final optimized');
