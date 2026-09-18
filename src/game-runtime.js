@@ -905,7 +905,7 @@ function preloadEnemySprites(){
 
 function makeBillboard(name,type,size,x,z){
   let p=BABYLON.MeshBuilder.CreatePlane(name,{size},scene);
-  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_Y;
   p.position.set(x,size*.48,z);
   p.isPickable=false;
   if(type==='player'){
@@ -959,7 +959,7 @@ function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
   let p=BABYLON.MeshBuilder.CreatePlane(name,{width:w,height:h},scene);
   // PNG environment luôn quay thẳng vào camera giống player/enemy.
   // Nhờ vậy ảnh pre-render không bị méo thêm bởi góc nhìn 3D của plane.
-  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_Y;
 
   // Chuẩn chân asset: tâm theo X, đáy PNG chạm mặt đất Y=0.
   // Không dùng yRatio khác nhau nữa vì nó làm cây/đá/nhà có "camera" khác nhau.
@@ -2135,10 +2135,17 @@ function updatePlayer(dt){
   const elev=CAMERA_STD.elevationDeg*Math.PI/180;
   const horizontal=Math.cos(elev)*CAMERA_STD.distance;
   const height=Math.sin(elev)*CAMERA_STD.distance;
-  camera.position.x=player.x;
+  // Pixel-stable camera: orthographic sprites shimmer when the camera moves by
+  // arbitrary sub-pixel amounts. Snap the camera target to the physical render
+  // pixel grid so map PNGs remain stable while the player moves.
+  const renderH=Math.max(1,engine.getRenderHeight());
+  const worldPerPixel=CAMERA_STD.viewHeight/renderH;
+  const camX=Math.round(player.x/worldPerPixel)*worldPerPixel;
+  const camZ=Math.round(player.z/worldPerPixel)*worldPerPixel;
+  camera.position.x=camX;
   camera.position.y=height;
-  camera.position.z=player.z-horizontal;
-  camera.setTarget(new BABYLON.Vector3(player.x,0,player.z));
+  camera.position.z=camZ-horizontal;
+  camera.setTarget(new BABYLON.Vector3(camX,0,camZ));
 
   // Update Companion Pet
   if(petActor&&petActor.mesh){
@@ -3170,7 +3177,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-native-sharp-v5.6').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-stable-motion-v5.7').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
