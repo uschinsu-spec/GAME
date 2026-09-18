@@ -3,7 +3,7 @@ async function boot(){
   const msg=document.querySelector('#loadMsg');
   try{
     if(msg)msg.textContent='Đang tối ưu tài nguyên khởi động…';
-    const res=await fetch('./game.js?v=27',{cache:'no-store'});
+    const res=await fetch('./game.js?v=28',{cache:'no-store'});
     if(!res.ok)throw new Error('Không tải được game.js ('+res.status+')');
     let src=await res.text();
 
