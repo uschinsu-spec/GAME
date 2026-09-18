@@ -14,9 +14,12 @@ for(const file of js){const source=fs.readFileSync(file,'utf8');if(/tokens trunc
 const html=fs.readFileSync('index.html','utf8');
 const scripts=[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match=>match[1].split('?')[0]).filter(src=>!/^https?:/.test(src));
 for(const file of scripts)if(!fs.existsSync(file))fail(`index.html tham chiếu file không tồn tại: ${file}`);
+if(new Set(scripts).size!==scripts.length)fail('index.html không được load trùng script');
 if(scripts.filter(file=>file==='game.js').length!==1)fail('game.js phải chỉ được load đúng một lần');
 if(/boot\.js/.test(html))fail('boot.js legacy không được là entrypoint production');
 if(/styles\.css/.test(html))fail('Không được load đồng thời styles.css legacy');
+const refiningSource=fs.readFileSync('refining-system.js','utf8');
+if(/\nensureEcosystemModules\(\);/.test(refiningSource))fail('refining-system.js không được tự chèn module crafting vào production');
 
 const coreOrder=['src/data/constants.js','src/core/event-bus.js','src/core/state.js','src/items/inventory-system.js','src/core/save-service.js','src/core/performance.js','src/core/asset-manager.js','src/core/object-pool.js','src/core/scheduler.js','src/core/lifecycle.js','src/core/telemetry.js','src/combat/realm-system.js','src/combat/damage-system.js','src/world/world-system.js'];
 const expectedCore='/* Generated runtime bundle. Source modules remain canonical under src/. */\n'+coreOrder.map(file=>fs.readFileSync(file,'utf8').trimEnd()+'\n;').join('\n')+'\n';
