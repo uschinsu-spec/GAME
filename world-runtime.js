@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const PATCH_VERSION='20260918-world-v1';
+const PATCH_VERSION='20260918-world-v2';
 
 function patchOnce(src,needle,replacement,label){
   const before=src;
@@ -22,15 +22,20 @@ function applyWorldPatch(src){
     /async function loadMapManifest\(\)\{[\s\S]*?\n\}\n\nfunction normalizeMapConfig/,
 `async function loadMapManifest(){
   try{
-    const data=await fetchMapJson('maps/manifest.json');
-    if(!data||!Array.isArray(data.maps)||data.maps.length===0)throw new Error('Danh mục map trống');
-    mapManifest=data;
-    regions=data.maps;
+    const root=await fetchMapJson('maps/manifest.json');
+    let allMaps=Array.isArray(root.maps)?root.maps:[];
+    if(allMaps.length===0&&Array.isArray(root.catalogs)&&root.catalogs.length){
+      const catalogs=await Promise.all(root.catalogs.map(file=>fetchMapJson(file)));
+      allMaps=catalogs.flatMap(c=>Array.isArray(c.maps)?c.maps:[]);
+    }
+    if(allMaps.length===0)throw new Error('Danh mục map trống');
+    mapManifest={...root,maps:allMaps};
+    regions=allMaps;
 
     const legacyIndex=Number.isInteger(S.region)?clamp(S.region,0,regions.length-1):0;
     const legacyId=(regions[legacyIndex]||regions[0]||DEFAULT_REGION).id;
     const requestedId=(typeof S.regionId==='string'&&S.regionId)?S.regionId:legacyId;
-    const resolvedId=regions.some(r=>r.id===requestedId)?requestedId:(data.defaultMap||DEFAULT_MAP_ID);
+    const resolvedId=regions.some(r=>r.id===requestedId)?requestedId:(root.defaultMap||DEFAULT_MAP_ID);
     const resolvedIndex=Math.max(0,regions.findIndex(r=>r.id===resolvedId));
     S.region=resolvedIndex;
     S.regionId=resolvedId;
