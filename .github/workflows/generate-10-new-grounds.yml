@@ -1,0 +1,122 @@
+name: Generate 10 new ground textures
+on:
+  push:
+    branches: [add-10-ground-textures-20260918]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: add-10-ground-textures-20260918
+      - name: Generate 10 standalone 1024x1024 PNG grounds
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, math, random, struct, zlib
+          W=H=1024
+          OUT='assets/maps/common/grounds'
+          os.makedirs(OUT, exist_ok=True)
+
+          themes = {
+            'ground_bamboo_01.png': ((52,68,42),(82,101,56),(120,128,76),101),
+            'ground_autumn_01.png': ((78,49,29),(119,74,38),(176,108,50),102),
+            'ground_volcanic_01.png': ((23,22,24),(49,43,41),(83,63,51),103),
+            'ground_crystal_01.png': ((38,49,62),(68,84,103),(111,135,154),104),
+            'ground_ruins_01.png': ((70,74,65),(103,106,91),(143,141,116),105),
+            'ground_riverbank_01.png': ((67,65,55),(100,94,73),(143,130,96),106),
+            'ground_canyon_01.png': ((101,50,35),(153,76,47),(201,117,70),107),
+            'ground_meadow_01.png': ((55,89,45),(87,122,60),(132,153,78),108),
+            'ground_cave_01.png': ((27,32,38),(48,55,60),(76,83,84),109),
+            'ground_city_stone_01.png': ((83,87,84),(116,118,111),(154,152,139),110),
+          }
+
+          def hnoise(x,y,s):
+              n=(x*374761393 + y*668265263 + s*69069) & 0xffffffff
+              n=(n ^ (n>>13))*1274126177 & 0xffffffff
+              return ((n ^ (n>>16)) & 0xffff)/65535.0
+
+          def lerp(a,b,t): return int(a+(b-a)*t)
+          def palette(c0,c1,c2,t):
+              if t<.5:
+                  q=t*2; return tuple(lerp(c0[i],c1[i],q) for i in range(3))
+              q=(t-.5)*2; return tuple(lerp(c1[i],c2[i],q) for i in range(3))
+
+          def png_write(path, rows):
+              raw=b''.join(b'\x00'+bytes(row) for row in rows)
+              def chunk(t,d):
+                  return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
+              data=b'\x89PNG\r\n\x1a\n'
+              data+=chunk(b'IHDR',struct.pack('>IIBBBBB',W,H,8,2,0,0,0))
+              data+=chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
+              open(path,'wb').write(data)
+
+          for name,(c0,c1,c2,seed) in themes.items():
+              rows=[]
+              for y in range(H):
+                  row=bytearray()
+                  for x in range(W):
+                      # Layered deterministic organic terrain texture.
+                      n=(hnoise(x//5,y//5,seed)*.16 + hnoise(x//18,y//18,seed+1)*.23 +
+                         hnoise(x//55,y//55,seed+2)*.32 + hnoise(x//150,y//150,seed+3)*.29)
+                      wave=(math.sin(x*.017+seed)+math.sin(y*.013-seed)+math.sin((x+y)*.008))*.025
+                      t=max(0,min(1,n+wave))
+                      r,g,b=palette(c0,c1,c2,t)
+
+                      if 'volcanic' in name:
+                          crack=abs(math.sin(x*.031 + math.sin(y*.018)*3.2))
+                          if crack<.035 and hnoise(x//8,y//8,seed+7)>.46:
+                              r,g,b=225,78+int(70*hnoise(x,y,9)),28
+                      elif 'crystal' in name:
+                          q=((x+y*2+int(18*math.sin(y*.04)))%137)
+                          if q<3 and hnoise(x//12,y//12,seed+8)>.5:
+                              r,g,b=min(220,r+55),min(235,g+70),min(245,b+75)
+                      elif 'ruins' in name:
+                          bx=(x+(y//92%2)*43)%112; by=y%92
+                          if bx<3 or by<3:
+                              r,g,b=max(35,r-38),max(38,g-38),max(34,b-35)
+                          elif hnoise(x//7,y//7,seed+9)>.84:
+                              g=min(150,g+30); r=max(45,r-15)
+                      elif 'riverbank' in name:
+                          if hnoise(x//9,y//9,seed+10)>.78:
+                              r=min(170,r+25); g=min(175,g+25); b=min(165,b+22)
+                          if abs(math.sin(y*.045+math.sin(x*.012)*2.0))<.018:
+                              b=min(190,b+34); g=min(170,g+22)
+                      elif 'canyon' in name:
+                          if abs(math.sin(y*.026+math.sin(x*.008)*2.5))<.025:
+                              r=max(65,r-45); g=max(38,g-30); b=max(28,b-20)
+                      elif 'meadow' in name:
+                          p=hnoise(x//3,y//3,seed+11)
+                          if p>.965:
+                              r,g,b=(232,220,145) if p<.985 else (230,183,184)
+                      elif 'autumn' in name:
+                          p=hnoise(x//4,y//4,seed+12)
+                          if p>.90:
+                              r,g,b=(214,131,44) if p<.95 else (175,71,31)
+                      elif 'bamboo' in name:
+                          if ((x*3+y*7+seed)%151)<2 and hnoise(x//8,y//8,seed+13)>.55:
+                              r,g,b=171,145,79
+                      elif 'cave' in name:
+                          p=hnoise(x//6,y//6,seed+14)
+                          if p>.975: r,g,b=82,128,139
+                      elif 'city_stone' in name:
+                          bx=(x+(y//72%2)*62)%124; by=y%72
+                          if bx<3 or by<3:
+                              r,g,b=max(45,r-42),max(47,g-42),max(45,b-40)
+                      row.extend((r,g,b))
+                  rows.append(row)
+              png_write(os.path.join(OUT,name),rows)
+              print('generated',name,os.path.getsize(os.path.join(OUT,name)))
+          PY
+      - name: Commit generated PNG files only
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/generate-10-new-grounds.yml
+          git add assets/maps/common/grounds .github/workflows/generate-10-new-grounds.yml
+          git commit -m "Add 10 new standalone map ground PNG textures"
+          git push origin HEAD:add-10-ground-textures-20260918
