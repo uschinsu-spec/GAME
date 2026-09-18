@@ -1714,13 +1714,25 @@ function skillAttack(target,skill,mult=1,forceCrit=false,ctx={}){
 }
 
 function nearest(range=9){
-  let best=null,bd=range;
+  let best=null,bd2=range*range;
   for(let a of actors){
     if(a.dead||isVillageSafe(a.x,a.z))continue;
-    let d=Math.hypot(a.x-player.x,a.z-player.z);
-    if(d<bd){bd=d;best=a}
+    let dx=a.x-player.x,dz=a.z-player.z,d2=dx*dx+dz*dz;
+    if(d2<bd2){bd2=d2;best=a}
   }
   return best;
+}
+
+function countEnemiesInRange(range,limit=Infinity){
+  const r2=range*range;
+  let count=0;
+  for(let i=0;i<actors.length;i++){
+    const a=actors[i];
+    if(!a||a.dead)continue;
+    const dx=a.x-player.x,dz=a.z-player.z;
+    if(dx*dx+dz*dz<r2&&++count>=limit)return count;
+  }
+  return count;
 }
 
 function getElementColor(){
@@ -2185,7 +2197,13 @@ function updateEffects(dt){
       e.mesh.dispose();
     }
   }
-  effects=effects.filter(e=>e.t>0);
+  // Compact in place: avoids allocating a new effects array every rendered frame.
+  let write=0;
+  for(let read=0;read<effects.length;read++){
+    const e=effects[read];
+    if(e&&e.t>0)effects[write++]=e;
+  }
+  effects.length=write;
 }
 
 function autoCombat(dt){
@@ -2206,11 +2224,10 @@ function autoCombat(dt){
       let tgt=nearest(9);
       if(tgt)useSkill(i);
     }else if(sk.aoe<=7.5){
-      let cnt=actors.filter(a=>!a.dead&&dist(a,player)<sk.aoe).length;
-      if(cnt>=2)useSkill(i);
+      if(countEnemiesInRange(sk.aoe,2)>=2)useSkill(i);
     }else{
       if(boss&&dist(boss,player)<sk.aoe)useSkill(i);
-      else if(actors.filter(a=>!a.dead&&dist(a,player)<sk.aoe).length>=3)useSkill(i);
+      else if(countEnemiesInRange(sk.aoe,3)>=3)useSkill(i);
     }
   }
 }
@@ -2227,13 +2244,14 @@ function tick(){
     updatePlayer(dt);
     for(let i=0;i<actors.length;i++){
       const a=actors[i];if(!a||a.dead)continue;
-      const d=Math.hypot(a.x-player.x,a.z-player.z);
-      if(d>150&&a!==boss)continue;
-      const hz=!profile?60:(d<=30?profile.enemyNearHz:d<=80?profile.enemyMidHz:profile.enemyFarHz);
+      const dx=a.x-player.x,dz=a.z-player.z,d2=dx*dx+dz*dz;
+      if(d2>22500&&a!==boss)continue;
+      const hz=!profile?60:(d2<=900?profile.enemyNearHz:d2<=6400?profile.enemyMidHz:profile.enemyFarHz);
       a._updateAcc=(a._updateAcc||0)+dt;
       if(a._updateAcc>=1/hz){const actorDt=Math.min(.25,a._updateAcc);a._updateAcc=0;updateActor(a,actorDt);}
-      if(a.mesh)a.mesh.setEnabled(d<170||a===boss);
-      if(a.shadow)a.shadow.setEnabled((d<(profile?profile.shadowDistance:55))||a===boss);
+      if(a.mesh)a.mesh.setEnabled(d2<28900||a===boss);
+      const shadowDistance=profile?profile.shadowDistance:55;
+      if(a.shadow)a.shadow.setEnabled((d2<shadowDistance*shadowDistance)||a===boss);
     }
     updateEffects(dt);
     for(let i=1;i<=4;i++)cooldown[i]=Math.max(0,cooldown[i]-dt);
@@ -3162,7 +3180,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-safe-runtime-opt-v6.1').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-runtime-opt-complete-v6.2').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
