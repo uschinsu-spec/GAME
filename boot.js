@@ -9,7 +9,7 @@ async function boot(){
 
     // Hệ thống đại thế giới được tách riêng để game.js không phình khi số map tăng.
     try{
-      const wr=await fetch('./world-runtime.js?v=1',{cache:'no-store'});
+      const wr=await fetch('./world-runtime.js?v=4',{cache:'no-store'});
       if(wr.ok){
         (0,eval)((await wr.text())+'\n//# sourceURL=world-runtime.js');
         if(typeof window.TuTienWorldPatch==='function')src=window.TuTienWorldPatch(src);
