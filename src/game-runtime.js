@@ -3050,7 +3050,11 @@ function openPanel(kind){
 
 function applyEngineScaling(){
   if(!engine)return;
-  const scale=window.PerformanceProfile?window.PerformanceProfile.engineScale():(1/Math.min(window.devicePixelRatio||1,MOBILE_RUNTIME?1.5:2));
+  // VISUAL BASELINE: exact render density used before architecture optimization.
+  // Keep this independent from PerformanceProfile so gameplay/performance state
+  // cannot silently change the physical canvas resolution while moving.
+  let dpr=Math.min(window.devicePixelRatio||1, MOBILE_RUNTIME?1.5:2.0);
+  let scale=1.0/dpr;
   engine.setHardwareScalingLevel(scale);
 }
 
@@ -3154,7 +3158,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-retina-fix-v5.9').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-morning-visual-baseline-v6.0').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
