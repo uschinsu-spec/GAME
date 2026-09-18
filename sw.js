@@ -1,5 +1,5 @@
-const BUILD='20260918-stable-motion-v5.7';
-const CACHE={shell:'game-shell-v12',assets:'game-assets-v12',maps:'game-maps-v12'};
+const BUILD='20260918-visual-restore-v5.8';
+const CACHE={shell:'game-shell-v13',assets:'game-assets-v13',maps:'game-maps-v13'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
