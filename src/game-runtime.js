@@ -1300,16 +1300,17 @@ function enemySeedRand(seed){
 function buildFixedEnemySpawns(){
   const rr=region();
   const isVillage=rr.id==='thanh_van_thon';
+  // Enemy density x10. Keep the same deterministic radial distribution and respawn logic.
   const bands=isVillage?[
-    {min:56,max:120,count:6},
-    {min:120,max:240,count:16},
-    {min:240,max:360,count:28},
-    {min:360,max:470,count:46}
+    {min:56,max:120,count:60},
+    {min:120,max:240,count:160},
+    {min:240,max:360,count:280},
+    {min:360,max:470,count:460}
   ]:[
-    {min:35,max:150,count:12},
-    {min:150,max:280,count:22},
-    {min:280,max:390,count:28},
-    {min:390,max:470,count:34}
+    {min:35,max:150,count:120},
+    {min:150,max:280,count:220},
+    {min:280,max:390,count:280},
+    {min:390,max:470,count:340}
   ];
   const pool=(rr.enemy&&rr.enemy.length)?rr.enemy:['boar'];
   const points=[];
@@ -3180,7 +3181,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-runtime-opt-complete-v6.2').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-enemy-x10-v6.3').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
