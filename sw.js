@@ -1,5 +1,5 @@
-const BUILD='20260918-runtime-opt-complete-v6.2';
-const CACHE={shell:'game-shell-v17',assets:'game-assets-v17',maps:'game-maps-v17'};
+const BUILD='20260918-enemy-x10-v6.3';
+const CACHE={shell:'game-shell-v18',assets:'game-assets-v18',maps:'game-maps-v18'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
