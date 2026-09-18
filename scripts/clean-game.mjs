@@ -40,7 +40,7 @@ function kill(a){
   gainXP(a.xp);
   const formationCult=window.TuTienSystems?window.TuTienSystems.getCultivationMultiplier(S,player):1;
   S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation*getTechniqueCultivationMultiplier()*formationCult);
-  
+
   // Loot
   if(Math.random()<.75){
     let g=Math.round(rnd(6,25)*(1+S.level*.05));
@@ -101,6 +101,7 @@ const skillPatch=loadPatcher('skill-runtime.js','TuTienSkillPatch');
 src=skillPatch(src);
 syntax(src,'game.js + 144 skill');
 src=optimize(src);
+src=src.replace(/[ \t]+$/gm,'');
 syntax(src,'game.js final optimized');
 assert(src.includes('const SKILL_MASTER=window.TuTienSkillMaster'),'skill master chưa được tích hợp');
 assert(!src.includes('…310 tokens truncated…'),'corruption vẫn còn');
