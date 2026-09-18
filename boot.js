@@ -20,6 +20,24 @@ async function boot(){
       console.warn('World runtime fallback:',worldErr);
     }
 
+    // MASTER SKILL 144 chiêu: dữ liệu/thông số theo file Excel + runtime status/CC.
+    // VFX vẫn chỉ đọc asset path hiện có; người dùng sẽ thay PNG VFX riêng sau.
+    try{
+      const [masterRes,runtimeRes]=await Promise.all([
+        fetch('./skill-master-data.js?v=1',{cache:'no-store'}),
+        fetch('./skill-runtime.js?v=1',{cache:'no-store'})
+      ]);
+      if(!masterRes.ok)throw new Error('Không tải được skill-master-data.js ('+masterRes.status+')');
+      if(!runtimeRes.ok)throw new Error('Không tải được skill-runtime.js ('+runtimeRes.status+')');
+      (0,eval)((await masterRes.text())+'\n//# sourceURL=skill-master-data.js');
+      (0,eval)((await runtimeRes.text())+'\n//# sourceURL=skill-runtime.js');
+      if(typeof window.TuTienSkillPatch!=='function')throw new Error('TuTienSkillPatch không tồn tại');
+      src=window.TuTienSkillPatch(src);
+    }catch(skillErr){
+      console.error('Skill runtime error:',skillErr);
+      throw skillErr;
+    }
+
     // Không preload toàn bộ quái x 16 frame ngay khi mở trang.
     // makeBillboard()/spriteFrames() sẽ tự nạp đúng loại quái khi cần.
     src=src.replace(/\n\s*preloadEnemySprites\(\);[^\n]*/,'\n  // Enemy textures: lazy-load theo loại quái đang xuất hiện');
