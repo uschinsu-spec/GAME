@@ -1093,8 +1093,13 @@ function spawnVillageCurvedWall(){
     'assets/maps/common/fences_gates/stone_wall_50deg_08.png'
   ];
 
+  // Tên file được tạo theo lô, không phải thứ tự góc nhìn liên tục.
+  // Sắp lại theo silhouette: cạnh mỏng -> chéo phải -> chính diện
+  // -> chéo trái -> cạnh mỏng, tương ứng -90°..+90°.
+  const wallFrameOrder=[6,5,2,1,4,0,7,3,8];
+
   const rx=43.0,rz=40.0;
-  const count=208; // khoảng cách ~1.25 world-unit: overlap nhẹ để tường kín khít.
+  const count=240; // khoảng cách ~1.08 world-unit, đủ kín cả ở frame cạnh mỏng.
 
   // Góc tiếp tuyến ellipse -> frame gần nhất trong 9 hướng (-90°..+90°, bước 22.5°).
   function frameForTangent(a){
@@ -1114,12 +1119,14 @@ function spawnVillageCurvedWall(){
     // Chừa hai lối cổng Bắc/Nam, các đoạn còn lại nối liên tục quanh trấn.
     if(Math.abs(x)<7.0 && Math.abs(z)>rz-4.6)continue;
 
-    const fi=frameForTangent(a);
+    const fi=wallFrameOrder[frameForTangent(a)];
     spawnMapProp(
       'village_curve_wall_'+i,
       {
         file:wallFiles[fi],
-        width:1.55,
+        // Asset dùng canvas vuông 256x256. Giữ plane gần vuông để không ép
+        // chiều ngang thành những cột đá mảnh như bản cũ.
+        width:3.35,
         height:3.35,
         noShadow:true
       },
