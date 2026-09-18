@@ -770,12 +770,13 @@ function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
 }
 
 function spawnVillageCurvedWall(){
+  // Micro wall module: đoạn cực hẹp để ghép mượt theo mọi đường cong.
   const wallDef={
-    file:'assets/maps/common/fences_gates/stone_wall_curve_01.png',
-    width:6.0,height:3.0
+    file:'assets/maps/common/fences_gates/stone_wall_micro_50deg.png',
+    width:1.55,height:3.0
   };
   const rx=43.0,rz=40.0;
-  const count=48;
+  const count=176;
 
   for(let i=0;i<count;i++){
     let a=(i/count)*Math.PI*2;
@@ -785,7 +786,7 @@ function spawnVillageCurvedWall(){
     // Chừa khe cổng Bắc/Nam rộng, không có tường che đường.
     if(Math.abs(x)<7.0 && Math.abs(z)>rz-4.6)continue;
 
-    spawnMapProp('village_curve_wall_'+i,wallDef,x,z,0.015);
+    spawnMapProp('village_curve_wall_'+i,wallDef,x,z,0.0);
   }
 
   // Hai cổng chính bám theo biên oval.
