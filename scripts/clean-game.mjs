@@ -75,9 +75,48 @@ function optimize(src){
   if(!src.includes('const MOBILE_RUNTIME=')){
     src=src.replace("(()=>{'use strict';",`(()=>{'use strict';\nconst MOBILE_RUNTIME=/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints||0)>1||Math.min(innerWidth||9999,innerHeight||9999)<820;`);
   }
+
+  // Thanh Vân Thôn: khi người chơi còn ở khu an toàn, quái tuần tra quanh cổng/vòng ngoài
+  // thay vì bị đẩy ngẫu nhiên sang đoạn tường xa. Khi ra khỏi thôn, spawn gần người chơi hơn.
+  src=applyOnce(src,/function spawnPack\(\)\{[\s\S]*?\n\}\n\nfunction spawnBoss\(\)\{/,
+`function spawnPack(){
+  if(actors.filter(a=>!a.dead).length>(MOBILE_RUNTIME?22:30))return;
+  let rr=region(), pool=rr.enemy, type=pool[Math.floor(Math.random()*pool.length)];
+  let baseX=player.x,baseZ=player.z;
+
+  if(rr.id==='thanh_van_thon'&&isVillageSafe(player.x,player.z)){
+    const patrols=[
+      {x:-7,z:-(VILLAGE_WALL_RZ+7)},{x:7,z:-(VILLAGE_WALL_RZ+7)},
+      {x:-7,z:(VILLAGE_WALL_RZ+7)},{x:7,z:(VILLAGE_WALL_RZ+7)},
+      {x:-(VILLAGE_WALL_RX+7),z:-12},{x:(VILLAGE_WALL_RX+7),z:12}
+    ];
+    const p=patrols[Math.floor(Math.random()*patrols.length)];
+    baseX=p.x;baseZ=p.z;
+  }else{
+    let ang=rnd(0,Math.PI*2),r=rnd(MOBILE_RUNTIME?13:16,MOBILE_RUNTIME?22:28);
+    baseX=clamp(player.x+Math.cos(ang)*r,-MAP_BOUND,MAP_BOUND);
+    baseZ=clamp(player.z+Math.sin(ang)*r,-MAP_BOUND,MAP_BOUND);
+  }
+
+  const packSize=(type==='wolf'||type==='boar')?3:2;
+  for(let i=0;i<packSize;i++){
+    let spawnX=clamp(baseX+rnd(-3.2,3.2),-MAP_BOUND,MAP_BOUND);
+    let spawnZ=clamp(baseZ+rnd(-3.2,3.2),-MAP_BOUND,MAP_BOUND);
+    if(isVillageSafe(spawnX,spawnZ)){
+      let a=Math.atan2(spawnZ,spawnX);
+      if(!Number.isFinite(a))a=0;
+      spawnX=clamp(Math.cos(a)*(VILLAGE_WALL_RX+6),-MAP_BOUND,MAP_BOUND);
+      spawnZ=clamp(Math.sin(a)*(VILLAGE_WALL_RZ+6),-MAP_BOUND,MAP_BOUND);
+    }
+    makeActor(type,spawnX,spawnZ,Math.random()<.08);
+  }
+}
+
+function spawnBoss(){`, 'Thanh Van Thon patrol spawn');
+
   src=applyOnce(src,/\n\s*preloadEnemySprites\(\);[^\n]*/,'\n  // Enemy texture lazy-load theo loại quái thực tế xuất hiện','enemy lazy-load');
-  src=applyOnce(src,'for(let i=0;i<16;i++)spawnPack();','for(let i=0;i<(MOBILE_RUNTIME?4:8);i++)spawnPack();','initial spawn');
-  src=applyOnce(src,'for(let i=0;i<12;i++)spawnPack();','for(let i=0;i<(MOBILE_RUNTIME?5:8);i++)spawnPack();','map spawn');
+  src=applyOnce(src,'for(let i=0;i<16;i++)spawnPack();','for(let i=0;i<(MOBILE_RUNTIME?6:10);i++)spawnPack();','initial spawn');
+  src=applyOnce(src,'for(let i=0;i<12;i++)spawnPack();','for(let i=0;i<(MOBILE_RUNTIME?6:9);i++)spawnPack();','map spawn');
   src=applyOnce(src,'if(actors.filter(a=>!a.dead).length>30)return;','if(actors.filter(a=>!a.dead).length>(MOBILE_RUNTIME?22:30))return;','actor cap');
   src=applyOnce(src,'const count=240; // khoảng cách ~1.08 world-unit, đủ kín cả ở frame cạnh mỏng.','const count=MOBILE_RUNTIME?156:240; // adaptive wall density','wall density');
   src=applyOnce(src,"for(let i=0;i<(cfg.treeCount||400);i++){","for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.treeCount||400),180):(cfg.treeCount||400));i++){",'tree cap');
@@ -104,12 +143,14 @@ src=optimize(src);
 src=src.replace(/[ \t]+$/gm,'');
 syntax(src,'game.js final optimized');
 assert(src.includes('const SKILL_MASTER=window.TuTienSkillMaster'),'skill master chưa được tích hợp');
+assert(src.includes("rr.id==='thanh_van_thon'&&isVillageSafe(player.x,player.z)"),'Thanh Vân Thôn patrol spawn chưa được tích hợp');
 assert(!src.includes('…310 tokens truncated…'),'corruption vẫn còn');
 write('game.js',src);
 
 let index=read('index.html');
-index=index.replace(/<script src="boot\.js\?v=\d+"><\/script>/,`<script>\nwindow.addEventListener('error',function(e){var m=document.getElementById('loadMsg');if(m)m.textContent='Lỗi GAME: '+(e.message||'Không xác định');});\n<\/script>\n<script src="skill-master-data.js?v=3"><\/script>\n<script src="game.js?v=35"><\/script>`);
-assert(index.includes('skill-master-data.js?v=3')&&index.includes('game.js?v=35'),'Không cập nhật được index.html');
+index=index.replace(/<script src="boot\.js\?v=\d+"><\/script>/,`<script>\nwindow.addEventListener('error',function(e){var m=document.getElementById('loadMsg');if(m)m.textContent='Lỗi GAME: '+(e.message||'Không xác định');});\n<\/script>\n<script src="skill-master-data.js?v=3"><\/script>\n<script src="game.js?v=36"><\/script>`);
+index=index.replace(/game\.js\?v=\d+/,'game.js?v=36');
+assert(index.includes('skill-master-data.js?v=3')&&index.includes('game.js?v=36'),'Không cập nhật được index.html');
 write('index.html',index);
 
 console.log('✓ CLEAN BUILD hoàn tất: game.js không còn runtime source patch/eval');
