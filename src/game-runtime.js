@@ -799,7 +799,7 @@ function drawProceduralCanvas(ctx, type, frame){
 function makeSpriteMaterial(url, key){
   if(spriteMats[key])return spriteMats[key];
   let m=new BABYLON.StandardMaterial('sm_'+key,scene);
-  let t=new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+  let t=new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.BILINEAR_SAMPLINGMODE);
   t.hasAlpha=true;
   m.diffuseTexture=t;
   m.emissiveTexture=t;
@@ -853,7 +853,7 @@ function preloadPlayerMaterials(){
       let url = `assets/player/right/${state}/${s}.png?v=5`;
       let key = `player_right_${state}_${s}`;
       let m = new BABYLON.StandardMaterial('sm_'+key, scene);
-      let t = new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+      let t = new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.BILINEAR_SAMPLINGMODE);
       t.hasAlpha = true;
       m.diffuseTexture = t;
       m.emissiveTexture = t;
@@ -938,7 +938,7 @@ function getSoftShadowMaterial(){
 function getMapPropMaterial(url){
   if(mapPropMaterials[url])return mapPropMaterials[url];
   let m=new BABYLON.StandardMaterial('prop_'+url,scene);
-  let t=new BABYLON.Texture(url,scene,false,true,BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+  let t=new BABYLON.Texture(url,scene,false,true,BABYLON.Texture.BILINEAR_SAMPLINGMODE);
   t.hasAlpha=true;
   m.diffuseTexture=t;
   m.emissiveTexture=t;
@@ -1087,7 +1087,7 @@ async function loadMap(regionIdx){
       gt.vScale=gScale;
       gt.wrapU=BABYLON.Texture.WRAP_ADDRESSMODE;
       gt.wrapV=BABYLON.Texture.WRAP_ADDRESSMODE;
-      gt.anisotropicFilteringLevel=MOBILE_RUNTIME?2:4;
+      gt.anisotropicFilteringLevel=(window.PerformanceProfile&&window.PerformanceProfile.name==='HIGH')?16:(MOBILE_RUNTIME?4:8);
       gm.diffuseTexture=gt;
       gm.specularColor=BABYLON.Color3.Black();
       gm.backFaceCulling=false;
