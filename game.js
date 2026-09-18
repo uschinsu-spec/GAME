@@ -1425,24 +1425,15 @@ function updatePlayer(dt){
   player.mesh.material=playerAnimMat(player.facing,player.state,player.frame);
   applyPlayerFacing(); // RIGHT = +X, LEFT = mirrored -X
 
-  // Smooth Camera Follow — giữ tuyệt đối camera orthographic 50°.
-  // Khi đang chạy: camera lerp nhẹ cho mượt.
-  // Khi vừa nhả joystick / dừng: snap ngay vào vị trí đích để map không còn trôi thêm vài frame.
+  // Camera lock — mobile anti-jitter.
+  // Bám trực tiếp vị trí player mỗi frame, không có inertia/lerp nên khi thả joystick
+  // tuyệt đối không còn 1-2 frame "đuổi theo" làm map xê dịch.
   const elev=CAMERA_STD.elevationDeg*Math.PI/180;
   const horizontal=Math.cos(elev)*CAMERA_STD.distance;
   const height=Math.sin(elev)*CAMERA_STD.distance;
-  const camX=player.x;
-  const camZ=player.z-horizontal;
-  if(l>.05){
-    const follow=Math.min(1,dt*7.5);
-    camera.position.x+=(camX-camera.position.x)*follow;
-    camera.position.y+=(height-camera.position.y)*follow;
-    camera.position.z+=(camZ-camera.position.z)*follow;
-  }else{
-    camera.position.x=camX;
-    camera.position.y=height;
-    camera.position.z=camZ;
-  }
+  camera.position.x=player.x;
+  camera.position.y=height;
+  camera.position.z=player.z-horizontal;
   camera.setTarget(new BABYLON.Vector3(player.x,0,player.z));
 
   // Update Companion Pet
@@ -1722,7 +1713,20 @@ function setupInput(){
     if(!joy.active||e.pointerId!==joy.pid)return;
     let r=j.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,m=Math.hypot(dx,dy),max=r.width*.32;
     if(m>max){dx=dx/m*max;dy=dy/m*max}
-    joy.x=dx/max;joy.y=-dy/max;
+
+    // Mobile dead-zone: loại bỏ rung/noise rất nhỏ của ngón tay quanh tâm joystick.
+    let nx=dx/max, ny=-dy/max;
+    let nm=Math.hypot(nx,ny);
+    const JOY_DEADZONE=0.12;
+    if(nm<JOY_DEADZONE){
+      joy.x=0; joy.y=0;
+      dx=0; dy=0;
+    }else{
+      // Remap phần còn lại về 0..1 để không tạo "bước nhảy" sau dead-zone.
+      let scaled=(nm-JOY_DEADZONE)/(1-JOY_DEADZONE);
+      joy.x=(nx/nm)*scaled;
+      joy.y=(ny/nm)*scaled;
+    }
     k.style.transform=`translate(${dx}px,${dy}px)`;
   }
   j.addEventListener('pointerdown',e=>{joy.active=true;joy.pid=e.pointerId;j.setPointerCapture(e.pointerId);move(e)});
@@ -1758,9 +1762,21 @@ function setupInput(){
     if(e.target===$('#panel'))closePanel();
   });
 
+  // iOS/Chrome thay đổi visual viewport vài px khi thanh địa chỉ co/giãn.
+  // Không cho thay đổi nhỏ đó cập nhật orthographic bounds vì sẽ làm map "nhảy" nhẹ.
+  let lastViewportW=window.innerWidth;
+  let lastViewportH=window.innerHeight;
   window.addEventListener('resize',()=>{
-    engine.resize();
-    updateOrthoCameraBounds();
+    const w=window.innerWidth, h=window.innerHeight;
+    const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const orientationChanged=(w>h)!=(lastViewportW>lastViewportH);
+    const majorResize=Math.abs(w-lastViewportW)>24 || Math.abs(h-lastViewportH)>120;
+    if(!mobile || orientationChanged || majorResize){
+      engine.resize();
+      updateOrthoCameraBounds();
+      lastViewportW=w;
+      lastViewportH=h;
+    }
   });
   document.addEventListener('visibilitychange',()=>{paused=document.hidden});
 }
