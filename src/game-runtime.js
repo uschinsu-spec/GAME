@@ -417,7 +417,7 @@ async function getMapConfig(id){
 const MAP_SIZE = 1000;
 const MAP_HALF = MAP_SIZE / 2; // 500
 const MAP_BOUND = MAP_HALF - 15; // 485
-const RADAR_RANGE = 75; // Bán kính quét Radar minimap (mét)
+const RADAR_RANGE = 140; // Minimap: đủ rộng để nhìn thấy các bãi quái lân cận
 
 // ==========================================
   // HỆ THỐNG KỸ NĂNG — MASTER DATA TỪ EXCEL
@@ -1300,45 +1300,53 @@ function enemySeedRand(seed){
 function buildFixedEnemySpawns(){
   const rr=region();
   const isVillage=rr.id==='thanh_van_thon';
-  // Enemy density x10. Keep the same deterministic radial distribution and respawn logic.
+  // 960 enemy / map, organized into deterministic hunting camps instead of
+  // being uniformly diluted across the 1000x1000 world.
   const bands=isVillage?[
-    {min:56,max:120,count:60},
-    {min:120,max:240,count:160},
-    {min:240,max:360,count:280},
-    {min:360,max:470,count:460}
+    {min:62,max:120,count:60,camps:6},
+    {min:120,max:240,count:160,camps:16},
+    {min:240,max:360,count:280,camps:28},
+    {min:360,max:465,count:460,camps:46}
   ]:[
-    {min:35,max:150,count:120},
-    {min:150,max:280,count:220},
-    {min:280,max:390,count:280},
-    {min:390,max:470,count:340}
+    {min:45,max:150,count:120,camps:12},
+    {min:150,max:280,count:220,camps:22},
+    {min:280,max:390,count:280,camps:28},
+    {min:390,max:465,count:340,camps:34}
   ];
   const pool=(rr.enemy&&rr.enemy.length)?rr.enemy:['boar'];
   const points=[];
   let slot=0;
   for(let bi=0;bi<bands.length;bi++){
-    const b=bands[bi];
+    const b=bands[bi],campCenters=[];
+    for(let ci=0;ci<b.camps;ci++){
+      let seed=enemySeedHash(rr.id+':camp:'+bi+':'+ci);
+      let r1=enemySeedRand(seed);seed=r1.seed;
+      let r2=enemySeedRand(seed);
+      const angle=((ci+r1.value*.55)/b.camps)*Math.PI*2+bi*.27;
+      const radius=Math.sqrt(b.min*b.min+r2.value*(b.max*b.max-b.min*b.min));
+      campCenters.push({x:Math.cos(angle)*radius,z:Math.sin(angle)*radius});
+    }
     for(let i=0;i<b.count;i++,slot++){
-      let seed=enemySeedHash(rr.id+':'+bi+':'+i);
+      const ci=i%b.camps,center=campCenters[ci];
+      let seed=enemySeedHash(rr.id+':mob:'+bi+':'+i);
       let r1=enemySeedRand(seed);seed=r1.seed;
       let r2=enemySeedRand(seed);seed=r2.seed;
       let r3=enemySeedRand(seed);seed=r3.seed;
       let r4=enemySeedRand(seed);
-      const angle=((i+r1.value*.72)/b.count)*Math.PI*2 + bi*.31;
-      const radius=Math.sqrt(b.min*b.min+r2.value*(b.max*b.max-b.min*b.min));
-      let x=Math.cos(angle)*radius;
-      let z=Math.sin(angle)*radius;
-      x=clamp(x,-MAP_BOUND,MAP_BOUND);
-      z=clamp(z,-MAP_BOUND,MAP_BOUND);
+      // About 10 monsters per camp, spread over an 8-14m radius.
+      const spread=8+r1.value*6;
+      const angle=r2.value*Math.PI*2;
+      const radius=Math.sqrt(r3.value)*spread;
+      let x=clamp(center.x+Math.cos(angle)*radius,-MAP_BOUND,MAP_BOUND);
+      let z=clamp(center.z+Math.sin(angle)*radius,-MAP_BOUND,MAP_BOUND);
       if(isVillageSafe(x,z)){
         const p=clampToEllipse(x||1,z||1,VILLAGE_WALL_RX+8,VILLAGE_WALL_RZ+8,1.02);
         x=p.x;z=p.z;
       }
       points.push({
-        id:rr.id+'_mob_'+slot,
-        x,z,
-        type:pool[Math.floor(r3.value*pool.length)%pool.length],
-        elite:r4.value<(.025+bi*.012),
-        band:bi
+        id:rr.id+'_mob_'+slot,x,z,
+        type:pool[Math.floor(r4.value*pool.length)%pool.length],
+        elite:r1.value<(.025+bi*.012),band:bi,campId:bi+'_'+ci
       });
     }
   }
@@ -3181,7 +3189,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-enemy-x10-v6.3').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-enemy-camps-minimap-v6.4').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
