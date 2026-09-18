@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "defaultMap": "thanh_van_thon",
+  "maps": [
+    {
+      "id": "thanh_van_thon",
+      "name": "Thanh Vân Thôn",
+      "kind": "Thôn",
+      "min": 1,
+      "max": 12,
+      "color": "#668071",
+      "enemy": [
+        "boar",
+        "archer"
+      ],
+      "file": "maps/thanh_van_thon.json"
+    },
+    {
+      "id": "linh_son_ngoai_vi",
+      "name": "Linh Sơn Ngoại Vi",
+      "kind": "Man Hoang",
+      "min": 8,
+      "max": 20,
+      "color": "#536f58",
+      "enemy": [
+        "boar",
+        "tiger",
+        "bandit"
+      ],
+      "file": "maps/linh_son_ngoai_vi.json"
+    },
+    {
+      "id": "bach_ngoc_thanh",
+      "name": "Bạch Ngọc Thành",
+      "kind": "Thành",
+      "min": 15,
+      "max": 30,
+      "color": "#72756b",
+      "enemy": [
+        "bandit",
+        "archer",
+        "skeleton"
+      ],
+      "file": "maps/bach_ngoc_thanh.json"
+    },
+    {
+      "id": "thanh_van_tong",
+      "name": "Thanh Vân Tông",
+      "kind": "Tông Môn",
+      "min": 25,
+      "max": 45,
+      "color": "#4f6d76",
+      "enemy": [
+        "skeleton",
+        "archer",
+        "bandit"
+      ],
+      "file": "maps/thanh_van_tong.json"
+    },
+    {
+      "id": "van_dam_sa_mac",
+      "name": "Vạn Dặm Sa Mạc",
+      "kind": "Man Hoang",
+      "min": 40,
+      "max": 65,
+      "color": "#88765d",
+      "enemy": [
+        "tiger",
+        "bandit",
+        "skeleton"
+      ],
+      "file": "maps/van_dam_sa_mac.json"
+    },
+    {
+      "id": "yeu_vuc",
+      "name": "Yêu Vực",
+      "kind": "Man Hoang",
+      "min": 60,
+      "max": 90,
+      "color": "#5b4b62",
+      "enemy": [
+        "undead",
+        "ice_wolf",
+        "skeleton"
+      ],
+      "file": "maps/yeu_vuc.json"
+    },
+    {
+      "id": "cam_dia_han_uyen",
+      "name": "Cấm Địa Hàn Uyên",
+      "kind": "Cấm Địa",
+      "min": 85,
+      "max": 120,
+      "color": "#4b6873",
+      "enemy": [
+        "ice_wolf",
+        "undead"
+      ],
+      "file": "maps/cam_dia_han_uyen.json"
+    },
+    {
+      "id": "ma_vuc",
+      "name": "Ma Vực",
+      "kind": "Cấm Địa",
+      "min": 110,
+      "max": 160,
+      "color": "#5d4248",
+      "enemy": [
+        "undead",
+        "ice_wolf",
+        "skeleton"
+      ],
+      "file": "maps/ma_vuc.json"
+    }
+  ]
+}
+

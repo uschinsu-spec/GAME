@@ -1,0 +1,710 @@
+{
+  "id": "thanh_van_thon",
+  "name": "Thanh Vân Thôn",
+  "folder": "assets/maps/common",
+  "clearColor": "#698679",
+  "fogColor": "#698679",
+  "fogStart": 45,
+  "fogEnd": 95,
+  "groundTexture": "assets/maps/common/grounds/ground_village_01.png",
+  "groundScale": 80,
+  "river": {
+    "enabled": false
+  },
+  "trees": [
+    {
+      "file": "assets/maps/common/trees/tree_01.png",
+      "width": 4.8,
+      "height": 5.8,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_02.png",
+      "width": 4.6,
+      "height": 5.6,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_03.png",
+      "width": 4.4,
+      "height": 5.4,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_sakura_01.png",
+      "width": 4.8,
+      "height": 6,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_pine_01.png",
+      "width": 4.2,
+      "height": 5.8,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_autumn_01.png",
+      "width": 4.4,
+      "height": 5.6,
+      "yRatio": 0.36
+    }
+  ],
+  "rocks": [
+    {
+      "file": "assets/maps/common/rocks/rock_01.png",
+      "width": 3.2,
+      "height": 3,
+      "yRatio": 0.38
+    },
+    {
+      "file": "assets/maps/common/rocks/rock_02.png",
+      "width": 2.8,
+      "height": 2.8,
+      "yRatio": 0.38
+    },
+    {
+      "file": "assets/maps/common/rocks/rock_03.png",
+      "width": 2.6,
+      "height": 3.2,
+      "yRatio": 0.38
+    },
+    {
+      "file": "assets/maps/common/rocks/rock_04.png",
+      "width": 3.6,
+      "height": 4.2,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/rocks/rock_05.png",
+      "width": 3.2,
+      "height": 3.4,
+      "yRatio": 0.38
+    },
+    {
+      "file": "assets/maps/common/rocks/rock_cliff_cluster_01.png",
+      "width": 4,
+      "height": 3.8,
+      "yRatio": 0.38
+    },
+    {
+      "file": "assets/maps/common/rocks/rock_large_vine_01.png",
+      "width": 3.8,
+      "height": 4,
+      "yRatio": 0.38
+    }
+  ],
+  "decor": [
+    {
+      "file": "assets/maps/common/lanterns/lantern_post_village_01.png",
+      "width": 2.2,
+      "height": 3.2,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/plants/grass_mixed_01.png",
+      "width": 1.8,
+      "height": 1.8,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/grass_tall_01.png",
+      "width": 1.6,
+      "height": 2.2,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/bush_rose_01.png",
+      "width": 2.2,
+      "height": 2.2,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/bush_ivy_01.png",
+      "width": 2,
+      "height": 2,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/flower_pink_01.png",
+      "width": 1.9,
+      "height": 1.9,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/flower_purple_01.png",
+      "width": 1.9,
+      "height": 1.9,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/bush_berry_01.png",
+      "width": 2,
+      "height": 1.8,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/grass_flower_01.png",
+      "width": 1.8,
+      "height": 1.6,
+      "yRatio": 0.36
+    }
+  ],
+  "villageProps": [
+    {
+      "file": "assets/maps/common/signs/sign_stone_yinyang_01.png",
+      "width": 2.4,
+      "height": 3.2,
+      "x": 0,
+      "z": -8,
+      "yRatio": 0.4
+    },
+    {
+      "file": "assets/maps/common/props/well_01.png",
+      "width": 2.6,
+      "height": 2.8,
+      "x": 0,
+      "z": 0,
+      "yRatio": 0.42
+    },
+    {
+      "file": "assets/maps/common/buildings/shrine_small_01.png",
+      "width": 2.5,
+      "height": 3,
+      "x": -9,
+      "z": 8,
+      "yRatio": 0.42
+    },
+    {
+      "file": "assets/maps/common/props/cart_wood_01.png",
+      "width": 2.6,
+      "height": 2,
+      "x": 7,
+      "z": -6,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/props/barrel_stack_01.png",
+      "width": 2.2,
+      "height": 2.2,
+      "x": -7,
+      "z": -5,
+      "yRatio": 0.42
+    },
+    {
+      "file": "assets/maps/common/buildings/house_herbal_01.png",
+      "width": 5.6,
+      "height": 5.2,
+      "x": 18,
+      "z": -16,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/house_tile_01.png",
+      "width": 5.4,
+      "height": 5,
+      "x": 28,
+      "z": -14,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/shop_house_01.png",
+      "width": 5.4,
+      "height": 5.2,
+      "x": 22,
+      "z": -26,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/props/jar_stack_01.png",
+      "width": 2,
+      "height": 1.8,
+      "x": 15,
+      "z": -22,
+      "yRatio": 0.42
+    },
+    {
+      "file": "assets/maps/common/props/sack_stack_01.png",
+      "width": 2.2,
+      "height": 1.8,
+      "x": 14,
+      "z": -18,
+      "yRatio": 0.42
+    },
+    {
+      "file": "assets/maps/common/props/stall_fruit_01.png",
+      "width": 3.4,
+      "height": 2.8,
+      "x": 30,
+      "z": -20,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/lanterns/lantern_shrine_01.png",
+      "width": 2,
+      "height": 3.2,
+      "x": 16,
+      "z": -14,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/lanterns/lantern_shrine_01.png",
+      "width": 2,
+      "height": 3.2,
+      "x": 26,
+      "z": -14,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/buildings/house_thatch_01.png",
+      "width": 5,
+      "height": 4.8,
+      "x": -18,
+      "z": -16,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/warehouse_thatch_01.png",
+      "width": 5.2,
+      "height": 4.6,
+      "x": -28,
+      "z": -14,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/smithy_01.png",
+      "width": 5.4,
+      "height": 5,
+      "x": -22,
+      "z": -26,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/props/stall_cloth_01.png",
+      "width": 3.4,
+      "height": 2.8,
+      "x": -16,
+      "z": -22,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/props/crate_stack_01.png",
+      "width": 2.2,
+      "height": 2.2,
+      "x": -14,
+      "z": -18,
+      "yRatio": 0.42
+    },
+    {
+      "file": "assets/maps/common/props/weapon_rack_01.png",
+      "width": 2.6,
+      "height": 2.6,
+      "x": -30,
+      "z": -20,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/lanterns/lantern_post_01.png",
+      "width": 2.2,
+      "height": 3.2,
+      "x": -16,
+      "z": -14,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/lanterns/lantern_post_01.png",
+      "width": 2.2,
+      "height": 3.2,
+      "x": -26,
+      "z": -14,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/buildings/house_sakura_01.png",
+      "width": 5.8,
+      "height": 5.4,
+      "x": 18,
+      "z": 18,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/house_tile_01.png",
+      "width": 5.4,
+      "height": 5,
+      "x": 28,
+      "z": 16,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/house_thatch_01.png",
+      "width": 5,
+      "height": 4.8,
+      "x": 22,
+      "z": 28,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/house_herbal_01.png",
+      "width": 5.6,
+      "height": 5.2,
+      "x": 32,
+      "z": 26,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/props/barrel_stack_01.png",
+      "width": 2.4,
+      "height": 2.2,
+      "x": 15,
+      "z": 22,
+      "yRatio": 0.42
+    },
+    {
+      "file": "assets/maps/common/props/cart_wood_01.png",
+      "width": 3.2,
+      "height": 2.4,
+      "x": 14,
+      "z": 16,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/lanterns/lantern_double_hanging_01.png",
+      "width": 2.2,
+      "height": 3.4,
+      "x": 18,
+      "z": 14,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/lanterns/lantern_double_hanging_01.png",
+      "width": 2.2,
+      "height": 3.4,
+      "x": 28,
+      "z": 14,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/buildings/shrine_buddha_01.png",
+      "width": 5.6,
+      "height": 5.8,
+      "x": -18,
+      "z": 18,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/pavilion_shrine_01.png",
+      "width": 4.8,
+      "height": 5,
+      "x": -28,
+      "z": 16,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/buildings/pavilion_water_01.png",
+      "width": 5.2,
+      "height": 5.2,
+      "x": -22,
+      "z": 28,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/signs/sign_stone_yinyang_01.png",
+      "width": 2.8,
+      "height": 3.6,
+      "x": -14,
+      "z": 22,
+      "yRatio": 0.4
+    },
+    {
+      "file": "assets/maps/common/signs/sign_magic_stone_01.png",
+      "width": 2.4,
+      "height": 3.2,
+      "x": -32,
+      "z": 22,
+      "yRatio": 0.4
+    },
+    {
+      "file": "assets/maps/common/props/campfire_01.png",
+      "width": 1.8,
+      "height": 1.6,
+      "x": -28,
+      "z": 22,
+      "yRatio": 0.44
+    },
+    {
+      "file": "assets/maps/common/lanterns/lantern_shrine_01.png",
+      "width": 2,
+      "height": 3.2,
+      "x": -16,
+      "z": 16,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/lanterns/lantern_shrine_01.png",
+      "width": 2,
+      "height": 3.2,
+      "x": -26,
+      "z": 16,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/fences_gates/fence_ornate_01.png",
+      "width": 3.2,
+      "height": 1.8,
+      "x": -12,
+      "z": -12,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/fences_gates/fence_ornate_01.png",
+      "width": 3.2,
+      "height": 1.8,
+      "x": 0,
+      "z": -12,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/fences_gates/fence_ornate_01.png",
+      "width": 3.2,
+      "height": 1.8,
+      "x": 12,
+      "z": -12,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/fences_gates/fence_ornate_01.png",
+      "width": 3.2,
+      "height": 1.8,
+      "x": -12,
+      "z": 12,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/fences_gates/fence_ornate_01.png",
+      "width": 3.2,
+      "height": 1.8,
+      "x": 0,
+      "z": 12,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/fences_gates/fence_ornate_01.png",
+      "width": 3.2,
+      "height": 1.8,
+      "x": 12,
+      "z": 12,
+      "yRatio": 0.46
+    },
+    {
+      "file": "assets/maps/common/trees/tree_sakura_01.png",
+      "width": 4.2,
+      "height": 5.6,
+      "x": -35,
+      "z": -20,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_willow_01.png",
+      "width": 4,
+      "height": 5.4,
+      "x": 35,
+      "z": -22,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_ancient_green_01.png",
+      "width": 4.2,
+      "height": 5.8,
+      "x": -35,
+      "z": 20,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_pink_blossom_02.png",
+      "width": 4,
+      "height": 5.2,
+      "x": 35,
+      "z": 22,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_lantern_01.png",
+      "width": 4,
+      "height": 5.5,
+      "x": 20,
+      "z": 6,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_autumn_01.png",
+      "width": 3.8,
+      "height": 5.2,
+      "x": -20,
+      "z": 6,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_white_blossom_01.png",
+      "width": 3.8,
+      "height": 5.2,
+      "x": 20,
+      "z": -10,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/trees/tree_pine_01.png",
+      "width": 3.6,
+      "height": 5.4,
+      "x": -20,
+      "z": -10,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/bush_mixed_flower_01.png",
+      "width": 2.2,
+      "height": 1.8,
+      "x": 10,
+      "z": -4,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/bush_pink_01.png",
+      "width": 1.9,
+      "height": 1.6,
+      "x": -10,
+      "z": -4,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/bush_purple_01.png",
+      "width": 1.9,
+      "height": 1.6,
+      "x": 10,
+      "z": 4,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/bush_green_01.png",
+      "width": 2,
+      "height": 1.7,
+      "x": -10,
+      "z": 4,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/flower_pink_01.png",
+      "width": 1.9,
+      "height": 1.9,
+      "x": 12,
+      "z": -8,
+      "yRatio": 0.36
+    },
+    {
+      "file": "assets/maps/common/plants/flower_purple_01.png",
+      "width": 1.9,
+      "height": 1.9,
+      "x": -12,
+      "z": -8,
+      "yRatio": 0.36
+    }
+  ],
+  "treeCount": 160,
+  "rockCount": 90,
+  "grassCount": 140,
+  "villageClearX": 42,
+  "villageClearZ": 42,
+  "lanternPosts": [
+    {
+      "x": -5,
+      "z": -34
+    },
+    {
+      "x": 5,
+      "z": -34
+    },
+    {
+      "x": -5,
+      "z": -24
+    },
+    {
+      "x": 5,
+      "z": -24
+    },
+    {
+      "x": -5,
+      "z": -12
+    },
+    {
+      "x": 5,
+      "z": -12
+    },
+    {
+      "x": -5,
+      "z": 0
+    },
+    {
+      "x": 5,
+      "z": 0
+    },
+    {
+      "x": -5,
+      "z": 12
+    },
+    {
+      "x": 5,
+      "z": 12
+    },
+    {
+      "x": -5,
+      "z": 24
+    },
+    {
+      "x": 5,
+      "z": 24
+    },
+    {
+      "x": -5,
+      "z": 34
+    },
+    {
+      "x": 5,
+      "z": 34
+    },
+    {
+      "x": -34,
+      "z": -5
+    },
+    {
+      "x": -34,
+      "z": 5
+    },
+    {
+      "x": -24,
+      "z": -5
+    },
+    {
+      "x": -24,
+      "z": 5
+    },
+    {
+      "x": 24,
+      "z": -5
+    },
+    {
+      "x": 24,
+      "z": 5
+    },
+    {
+      "x": 34,
+      "z": -5
+    },
+    {
+      "x": 34,
+      "z": 5
+    }
+  ],
+  "schemaVersion": 1,
+  "specialSpawns": [
+    "villageCurvedWall"
+  ]
+}
+

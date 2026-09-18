@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 30310)
+Total output lines: 2965
+
 (()=>{'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const canvas=$('#renderCanvas'), loading=$('#loading'), loadMsg=$('#loadMsg'), loadBar=$('#loadBar'), startBtn=$('#startBtn'), hud=$('#hud');
@@ -321,172 +324,76 @@ const elements=[
   ['Thổ','⛰'],['Mộc','🌿'],['Phong','🌪'],
   ['Lôi','⚡'],['Kiếm','劍'],['Đao','刀']
 ];
-const regions=[
-  // Cấp 1-12: Thanh Vân Thôn — ngoại ô bình yên, thú nhỏ
-  {id:'thanh_van_thon',name:'Thanh Vân Thôn',kind:'Thôn',min:1,max:12,color:'#668071',enemy:['boar','archer']},
-  // Cấp 8-20: Linh Sơn Ngoại Vi — rừng núi hoang dã
-  {id:'linh_son_ngoai_vi',name:'Linh Sơn Ngoại Vi',kind:'Man Hoang',min:8,max:20,color:'#536f58',enemy:['boar','tiger','bandit']},
-  // Cấp 15-30: Bạch Ngọc Thành — đạo tặc thành thị
-  {id:'bach_ngoc_thanh',name:'Bạch Ngọc Thành',kind:'Thành',min:15,max:30,color:'#72756b',enemy:['bandit','archer','skeleton']},
-  // Cấp 25-45: Thanh Vân Tông — cấm khu môn phái
-  {id:'thanh_van_tong',name:'Thanh Vân Tông',kind:'Tông Môn',min:25,max:45,color:'#4f6d76',enemy:['skeleton','archer','bandit']},
-  // Cấp 40-65: Vạn Dặm Sa Mạc — mãnh thú hoang mạc
-  {id:'van_dam_sa_mac',name:'Vạn Dặm Sa Mạc',kind:'Man Hoang',min:40,max:65,color:'#88765d',enemy:['tiger','bandit','skeleton']},
-  // Cấp 60-90: Yêu Vực — yêu khí nồng nặc
-  {id:'yeu_vuc',name:'Yêu Vực',kind:'Man Hoang',min:60,max:90,color:'#5b4b62',enemy:['undead','ice_wolf','skeleton']},
-  // Cấp 85-120: Cấm Địa Hàn Uyên — băng giá tử địa
-  {id:'cam_dia_han_uyen',name:'Cấm Địa Hàn Uyên',kind:'Cấm Địa',min:85,max:120,color:'#4b6873',enemy:['ice_wolf','undead']},
-  // Cấp 110-160: Ma Vực — địa ngục đáy sâu
-  {id:'ma_vuc',name:'Ma Vực',kind:'Cấm Địa',min:110,max:160,color:'#5d4248',enemy:['undead','ice_wolf','skeleton']}
-];
+// Dữ liệu map nằm trong /maps để game.js luôn gọn khi có hàng trăm bản đồ.
+const MAP_DATA_VERSION='20260918-1';
+const DEFAULT_MAP_ID='thanh_van_thon';
+const DEFAULT_REGION={id:DEFAULT_MAP_ID,name:'Thanh Vân Thôn',kind:'Thôn',min:1,max:12,color:'#668071',enemy:['boar','archer'],file:'maps/thanh_van_thon.json'};
+let regions=[DEFAULT_REGION];
+let mapManifest={schemaVersion:1,defaultMap:DEFAULT_MAP_ID,maps:regions};
+const MAP_CONFIGS=Object.create(null);
+let mapLoadToken=0;
+
+async function fetchMapJson(url){
+  const join=url.includes('?')?'&':'?';
+  const res=await fetch(url+join+'v='+MAP_DATA_VERSION,{cache:'no-store'});
+  if(!res.ok)throw new Error('Không tải được '+url+' ('+res.status+')');
+  return res.json();
+}
+
+async function loadMapManifest(){
+  try{
+    const data=await fetchMapJson('maps/manifest.json');
+    if(!data||!Array.isArray(data.maps)||data.maps.length===0)throw new Error('Danh mục map trống');
+    mapManifest=data;
+    regions=data.maps;
+  }catch(err){
+    console.warn('Dùng danh mục map dự phòng:',err);
+    mapManifest={schemaVersion:1,defaultMap:DEFAULT_MAP_ID,maps:[DEFAULT_REGION]};
+    regions=mapManifest.maps;
+  }
+}
+
+function normalizeMapConfig(cfg,id){
+  if(!cfg||typeof cfg!=='object')throw new Error('Dữ liệu map '+id+' không hợp lệ');
+  cfg.id=cfg.id||id;
+  cfg.name=cfg.name||cfg.id;
+  cfg.trees=Array.isArray(cfg.trees)?cfg.trees:[];
+  cfg.rocks=Array.isArray(cfg.rocks)?cfg.rocks:[];
+  cfg.decor=Array.isArray(cfg.decor)?cfg.decor:[];
+  cfg.villageProps=Array.isArray(cfg.villageProps)?cfg.villageProps:[];
+  cfg.lanternPosts=Array.isArray(cfg.lanternPosts)?cfg.lanternPosts:[];
+  cfg.specialSpawns=Array.isArray(cfg.specialSpawns)?cfg.specialSpawns:[];
+  if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)){
+    cfg.treeCount=Math.min(cfg.treeCount||400,90);
+    cfg.rockCount=Math.min(cfg.rockCount||220,50);
+    cfg.grassCount=Math.min(cfg.grassCount||140,80);
+  }
+  return cfg;
+}
+
+async function getMapConfig(id){
+  if(MAP_CONFIGS[id])return MAP_CONFIGS[id];
+  const meta=regions.find(r=>r.id===id);
+  const file=(meta&&meta.file)||('maps/'+id+'.json');
+  try{
+    const cfg=normalizeMapConfig(await fetchMapJson(file),id);
+    MAP_CONFIGS[id]=cfg;
+    return cfg;
+  }catch(err){
+    if(id===DEFAULT_MAP_ID)throw err;
+    console.warn('Map '+id+' chưa có file riêng, dùng '+DEFAULT_MAP_ID,err);
+    const fallback=await getMapConfig(DEFAULT_MAP_ID);
+    const cfg={...fallback,id,name:(meta&&meta.name)||id,specialSpawns:[]};
+    MAP_CONFIGS[id]=cfg;
+    return cfg;
+  }
+}
 
 // Bản đồ thế giới mở rộng 100 lần (1000m x 1000m = 1.000.000 m²)
 const MAP_SIZE = 1000;
 const MAP_HALF = MAP_SIZE / 2; // 500
 const MAP_BOUND = MAP_HALF - 15; // 485
 const RADAR_RANGE = 75; // Bán kính quét Radar minimap (mét)
-
-// Cấu trúc cấu hình tài nguyên bản đồ (Map Asset Configurations)
-// Mỗi bản đồ có thư mục riêng, asset cây cối, đá, phụ kiện, mặt đất được phân tách rõ ràng
-const MAP_CONFIGS={
-  thanh_van_thon:{
-    id:'thanh_van_thon',
-    name:'Thanh Vân Thôn',
-    folder:'assets/maps/common',
-    clearColor:'#698679',
-    fogColor:'#698679',
-    fogStart:45,
-    fogEnd:95,
-    groundTexture:'assets/maps/common/grounds/ground_village_01.png',
-    groundScale:80,
-    river:{enabled:false},
-    trees:[
-      {file:'assets/maps/common/trees/tree_01.png',width:4.8,height:5.8,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_02.png',width:4.6,height:5.6,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_03.png',width:4.4,height:5.4,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_sakura_01.png',width:4.8,height:6.0,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_pine_01.png',width:4.2,height:5.8,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_autumn_01.png',width:4.4,height:5.6,yRatio:0.36}
-    ],
-    rocks:[
-      {file:'assets/maps/common/rocks/rock_01.png',width:3.2,height:3.0,yRatio:0.38},
-      {file:'assets/maps/common/rocks/rock_02.png',width:2.8,height:2.8,yRatio:0.38},
-      {file:'assets/maps/common/rocks/rock_03.png',width:2.6,height:3.2,yRatio:0.38},
-      {file:'assets/maps/common/rocks/rock_04.png',width:3.6,height:4.2,yRatio:0.36},
-      {file:'assets/maps/common/rocks/rock_05.png',width:3.2,height:3.4,yRatio:0.38},
-      {file:'assets/maps/common/rocks/rock_cliff_cluster_01.png',width:4.0,height:3.8,yRatio:0.38},
-      {file:'assets/maps/common/rocks/rock_large_vine_01.png',width:3.8,height:4.0,yRatio:0.38}
-    ],
-    decor:[
-      {file:'assets/maps/common/lanterns/lantern_post_village_01.png',width:2.2,height:3.2,yRatio:0.46},
-      {file:'assets/maps/common/plants/grass_mixed_01.png',width:1.8,height:1.8,yRatio:0.36},
-      {file:'assets/maps/common/plants/grass_tall_01.png',width:1.6,height:2.2,yRatio:0.36},
-      {file:'assets/maps/common/plants/bush_rose_01.png',width:2.2,height:2.2,yRatio:0.36},
-      {file:'assets/maps/common/plants/bush_ivy_01.png',width:2.0,height:2.0,yRatio:0.36},
-      {file:'assets/maps/common/plants/flower_pink_01.png',width:1.9,height:1.9,yRatio:0.36},
-      {file:'assets/maps/common/plants/flower_purple_01.png',width:1.9,height:1.9,yRatio:0.36},
-      {file:'assets/maps/common/plants/bush_berry_01.png',width:2.0,height:1.8,yRatio:0.36},
-      {file:'assets/maps/common/plants/grass_flower_01.png',width:1.8,height:1.6,yRatio:0.36}
-    ],
-    // Trung tâm thôn — sử dụng hoàn toàn common assets
-    villageProps:[
-      // ── QUẢNG TRƯỜNG TRUNG TÂM ──
-      {file:'assets/maps/common/signs/sign_stone_yinyang_01.png',width:2.4,height:3.2,x:0,z:-8,yRatio:0.40},
-      {file:'assets/maps/common/props/well_01.png',width:2.6,height:2.8,x:0,z:0,yRatio:0.42},
-      {file:'assets/maps/common/buildings/shrine_small_01.png',width:2.5,height:3.0,x:-9,z:8,yRatio:0.42},
-      {file:'assets/maps/common/props/cart_wood_01.png',width:2.6,height:2.0,x:7,z:-6,yRatio:0.44},
-      {file:'assets/maps/common/props/barrel_stack_01.png',width:2.2,height:2.2,x:-7,z:-5,yRatio:0.42},
-
-      // ── KHU DƯỢC PHỐ (Đông Bắc, x>0, z<0) ── Thảo Dược Đường & hàng hóa
-      {file:'assets/maps/common/buildings/house_herbal_01.png',width:5.6,height:5.2,x:18,z:-16,yRatio:0.44},
-      {file:'assets/maps/common/buildings/house_tile_01.png',width:5.4,height:5.0,x:28,z:-14,yRatio:0.44},
-      {file:'assets/maps/common/buildings/shop_house_01.png',width:5.4,height:5.2,x:22,z:-26,yRatio:0.44},
-      {file:'assets/maps/common/props/jar_stack_01.png',width:2.0,height:1.8,x:15,z:-22,yRatio:0.42},
-      {file:'assets/maps/common/props/sack_stack_01.png',width:2.2,height:1.8,x:14,z:-18,yRatio:0.42},
-      {file:'assets/maps/common/props/stall_fruit_01.png',width:3.4,height:2.8,x:30,z:-20,yRatio:0.44},
-      {file:'assets/maps/common/lanterns/lantern_shrine_01.png',width:2.0,height:3.2,x:16,z:-14,yRatio:0.46},
-      {file:'assets/maps/common/lanterns/lantern_shrine_01.png',width:2.0,height:3.2,x:26,z:-14,yRatio:0.46},
-
-      // ── KHU THƯƠNG PHỐ (Tây Bắc, x<0, z<0) ── Chợ & nơi buôn bán
-      {file:'assets/maps/common/buildings/house_thatch_01.png',width:5.0,height:4.8,x:-18,z:-16,yRatio:0.44},
-      {file:'assets/maps/common/buildings/warehouse_thatch_01.png',width:5.2,height:4.6,x:-28,z:-14,yRatio:0.44},
-      {file:'assets/maps/common/buildings/smithy_01.png',width:5.4,height:5.0,x:-22,z:-26,yRatio:0.44},
-      {file:'assets/maps/common/props/stall_cloth_01.png',width:3.4,height:2.8,x:-16,z:-22,yRatio:0.44},
-      {file:'assets/maps/common/props/crate_stack_01.png',width:2.2,height:2.2,x:-14,z:-18,yRatio:0.42},
-      {file:'assets/maps/common/props/weapon_rack_01.png',width:2.6,height:2.6,x:-30,z:-20,yRatio:0.44},
-      {file:'assets/maps/common/lanterns/lantern_post_01.png',width:2.2,height:3.2,x:-16,z:-14,yRatio:0.46},
-      {file:'assets/maps/common/lanterns/lantern_post_01.png',width:2.2,height:3.2,x:-26,z:-14,yRatio:0.46},
-
-      // ── KHU DÂN CƯ (Đông Nam, x>0, z>0) ── Nhà ở dân lành
-      {file:'assets/maps/common/buildings/house_sakura_01.png',width:5.8,height:5.4,x:18,z:18,yRatio:0.44},
-      {file:'assets/maps/common/buildings/house_tile_01.png',width:5.4,height:5.0,x:28,z:16,yRatio:0.44},
-      {file:'assets/maps/common/buildings/house_thatch_01.png',width:5.0,height:4.8,x:22,z:28,yRatio:0.44},
-      {file:'assets/maps/common/buildings/house_herbal_01.png',width:5.6,height:5.2,x:32,z:26,yRatio:0.44},
-      {file:'assets/maps/common/props/barrel_stack_01.png',width:2.4,height:2.2,x:15,z:22,yRatio:0.42},
-      {file:'assets/maps/common/props/cart_wood_01.png',width:3.2,height:2.4,x:14,z:16,yRatio:0.44},
-      {file:'assets/maps/common/lanterns/lantern_double_hanging_01.png',width:2.2,height:3.4,x:18,z:14,yRatio:0.46},
-      {file:'assets/maps/common/lanterns/lantern_double_hanging_01.png',width:2.2,height:3.4,x:28,z:14,yRatio:0.46},
-
-      // ── KHU TU LUYỆN VIỆN (Tây Nam, x<0, z>0) ── Đạo Quán & thiền định
-      {file:'assets/maps/common/buildings/shrine_buddha_01.png',width:5.6,height:5.8,x:-18,z:18,yRatio:0.44},
-      {file:'assets/maps/common/buildings/pavilion_shrine_01.png',width:4.8,height:5.0,x:-28,z:16,yRatio:0.44},
-      {file:'assets/maps/common/buildings/pavilion_water_01.png',width:5.2,height:5.2,x:-22,z:28,yRatio:0.44},
-      {file:'assets/maps/common/signs/sign_stone_yinyang_01.png',width:2.8,height:3.6,x:-14,z:22,yRatio:0.40},
-      {file:'assets/maps/common/signs/sign_magic_stone_01.png',width:2.4,height:3.2,x:-32,z:22,yRatio:0.40},
-      {file:'assets/maps/common/props/campfire_01.png',width:1.8,height:1.6,x:-28,z:22,yRatio:0.44},
-      {file:'assets/maps/common/lanterns/lantern_shrine_01.png',width:2.0,height:3.2,x:-16,z:16,yRatio:0.46},
-      {file:'assets/maps/common/lanterns/lantern_shrine_01.png',width:2.0,height:3.2,x:-26,z:16,yRatio:0.46},
-
-      // Vòng tường đá bo cong được dựng động trong spawnVillageCurvedWall().
-
-      // ── TƯỜNG TRONG — Ngăn khu phố với quảng trường ──
-      {file:'assets/maps/common/fences_gates/fence_ornate_01.png',width:3.2,height:1.8,x:-12,z:-12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/fence_ornate_01.png',width:3.2,height:1.8,x:0,z:-12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/fence_ornate_01.png',width:3.2,height:1.8,x:12,z:-12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/fence_ornate_01.png',width:3.2,height:1.8,x:-12,z:12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/fence_ornate_01.png',width:3.2,height:1.8,x:0,z:12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/fence_ornate_01.png',width:3.2,height:1.8,x:12,z:12,yRatio:0.46},
-
-      // ── CÂY VEN TƯỜNG & CÂY NỘI Ô ── Tán cây trong làng che bóng mát
-      {file:'assets/maps/common/trees/tree_sakura_01.png',width:4.2,height:5.6,x:-35,z:-20,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_willow_01.png',width:4.0,height:5.4,x:35,z:-22,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_ancient_green_01.png',width:4.2,height:5.8,x:-35,z:20,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_pink_blossom_02.png',width:4.0,height:5.2,x:35,z:22,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_lantern_01.png',width:4.0,height:5.5,x:20,z:6,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_autumn_01.png',width:3.8,height:5.2,x:-20,z:6,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_white_blossom_01.png',width:3.8,height:5.2,x:20,z:-10,yRatio:0.36},
-      {file:'assets/maps/common/trees/tree_pine_01.png',width:3.6,height:5.4,x:-20,z:-10,yRatio:0.36},
-
-      // ── ĐÈN ĐƯỜNG & HOA VIỀN LỐI ĐI ──
-      {file:'assets/maps/common/plants/bush_mixed_flower_01.png',width:2.2,height:1.8,x:10,z:-4,yRatio:0.36},
-      {file:'assets/maps/common/plants/bush_pink_01.png',width:1.9,height:1.6,x:-10,z:-4,yRatio:0.36},
-      {file:'assets/maps/common/plants/bush_purple_01.png',width:1.9,height:1.6,x:10,z:4,yRatio:0.36},
-      {file:'assets/maps/common/plants/bush_green_01.png',width:2.0,height:1.7,x:-10,z:4,yRatio:0.36},
-      {file:'assets/maps/common/plants/flower_pink_01.png',width:1.9,height:1.9,x:12,z:-8,yRatio:0.36},
-      {file:'assets/maps/common/plants/flower_purple_01.png',width:1.9,height:1.9,x:-12,z:-8,yRatio:0.36},
-    ],
-    treeCount:160,
-    rockCount:90,
-    grassCount:140,
-    villageClearX:42,
-    villageClearZ:42,
-    lanternPosts:[
-      // Trục Bắc-Nam (đường chính)
-      {x:-5,z:-34},{x:5,z:-34},
-      {x:-5,z:-24},{x:5,z:-24},
-      {x:-5,z:-12},{x:5,z:-12},
-      {x:-5,z:0},  {x:5,z:0},
-      {x:-5,z:12}, {x:5,z:12},
-      {x:-5,z:24}, {x:5,z:24},
-      {x:-5,z:34}, {x:5,z:34},
-      // Trục Đông-Tây (đường chợ)
-      {x:-34,z:-5},{x:-34,z:5},
-      {x:-24,z:-5},{x:-24,z:5},
-      {x:24,z:-5}, {x:24,z:5},
-      {x:34,z:-5}, {x:34,z:5}
-    ]
-  }
-};
 
 // ==========================================
 // HỆ THỐNG KỸ NĂNG: TỨ ĐẠI ĐẲNG CẤP & TỨ PHẨM VỊ
@@ -1151,7 +1058,14 @@ function spawnVillageCurvedWall(){
   spawnMapProp('gate_s_r',lamp, 6.2, rz,0.01);
 }
 
-function loadMap(regionIdx){
+const MAP_SPECIAL_SPAWNERS={villageCurvedWall:spawnVillageCurvedWall};
+
+async function loadMap(regionIdx){
+  const token=++mapLoadToken;
+  let reg=regions[regionIdx]||regions[0]||DEFAULT_REGION;
+  let cfg=await getMapConfig(reg.id);
+  if(token!==mapLoadToken)return false;
+
   decor.forEach(m=>{
     try{
       if(m&&!m.isDisposed()){
@@ -1160,9 +1074,6 @@ function loadMap(regionIdx){
     }catch(e){}
   });
   decor=[];
-
-  let reg=regions[regionIdx]||regions[0];
-  let cfg=MAP_CONFIGS[reg.id]||MAP_CONFIGS.thanh_van_thon;
 
   let sceneColor=reg.color?BABYLON.Color4.FromHexString(reg.color+'ff'):BABYLON.Color4.FromHexString(cfg.clearColor+'ff');
   scene.clearColor=sceneColor;
@@ -1242,12 +1153,15 @@ function loadMap(regionIdx){
     });
   }
 
-  if(reg.id==='thanh_van_thon'){
-    spawnVillageCurvedWall();
+  for(const name of cfg.specialSpawns){
+    const spawn=MAP_SPECIAL_SPAWNERS[name];
+    if(spawn)spawn(cfg);
+    else console.warn('Chưa đăng ký map special spawn:',name);
   }
+  return true;
 }
 
-function createWorld(){
+async function createWorld(){
   scene=new BABYLON.Scene(engine);
   camera=new BABYLON.FreeCamera('cam',BABYLON.Vector3.Zero(),scene);
   camera.mode=BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
@@ -1265,7 +1179,7 @@ function createWorld(){
   light.groundColor=new BABYLON.Color3(.36,.44,.38);
 
   worldGround=BABYLON.MeshBuilder.CreateGround('ground',{width:MAP_SIZE,height:MAP_SIZE,subdivisions:6},scene);
-  loadMap(S.region||0);
+  await loadMap(S.region||0);
 }
 
 function makeActor(type,x,z,elite=false){
@@ -1510,44 +1424,7 @@ function damageFromRealmSource(a,d,sourceMajor,type='physical',crit=false,label=
   sourceMajor=clamp(Number(sourceMajor)||0,0,realms.length-1);
   const sourceScore=sourceMajor===0?11:12+(sourceMajor-1)*4+3;
   const info=a.realmInfo||getEnemyRealmInfo(a.enemyLv||1);
-  const sourceSuppress=getRealmSuppressionByScores(sourceScore,sourceMajor,info.score,info.major);
-  const defenderSuppress=getRealmSuppressionByScores(info.score,info.major,sourceScore,sourceMajor);
-  d=Math.max(1,Math.round(d*sourceSuppress/Math.max(1,defenderSuppress)));
-  a.hp-=d;
-  sfx(crit?'slash':'hit');
-  floatText(a.mesh.position,(label?label+' ':'')+'-'+d+' '+(DAMAGE_LABELS[type]||''),crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
-  flash(a.mesh);
-  if(a===boss)$('#bossFill').style.width=clamp(a.hp/a.maxHp*100,0,100)+'%';
-  if(a.hp<=0)kill(a);
-}
-
-function getSystemContext(){
-  return {
-    save,updateHUD,toast,sfx,openPanel,closePanel,
-    getActors:()=>actors,
-    getPlayer:()=>player,
-    realmDamage:damageFromRealmSource,
-    burst,ring,slash
-  };
-}
-
-function kill(a){
-  a.dead=true;
-  a.mesh.setEnabled(false);
-  if(a.shadow)a.shadow.setEnabled(false);
-  S.kills++;
-  S.questKills++;
-  gainXP(a.xp);
-  const formationCult=window.TuTienSystems?window.TuTienSystems.getCultivationMultiplier(S,player):1;
-  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation*getTechniqueCultivationMultiplier()*formationCult);
-  
-  // Loot
-  if(Math.random()<.75){
-    let g=Math.round(rnd(6,25)*(1+S.level*.05));
-    S.gold+=g;
-    if(Math.random()<.2){
-      S.stones++;
-      addItem('Linh Thạch',1);
+  const sourceSuppress=getRealmSuppressionByScores(sourceScore,sourceMa…310 tokens truncated…tem('Linh Thạch',1);
       toast('💎 Nhặt Linh Thạch x1');
       sfx('item');
     }
@@ -2907,14 +2784,14 @@ function openPanel(kind){
     }else if(kind==='map'){
       title='Bản Đồ Thế Giới (8 Đại Khu Vực)';
       html=`<div class="cards">${regions.map((r,i)=>`<div class="card"><b>${r.kind} · ${r.name}</b><p>Lv.${r.min}–${r.max} · ${r.enemy.map(e=>({wolf:'Ma Lang',fox:'Linh Hồ',golem:'Thạch Khôi',shadow:'Ảnh Thú'})[e]).join(', ')}</p><button data-region="${i}" ${S.level<r.min?'disabled':''}>${i===S.region?'Đang ở đây':'Dịch chuyển'}</button></div>`).join('')}</div>`;
-      setTimeout(()=>$$('[data-region]').forEach(b=>b.onclick=()=>{
+      setTimeout(()=>$$('[data-region]').forEach(b=>b.onclick=async()=>{
         S.region=+b.dataset.region;
         actors.forEach(a=>a.mesh&&a.mesh.dispose());
         actors=[];
         boss=null;
         $('#bossBar').hidden=true;
         player.x=0;player.z=2;
-        loadMap(S.region);
+        await loadMap(S.region);
         for(let i=0;i<12;i++)spawnPack();
         save();
         closePanel();
@@ -2987,6 +2864,9 @@ function closePanel(){
 }
 
 async function init(){
+  progress(5,'Đang đọc danh mục tiên vực…');
+  await loadMapManifest();
+
   progress(10,'Khởi tạo Babylon.js Engine…');
   engine=new BABYLON.Engine(canvas,true,{
     preserveDrawingBuffer:false,
@@ -2998,7 +2878,7 @@ async function init(){
   applyEngineScaling();
 
   progress(30,'Dựng không gian tiên cảnh…');
-  createWorld();
+  await createWorld();
 
   progress(50,'Nạp tiên thể và linh thú…');
   preloadPlayerMaterials();
