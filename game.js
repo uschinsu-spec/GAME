@@ -910,6 +910,28 @@ function makeSpriteMaterial(url, key){
   return m;
 }
 
+// Một số actor đặc biệt (pet/boss cũ) chưa có bộ PNG 16 frame riêng.
+// Dùng texture procedural thay vì cố tải file không tồn tại khiến actor bị vô hình
+// và tạo hàng loạt lỗi 404 trên trình duyệt.
+function makeProceduralSpriteMaterial(type,frame,key){
+  if(spriteMats[key])return spriteMats[key];
+  let m=new BABYLON.StandardMaterial('sm_'+key,scene);
+  let t=new BABYLON.DynamicTexture('dt_'+key,{width:128,height:128},scene,false);
+  t.hasAlpha=true;
+  drawProceduralCanvas(t.getContext(),type,frame);
+  t.update(false);
+  m.diffuseTexture=t;
+  m.emissiveTexture=t;
+  m.useAlphaFromDiffuseTexture=true;
+  m.emissiveColor=new BABYLON.Color3(1.0,1.0,1.0);
+  m.specularColor=BABYLON.Color3.Black();
+  m.disableLighting=true;
+  m.backFaceCulling=false;
+  m.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
+  spriteMats[key]=m;
+  return m;
+}
+
 const PLAYER_ANIMS = {
   idle: { frames: 4, fps: 6, loop: true },
   run: { frames: 4, fps: 10, loop: true },
@@ -958,10 +980,16 @@ function applyPlayerFacing(){
 }
 
 // Enemy sprites: 16 frames per type (00-07 = right, 08-15 = left mirrored)
+const FILE_SPRITE_TYPES=new Set(['archer','bandit','boar','ice_wolf','skeleton','tiger','undead']);
 function spriteFrames(type){
   let n = 16, arr = [];
   for(let i=0; i<n; i++){
-    arr.push(makeSpriteMaterial(`assets/sprites/${type}_${String(i).padStart(2,'0')}.png?v=6`, type+i));
+    let key=type+i;
+    if(FILE_SPRITE_TYPES.has(type)){
+      arr.push(makeSpriteMaterial(`assets/sprites/${type}_${String(i).padStart(2,'0')}.png?v=6`,key));
+    }else{
+      arr.push(makeProceduralSpriteMaterial(type,i,key));
+    }
   }
   return arr;
 }
@@ -2702,7 +2730,7 @@ function openPanel(kind){
           sfx('breakthrough'); updateHUD();
         };
 
-        $('[data-tech-select]').forEach(b=>b.onclick=()=>{
+        $$('[data-tech-select]').forEach(b=>b.onclick=()=>{
           const type=normalizeTechniqueType(b.dataset.techSelect);
           if(!isTechniqueRealmAllowed(type))return toast('Cảnh giới hiện tại chưa đủ để vận hành công pháp này');
           S.activeCultivationTechnique=type;
