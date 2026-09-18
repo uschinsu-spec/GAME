@@ -1143,6 +1143,8 @@ async function createWorld(){
   scene=new BABYLON.Scene(engine);
   scene.skipPointerMovePicking=true;
   scene.constantlyUpdateMeshUnderPointer=false;
+  scene.skipPointerMovePicking=true;
+  scene.constantlyUpdateMeshUnderPointer=false;
   camera=new BABYLON.FreeCamera('cam',BABYLON.Vector3.Zero(),scene);
   camera.mode=BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
   camera.minZ=.1;
@@ -1265,15 +1267,31 @@ function syncPet(){
 function spawnPack(){
   if(actors.filter(a=>!a.dead).length>(MOBILE_RUNTIME?22:30))return;
   let rr=region(), pool=rr.enemy, type=pool[Math.floor(Math.random()*pool.length)];
-  let ang=rnd(0,Math.PI*2),r=rnd(44,66);
-  for(let i=0;i<(type==='wolf'?3:2);i++){
-    let spawnX=clamp(player.x+Math.cos(ang)*r+rnd(-3,3),-MAP_BOUND,MAP_BOUND);
-    let spawnZ=clamp(player.z+Math.sin(ang)*r+rnd(-3,3),-MAP_BOUND,MAP_BOUND);
-    // Tuyệt đối không spawn trong khu an toàn Thanh Vân Thôn.
+  let baseX=player.x,baseZ=player.z;
+
+  if(rr.id==='thanh_van_thon'&&isVillageSafe(player.x,player.z)){
+    const patrols=[
+      {x:-7,z:-(VILLAGE_WALL_RZ+7)},{x:7,z:-(VILLAGE_WALL_RZ+7)},
+      {x:-7,z:(VILLAGE_WALL_RZ+7)},{x:7,z:(VILLAGE_WALL_RZ+7)},
+      {x:-(VILLAGE_WALL_RX+7),z:-12},{x:(VILLAGE_WALL_RX+7),z:12}
+    ];
+    const p=patrols[Math.floor(Math.random()*patrols.length)];
+    baseX=p.x;baseZ=p.z;
+  }else{
+    let ang=rnd(0,Math.PI*2),r=rnd(MOBILE_RUNTIME?13:16,MOBILE_RUNTIME?22:28);
+    baseX=clamp(player.x+Math.cos(ang)*r,-MAP_BOUND,MAP_BOUND);
+    baseZ=clamp(player.z+Math.sin(ang)*r,-MAP_BOUND,MAP_BOUND);
+  }
+
+  const packSize=(type==='wolf'||type==='boar')?3:2;
+  for(let i=0;i<packSize;i++){
+    let spawnX=clamp(baseX+rnd(-3.2,3.2),-MAP_BOUND,MAP_BOUND);
+    let spawnZ=clamp(baseZ+rnd(-3.2,3.2),-MAP_BOUND,MAP_BOUND);
     if(isVillageSafe(spawnX,spawnZ)){
-      let a=rnd(0,Math.PI*2),rad=rnd(1.15,1.65);
-      spawnX=clamp(Math.cos(a)*VILLAGE_WALL_RX*rad,-MAP_BOUND,MAP_BOUND);
-      spawnZ=clamp(Math.sin(a)*VILLAGE_WALL_RZ*rad,-MAP_BOUND,MAP_BOUND);
+      let a=Math.atan2(spawnZ,spawnX);
+      if(!Number.isFinite(a))a=0;
+      spawnX=clamp(Math.cos(a)*(VILLAGE_WALL_RX+6),-MAP_BOUND,MAP_BOUND);
+      spawnZ=clamp(Math.sin(a)*(VILLAGE_WALL_RZ+6),-MAP_BOUND,MAP_BOUND);
     }
     makeActor(type,spawnX,spawnZ,Math.random()<.08);
   }
