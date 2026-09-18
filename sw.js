@@ -1,5 +1,5 @@
-const BUILD='20260918-mobile-clarity-v5.3';
-const CACHE={shell:'game-shell-v8',assets:'game-assets-v8',maps:'game-maps-v8'};
+const BUILD='20260918-mobile-clarity-v5.4';
+const CACHE={shell:'game-shell-v9',assets:'game-assets-v9',maps:'game-maps-v9'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
