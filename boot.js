@@ -1,71 +1,96 @@
 (()=>{'use strict';
+function validateSource(src,stage){
+  try{
+    new Function(src);
+    console.info('[Boot/Audit] '+stage+': syntax OK');
+    return {ok:true,error:null};
+  }catch(error){
+    console.error('[Boot/Audit] '+stage+': syntax FAIL',error);
+    return {ok:false,error};
+  }
+}
+async function fetchText(url,label){
+  const res=await fetch(url,{cache:'no-store'});
+  if(!res.ok)throw new Error('Không tải được '+label+' ('+res.status+')');
+  return res.text();
+}
 async function boot(){
   const msg=document.querySelector('#loadMsg');
   try{
-    if(msg)msg.textContent='Đang tối ưu tài nguyên khởi động…';
-    const res=await fetch('./game.js?v=31',{cache:'no-store'});
-    if(!res.ok)throw new Error('Không tải được game.js ('+res.status+')');
-    let src=await res.text();
+    if(msg)msg.textContent='Đang kiểm tra toàn bộ GAME…';
 
-    // Hệ thống đại thế giới được tách riêng để game.js không phình khi số map tăng.
+    // 1) GAME gốc phải tự parse được trước khi bất kỳ runtime patch nào can thiệp.
+    const rawSrc=await fetchText('./game.js?v=31','game.js');
+    const rawCheck=validateSource(rawSrc,'game.js gốc');
+    if(!rawCheck.ok)throw new Error('game.js gốc lỗi cú pháp: '+rawCheck.error.message);
+    let src=rawSrc;
+
+    // 2) Đại thế giới/map runtime: kiểm tra chính runtime, sau đó kiểm tra source SAU patch.
+    // Nếu world patch làm source hỏng, rollback riêng world patch và GAME vẫn tiếp tục khởi động.
     try{
-      const wr=await fetch('./world-runtime.js?v=4',{cache:'no-store'});
-      if(wr.ok){
-        (0,eval)((await wr.text())+'\n//# sourceURL=world-runtime.js');
-        if(typeof window.TuTienWorldPatch==='function')src=window.TuTienWorldPatch(src);
-      }else{
-        console.warn('Không tải được world-runtime.js:',wr.status);
+      const worldText=await fetchText('./world-runtime.js?v=4','world-runtime.js');
+      const worldRuntimeCheck=validateSource(worldText,'world-runtime.js');
+      if(!worldRuntimeCheck.ok)throw new Error('world-runtime.js lỗi cú pháp: '+worldRuntimeCheck.error.message);
+      (0,eval)(worldText+'\n//# sourceURL=world-runtime.js');
+      if(typeof window.TuTienWorldPatch==='function'){
+        const beforeWorldPatch=src;
+        const worldPatched=window.TuTienWorldPatch(src);
+        const worldOutputCheck=validateSource(worldPatched,'game.js sau WORLD patch');
+        if(worldOutputCheck.ok){
+          src=worldPatched;
+          console.info('[Boot/Audit] WORLD patch hợp lệ.');
+        }else{
+          src=beforeWorldPatch;
+          console.error('[Boot/Audit] WORLD patch tạo source lỗi — rollback WORLD:',worldOutputCheck.error);
+          if(msg)msg.textContent='Đang khởi động GAME (đã cô lập lỗi world/map)…';
+        }
       }
     }catch(worldErr){
-      console.warn('World runtime fallback:',worldErr);
+      console.error('[Boot/Audit] World runtime fallback:',worldErr);
+      src=rawSrc;
+      if(msg)msg.textContent='Đang khởi động GAME (world/map tạm bỏ qua)…';
     }
 
-    // MASTER SKILL 144 chiêu: dữ liệu/thông số theo file Excel + runtime status/CC.
-    // VFX vẫn chỉ đọc asset path hiện có; người dùng sẽ thay PNG VFX riêng sau.
-    // QUAN TRỌNG: nếu patch skill sinh mã JS lỗi, tự động quay về source trước patch để GAME vẫn mở được.
+    // 3) MASTER SKILL 144 chiêu: kiểm tra runtime và output độc lập.
+    // VFX asset không bị chỉnh sửa ở đây.
     try{
-      const [masterRes,runtimeRes]=await Promise.all([
-        fetch('./skill-master-data.js?v=2',{cache:'no-store'}),
-        fetch('./skill-runtime.js?v=2',{cache:'no-store'})
+      const [masterText,runtimeText]=await Promise.all([
+        fetchText('./skill-master-data.js?v=2','skill-master-data.js'),
+        fetchText('./skill-runtime.js?v=2','skill-runtime.js')
       ]);
-      if(!masterRes.ok)throw new Error('Không tải được skill-master-data.js ('+masterRes.status+')');
-      if(!runtimeRes.ok)throw new Error('Không tải được skill-runtime.js ('+runtimeRes.status+')');
-      (0,eval)((await masterRes.text())+'\n//# sourceURL=skill-master-data.js');
-      (0,eval)((await runtimeRes.text())+'\n//# sourceURL=skill-runtime.js');
+      const masterCheck=validateSource(masterText,'skill-master-data.js');
+      if(!masterCheck.ok)throw new Error('skill-master-data.js lỗi cú pháp: '+masterCheck.error.message);
+      const runtimeCheck=validateSource(runtimeText,'skill-runtime.js');
+      if(!runtimeCheck.ok)throw new Error('skill-runtime.js lỗi cú pháp: '+runtimeCheck.error.message);
+      (0,eval)(masterText+'\n//# sourceURL=skill-master-data.js');
+      (0,eval)(runtimeText+'\n//# sourceURL=skill-runtime.js');
       if(typeof window.TuTienSkillPatch!=='function')throw new Error('TuTienSkillPatch không tồn tại');
 
       const beforeSkillPatch=src;
-      const patched=window.TuTienSkillPatch(src);
-      try{
-        // Compile-only validation: bắt SyntaxError trước khi chạy GAME.
-        // new Function không thực thi game, chỉ kiểm tra source có parse được hay không.
-        new Function(patched);
-        src=patched;
-        console.info('[Boot] Skill patch hợp lệ.');
-      }catch(skillSyntaxErr){
+      const skillPatched=window.TuTienSkillPatch(src);
+      const skillOutputCheck=validateSource(skillPatched,'game.js sau SKILL patch');
+      if(skillOutputCheck.ok){
+        src=skillPatched;
+        console.info('[Boot/Audit] SKILL patch hợp lệ.');
+      }else{
         src=beforeSkillPatch;
-        console.error('[Boot] Skill patch tạo source lỗi cú pháp — đã tự fallback về GAME gốc:',skillSyntaxErr);
-        if(msg)msg.textContent='Đang khởi động GAME (đã bỏ qua patch skill lỗi)…';
+        console.error('[Boot/Audit] SKILL patch tạo source lỗi — rollback SKILL:',skillOutputCheck.error);
+        if(msg)msg.textContent='Đang khởi động GAME (đã cô lập lỗi skill)…';
       }
     }catch(skillErr){
-      // Skill mở rộng không được phép làm toàn GAME chết.
-      console.error('Skill runtime fallback:',skillErr);
+      console.error('[Boot/Audit] Skill runtime fallback:',skillErr);
       if(msg)msg.textContent='Đang khởi động GAME (skill mở rộng tạm bỏ qua)…';
     }
 
-    // Không preload toàn bộ quái x 16 frame ngay khi mở trang.
-    // makeBillboard()/spriteFrames() sẽ tự nạp đúng loại quái khi cần.
+    // 4) Các tối ưu boot cũ.
     src=src.replace(/\n\s*preloadEnemySprites\(\);[^\n]*/,'\n  // Enemy textures: lazy-load theo loại quái đang xuất hiện');
-
-    // Chỉ tạo vài pack ban đầu; vòng game sẽ bổ sung dần sau khi người chơi vào.
     src=src.replace('for(let i=0;i<16;i++)spawnPack();','for(let i=0;i<4;i++)spawnPack();');
 
-    // Kiểm tra lần cuối trước khi chạy để tránh đứng màn hình loading vì SyntaxError.
-    try{new Function(src)}catch(finalSyntaxErr){
-      console.error('[Boot] Final source syntax error:',finalSyntaxErr);
-      throw new Error('Mã GAME lỗi cú pháp: '+finalSyntaxErr.message);
-    }
+    // 5) Compile-check cuối cùng, ghi rõ tầng lỗi thay vì báo SyntaxError mơ hồ.
+    const finalCheck=validateSource(src,'GAME cuối cùng');
+    if(!finalCheck.ok)throw new Error('GAME cuối cùng lỗi cú pháp: '+finalCheck.error.message);
 
+    if(msg)msg.textContent='Đang vào tiên đồ…';
     (0,eval)(src+'\n//# sourceURL=game.optimized.js');
   }catch(err){
     console.error('Boot error:',err);
