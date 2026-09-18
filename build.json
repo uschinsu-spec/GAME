@@ -1,7 +1,7 @@
 {
-  "buildVersion": "20260918-stable-motion-v5.7",
+  "buildVersion": "20260918-visual-restore-v5.8",
   "saveVersion": 5,
-  "shellCache": "game-shell-v12",
-  "assetCache": "game-assets-v12",
-  "mapCache": "game-maps-v12"
+  "shellCache": "game-shell-v13",
+  "assetCache": "game-assets-v13",
+  "mapCache": "game-maps-v13"
 }
