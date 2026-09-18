@@ -1,3163 +1,6 @@
-(()=>{'use strict';
-const MOBILE_RUNTIME=/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints||0)>1||Math.min(innerWidth||9999,innerHeight||9999)<820;
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const canvas=$('#renderCanvas'), loading=$('#loading'), loadMsg=$('#loadMsg'), loadBar=$('#loadBar'), startBtn=$('#startBtn'), hud=$('#hud');
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), rnd=(a,b)=>a+Math.random()*(b-a), dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
-const SAVE='tutien_chilo_save_v2';
-
-// Web Audio API Synthesizer (Zero External Dependencies)
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
-function getAudio(){
-  if(!audioCtx){try{audioCtx=new AudioContext()}catch(e){}}
-  if(audioCtx&&audioCtx.state==='suspended'){audioCtx.resume()}
-  return audioCtx;
-}
-function sfx(type){
-  try{
-    const ctx=getAudio();if(!ctx)return;
-    const now=ctx.currentTime;
-    if(type==='slash'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='sawtooth';
-      osc.frequency.setValueAtTime(460,now);
-      osc.frequency.exponentialRampToValueAtTime(90,now+0.12);
-      g.gain.setValueAtTime(0.22,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.12);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.12);
-    }else if(type==='hit'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='triangle';
-      osc.frequency.setValueAtTime(150,now);
-      osc.frequency.exponentialRampToValueAtTime(35,now+0.1);
-      g.gain.setValueAtTime(0.28,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.1);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.1);
-    }else if(type==='skill1'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='square';
-      osc.frequency.setValueAtTime(580,now);
-      osc.frequency.exponentialRampToValueAtTime(180,now+0.18);
-      g.gain.setValueAtTime(0.18,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.18);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.18);
-    }else if(type==='skill2'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='sine';
-      osc.frequency.setValueAtTime(260,now);
-      osc.frequency.exponentialRampToValueAtTime(740,now+0.32);
-      g.gain.setValueAtTime(0.25,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.32);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.32);
-    }else if(type==='skill3'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='sawtooth';
-      osc.frequency.setValueAtTime(240,now);
-      osc.frequency.linearRampToValueAtTime(55,now+0.36);
-      g.gain.setValueAtTime(0.3,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.36);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.36);
-    }else if(type==='skill4'){
-      [392, 523, 659, 784].forEach((f,i)=>{
-        const osc=ctx.createOscillator(),g=ctx.createGain();
-        osc.type='sine';
-        osc.frequency.setValueAtTime(f,now+i*0.07);
-        g.gain.setValueAtTime(0.2,now+i*0.07);
-        g.gain.linearRampToValueAtTime(0.01,now+i*0.07+0.45);
-        osc.connect(g);g.connect(ctx.destination);
-        osc.start(now+i*0.07);osc.stop(now+i*0.07+0.45);
-      });
-    }else if(type==='dash'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='triangle';
-      osc.frequency.setValueAtTime(380,now);
-      osc.frequency.exponentialRampToValueAtTime(80,now+0.15);
-      g.gain.setValueAtTime(0.22,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.15);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.15);
-    }else if(type==='levelUp'){
-      [523, 659, 784, 1046].forEach((f,i)=>{
-        const osc=ctx.createOscillator(),g=ctx.createGain();
-        osc.type='triangle';
-        osc.frequency.setValueAtTime(f,now+i*0.09);
-        g.gain.setValueAtTime(0.25,now+i*0.09);
-        g.gain.linearRampToValueAtTime(0.01,now+i*0.09+0.35);
-        osc.connect(g);g.connect(ctx.destination);
-        osc.start(now+i*0.09);osc.stop(now+i*0.09+0.35);
-      });
-    }else if(type==='breakthrough'){
-      [261, 329, 392, 523, 659, 784, 1046].forEach((f,i)=>{
-        const osc=ctx.createOscillator(),g=ctx.createGain();
-        osc.type='sine';
-        osc.frequency.setValueAtTime(f,now+i*0.08);
-        g.gain.setValueAtTime(0.3,now+i*0.08);
-        g.gain.linearRampToValueAtTime(0.01,now+i*0.08+0.55);
-        osc.connect(g);g.connect(ctx.destination);
-        osc.start(now+i*0.08);osc.stop(now+i*0.08+0.55);
-      });
-    }else if(type==='item'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='sine';
-      osc.frequency.setValueAtTime(880,now);
-      osc.frequency.setValueAtTime(1320,now+0.07);
-      g.gain.setValueAtTime(0.18,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.2);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.2);
-    }
-  }catch(e){}
-}
-
-const realms=['Luyá»‡n KhÃ­','TrÃºc CÆ¡','Káº¿t Äan','NguyÃªn Anh','HÃ³a Tháº§n'];
-const periods=['SÆ¡ Ká»³','Trung Ká»³','Háº­u Ká»³','Äá»‰nh Phong'];
-
-// ===== Cáº¢NH GIá»šI + ÃP CHáº¾ Cáº¢NH GIá»šI =====
-// Stat ná»n chá»‰ tÄƒng vá»«a pháº£i. ChÃªnh lá»‡ch tháº­t sá»± Ä‘áº¿n tá»« "Ã¡p cháº¿ cáº£nh giá»›i".
-const REALM_BASE_POWER=[1,2.5,6,15,36];
-const REALM_MINOR_MULT=1.25;
-const QI_STAGE_MULT=1.08;
-
-// Ãp cháº¿: chÃªnh má»—i tiá»ƒu cáº£nh giá»›i tÄƒng lá»£i tháº¿ 35%.
-// Má»—i Ä‘áº¡i cáº£nh giá»›i chÃªnh thÃªm há»‡ sá»‘ 1.75.
-// Giá»›i háº¡n Ä‘á»ƒ combat khÃ´ng vá»¡ sá»‘ nhÆ°ng váº«n táº¡o cáº£m giÃ¡c "trá»i vá»›i Ä‘áº¥t".
-const SUPPRESS_MINOR_MULT=1.35;
-const SUPPRESS_MAJOR_MULT=1.75;
-const SUPPRESS_MAX=12;
-
-function getRealmPowerMultiplier(){
-  if((S.realm||0)===0){
-    return Math.pow(QI_STAGE_MULT,Math.max(0,(S.realmStage||1)-1));
-  }
-  const realmIdx=clamp(S.realm||0,1,REALM_BASE_POWER.length-1);
-  const minor=clamp(S.period||0,0,3);
-  return REALM_BASE_POWER[realmIdx]*Math.pow(REALM_MINOR_MULT,minor);
-}
-
-function getRealmPowerText(){
-  return getRealmPowerMultiplier().toFixed(2)+'Ã—';
-}
-
-function getPlayerRealmScore(){
-  if((S.realm||0)===0)return clamp((S.realmStage||1)-1,0,11);
-  return 12+(Math.max(1,S.realm)-1)*4+clamp(S.period||0,0,3);
-}
-
-function getPlayerMajorRealmIndex(){
-  return clamp(S.realm||0,0,realms.length-1);
-}
-
-// QuÃ¡i hiá»‡n dÃ¹ng level, nÃªn quy Ä‘á»•i level -> báº­c tu luyá»‡n Ä‘á»ƒ há»‡ Ã¡p cháº¿ hoáº¡t Ä‘á»™ng ngay.
-// 1-12 = Luyá»‡n KhÃ­ 1-12; sau Ä‘Ã³ má»—i 12 level xáº¥p xá»‰ 1 Ä‘áº¡i cáº£nh giá»›i,
-// vÃ  chia thÃ nh 4 tiá»ƒu cáº£nh giá»›i trong Ä‘áº¡i cáº£nh giá»›i Ä‘Ã³.
-function getEnemyRealmInfo(enemyLv=1){
-  if(window.RealmSystem)return window.RealmSystem.enemyInfo(enemyLv);
-  const lv=Math.max(1,Math.round(enemyLv||1));
-  if(lv<=12)return {major:0,minor:lv-1,score:lv-1};
-  const major=clamp(1+Math.floor((lv-13)/28),1,realms.length-1);
-  const local=(lv-13)%28;
-  const period=clamp(Math.floor(local/7),0,3);
-  return {major,minor:period,score:12+(major-1)*4+period};
-}
-
-function getRealmSuppressionByScores(attackerScore,attackerMajor,defenderScore,defenderMajor){
-  if(window.RealmSystem)return window.RealmSystem.getSuppression({score:attackerScore,major:attackerMajor},{score:defenderScore,major:defenderMajor});
-  const diff=attackerScore-defenderScore;
-  if(diff<=0)return 1;
-  const majorDiff=Math.max(0,attackerMajor-defenderMajor);
-  const minorFactor=Math.pow(SUPPRESS_MINOR_MULT,diff);
-  const majorFactor=Math.pow(SUPPRESS_MAJOR_MULT,majorDiff);
-  return Math.min(SUPPRESS_MAX,minorFactor*majorFactor);
-}
-
-function getPlayerSuppressionVsActor(actor){
-  if(!actor)return 1;
-  const info=actor.realmInfo||getEnemyRealmInfo(actor.enemyLv||1);
-  return getRealmSuppressionByScores(
-    getPlayerRealmScore(),getPlayerMajorRealmIndex(),
-    info.score,info.major
-  );
-}
-
-function getActorSuppressionVsPlayer(actor){
-  if(!actor)return 1;
-  const info=actor.realmInfo||getEnemyRealmInfo(actor.enemyLv||1);
-  return getRealmSuppressionByScores(
-    info.score,info.major,
-    getPlayerRealmScore(),getPlayerMajorRealmIndex()
-  );
-}
-
-const CULTIVATION_TECH_TYPES=['physical','Kim','Há»a','Thá»§y','Má»™c','Thá»•','Phong','LÃ´i'];
-const CULTIVATION_TECH_LABELS={
-  physical:'Thá»ƒ Tu / Váº­t lÃ½',Kim:'Kim',Há»a:'Há»a',Thá»§y:'Thá»§y',Má»™c:'Má»™c',Thá»•:'Thá»•',Phong:'Phong',LÃ´i:'LÃ´i'
-};
-const TECHNIQUE_GRADES=[
-  {id:'hoang',name:'HoÃ ng',minRealm:0,cultivation:1.00,stat:1.10,unlockCost:0},
-  {id:'huyen',name:'Huyá»n',minRealm:1,cultivation:1.55,stat:1.35,unlockCost:120},
-  {id:'dia',name:'Äá»‹a',minRealm:2,cultivation:2.40,stat:1.75,unlockCost:420},
-  {id:'thien',name:'ThiÃªn',minRealm:3,cultivation:3.60,stat:2.30,unlockCost:1200}
-];
-const TECHNIQUE_RANKS=[
-  {id:'ha',name:'Háº¡ pháº©m',cultivation:1.00,stat:1.00},
-  {id:'trung',name:'Trung pháº©m',cultivation:1.18,stat:1.12},
-  {id:'thuong',name:'ThÆ°á»£ng pháº©m',cultivation:1.42,stat:1.28},
-  {id:'cuc',name:'Cá»±c pháº©m',cultivation:1.75,stat:1.50}
-];
-const TECHNIQUE_NAMES={
-  physical:['Luyá»‡n Thá»ƒ Quyáº¿t','Huyá»n CÆ°Æ¡ng BÃ¡ Thá»ƒ','Äá»‹a SÃ¡t Luyá»‡n Thá»ƒ Kinh','ThiÃªn CÆ°Æ¡ng Báº¥t Diá»‡t Thá»ƒ'],
-  Kim:['Kim Linh Quyáº¿t','Huyá»n Kim ChÃ¢n Kinh','Äá»‹a Kim Tháº§n Äiá»ƒn','ThiÃªn Kim Váº¡n Kiáº¿p Kinh'],
-  Há»a:['XÃ­ch Há»a Quyáº¿t','Huyá»n Há»a ChÃ¢n Kinh','Äá»‹a ViÃªm Tháº§n Äiá»ƒn','ThiÃªn Há»a Pháº§n Tháº¿ Kinh'],
-  Thá»§y:['HÃ n Thá»§y Quyáº¿t','Huyá»n Thá»§y ChÃ¢n Kinh','Äá»‹a Háº£i Tháº§n Äiá»ƒn','ThiÃªn HÃ  Váº¡n Thá»§y Kinh'],
-  Má»™c:['Thanh Má»™c Quyáº¿t','Huyá»n Má»™c ChÃ¢n Kinh','Äá»‹a Máº¡ch Sinh Linh Kinh','ThiÃªn Má»™c TrÆ°á»ng Sinh Kinh'],
-  Thá»•:['Háº­u Thá»• Quyáº¿t','Huyá»n Thá»• ChÃ¢n Kinh','Äá»‹a Nháº¡c Tháº§n Äiá»ƒn','ThiÃªn SÆ¡n Tráº¥n Giá»›i Kinh'],
-  Phong:['Thanh Phong Quyáº¿t','Huyá»n Phong ChÃ¢n Kinh','Äá»‹a Phong VÃ´ áº¢nh Kinh','ThiÃªn Phong Cá»­u TiÃªu Kinh'],
-  LÃ´i:['Dáº«n LÃ´i Quyáº¿t','Huyá»n LÃ´i ChÃ¢n Kinh','Äá»‹a LÃ´i Tháº§n Äiá»ƒn','ThiÃªn LÃ´i Váº¡n Kiáº¿p Kinh']
-};
-function makeDefaultTechniqueCultivation(){
-  const out={};
-  for(const type of CULTIVATION_TECH_TYPES)out[type]={grade:0,rank:0};
-  return out;
-}
-function normalizeTechniqueType(type='physical'){
-  type=normalizeDamageType(type);
-  return CULTIVATION_TECH_TYPES.includes(type)?type:'physical';
-}
-function getTechniqueState(type='physical'){
-  type=normalizeTechniqueType(type);
-  if(!S.cultivationTechniques||typeof S.cultivationTechniques!=='object')S.cultivationTechniques=makeDefaultTechniqueCultivation();
-  if(!S.cultivationTechniques[type]||typeof S.cultivationTechniques[type]!=='object')S.cultivationTechniques[type]={grade:0,rank:0};
-  const st=S.cultivationTechniques[type];
-  if(typeof st.rank!=='number'){
-    const oldLv=Math.max(1,Number(st.level)||1);
-    st.rank=oldLv>=8?3:oldLv>=5?2:oldLv>=3?1:0;
-    delete st.level;
-  }
-  st.grade=clamp(Number(st.grade)||0,0,TECHNIQUE_GRADES.length-1);
-  st.rank=clamp(Number(st.rank)||0,0,TECHNIQUE_RANKS.length-1);
-  return st;
-}
-function getTechniqueDef(type='physical'){
-  type=normalizeTechniqueType(type);
-  const st=getTechniqueState(type);
-  return {
-    type,gradeIndex:st.grade,rankIndex:st.rank,
-    grade:TECHNIQUE_GRADES[st.grade],rank:TECHNIQUE_RANKS[st.rank],
-    name:(TECHNIQUE_NAMES[type]||TECHNIQUE_NAMES.physical)[st.grade]
-  };
-}
-function getActiveTechniqueType(){return normalizeTechniqueType(S.activeCultivationTechnique||'physical')}
-function getActiveTechnique(){return getTechniqueDef(getActiveTechniqueType())}
-function getTechniqueCultivationMultiplier(type=getActiveTechniqueType()){
-  const t=getTechniqueDef(type);
-  return t.grade.cultivation*t.rank.cultivation;
-}
-function isTechniqueRealmAllowed(type='physical'){
-  const t=getTechniqueDef(type);
-  return (S.realm||0)>=t.grade.minRealm;
-}
-function getTechniqueStatMultiplier(type='physical'){
-  type=normalizeTechniqueType(type);
-  if(getActiveTechniqueType()!==type)return 1;
-  const t=getTechniqueDef(type);
-  if((S.realm||0)<t.grade.minRealm)return 1;
-  return t.grade.stat*t.rank.stat;
-}
-function getTechniqueStatText(type=getActiveTechniqueType()){
-  return getTechniqueStatMultiplier(type).toFixed(2)+'Ã—';
-}
-function techniqueRankUpgradeCost(type='physical'){
-  const t=getTechniqueDef(type);
-  return {cult:Math.round(300*Math.pow(2,t.rankIndex)*(1+t.gradeIndex*2.2)),stones:Math.round(10*Math.pow(1.7,t.rankIndex)*(1+t.gradeIndex*1.6))};
-}
-function canBreakTechniqueGrade(type='physical'){
-  const t=getTechniqueDef(type);
-  if(t.gradeIndex>=TECHNIQUE_GRADES.length-1)return false;
-  return t.rankIndex===TECHNIQUE_RANKS.length-1&&(S.realm||0)>=TECHNIQUE_GRADES[t.gradeIndex+1].minRealm;
-}
-function techniqueBreakthroughCost(type='physical'){
-  const t=getTechniqueDef(type);
-  if(t.gradeIndex>=TECHNIQUE_GRADES.length-1)return null;
-  const next=TECHNIQUE_GRADES[t.gradeIndex+1];
-  return {cult:Math.round(3000*Math.pow(4,t.gradeIndex)),stones:next.unlockCost};
-}
-
-const heartMethods=[
-  {id:'duong_khi',grade:'HoÃ ng',name:'DÆ°á»¡ng KhÃ­ TÃ¢m PhÃ¡p',minRealm:0,regen:1.15,spirit:1.05,move:1.00,attack:1.00,cast:1.00,cultivation:1.10,defense:1.03,perLevel:0.018,desc:'Ã”n dÆ°á»¡ng khÃ­ háº£i, tÄƒng há»“i phá»¥c vÃ  tá»‘c Ä‘á»™ tÃ­ch lÅ©y tu vi.'},
-  {id:'tinh_tam',grade:'Huyá»n',name:'TÄ©nh TÃ¢m Huyá»n PhÃ¡p',minRealm:1,regen:1.25,spirit:1.12,move:1.02,attack:1.03,cast:1.06,cultivation:1.18,defense:1.08,perLevel:0.024,desc:'TÃ¢m nhÆ° chá»‰ thá»§y, tÄƒng Tháº§n thá»©c vÃ  tá»‘c Ä‘á»™ thi triá»ƒn.'},
-  {id:'kim_cang',grade:'Äá»‹a',name:'Kim Cang Há»™ TÃ¢m Kinh',minRealm:2,regen:1.35,spirit:1.16,move:1.02,attack:1.05,cast:1.05,cultivation:1.25,defense:1.18,perLevel:0.030,desc:'TÃ¢m máº¡ch nhÆ° kim cang, tÄƒng máº¡nh phÃ²ng thá»§ vÃ  há»“i phá»¥c.'},
-  {id:'thai_thuong',grade:'ThiÃªn',name:'ThÃ¡i ThÆ°á»£ng Vong TÃ¬nh Quyáº¿t',minRealm:3,regen:1.48,spirit:1.28,move:1.05,attack:1.08,cast:1.12,cultivation:1.38,defense:1.25,perLevel:0.038,desc:'TÃ¢m cáº£nh siÃªu nhiÃªn, toÃ n diá»‡n tÄƒng tá»‘c Ä‘á»™ vÃ  tu luyá»‡n.'},
-  {id:'vo_cuc_tam',grade:'TiÃªn',name:'VÃ´ Cá»±c Äáº¡o TÃ¢m',minRealm:4,regen:1.65,spirit:1.45,move:1.08,attack:1.12,cast:1.18,cultivation:1.55,defense:1.35,perLevel:0.05,desc:'Äáº¡o tÃ¢m vÃ´ cá»±c, tÃ¢m phÃ¡p tá»‘i thÆ°á»£ng cá»§a HÃ³a Tháº§n.'}
-];
-
-function getHeartMethodDef(){return heartMethods[clamp(S.heartMethod||0,0,heartMethods.length-1)]||heartMethods[0]}
-function getTechniqueLevel(i=S.technique||0){return Math.max(1,Number((S.techniqueLevels||{})[i])||1)}
-function getHeartMethodLevel(i=S.heartMethod||0){return Math.max(1,Number((S.heartMethodLevels||{})[i])||1)}
-
-
-
-function getHeartMethodEffects(){
-  const h=getHeartMethodDef(),lv=getHeartMethodLevel();
-  const grow=1+(lv-1)*h.perLevel;
-  return {
-    regen:h.regen*grow,
-    spirit:h.spirit*grow,
-    move:1+(h.move-1)*grow,
-    attack:1+(h.attack-1)*grow,
-    cast:1+(h.cast-1)*grow,
-    cultivation:h.cultivation*grow,
-    defense:h.defense*grow
-  };
-}
-
-function heartUpgradeCost(i=S.heartMethod||0){
-  const lv=getHeartMethodLevel(i),h=heartMethods[i]||heartMethods[0];
-  return {cult:Math.round(260*Math.pow(1.8,lv)*(1+h.minRealm*1.9)),stones:Math.round(10*Math.pow(1.45,lv)*(1+h.minRealm))};
-}
-const elements=[
-  ['Kim','âšœ'],['Há»a','ğŸ”¥'],['Thá»§y','ğŸ’§'],
-  ['Thá»•','â›°'],['Má»™c','ğŸŒ¿'],['Phong','ğŸŒª'],
-  ['LÃ´i','âš¡'],['Kiáº¿m','åŠ'],['Äao','åˆ€']
-];
-// Dá»¯ liá»‡u map náº±m trong /maps Ä‘á»ƒ game.js luÃ´n gá»n khi cÃ³ hÃ ng trÄƒm báº£n Ä‘á»“.
-const MAP_DATA_VERSION='20260918-2';
-const DEFAULT_MAP_ID='thanh_van_thon';
-const DEFAULT_REGION={id:DEFAULT_MAP_ID,name:'Thanh VÃ¢n ThÃ´n',kind:'ThÃ´n',min:1,max:12,color:'#668071',enemy:['boar','archer'],file:'maps/thanh_van_thon.json'};
-let regions=[DEFAULT_REGION];
-let mapManifest={schemaVersion:1,defaultMap:DEFAULT_MAP_ID,maps:regions};
-const MAP_CONFIGS=Object.create(null);
-let mapLoadToken=0;
-
-async function fetchMapJson(url){
-  if(window.AssetManager)return window.AssetManager.loadJSON(url);
-  const res=await fetch(url,{cache:'default'});
-  if(!res.ok)throw new Error('KhÃ´ng táº£i Ä‘Æ°á»£c '+url+' ('+res.status+')');
-  return res.json();
-}
-
-async function loadMapManifest(){
-  try{
-    const root=await fetchMapJson('maps/manifest.json');
-    let allMaps=Array.isArray(root.maps)?root.maps:[];
-    if(allMaps.length===0&&Array.isArray(root.catalogs)&&root.catalogs.length){
-      const catalogs=await Promise.all(root.catalogs.map(file=>fetchMapJson(file)));
-      allMaps=catalogs.flatMap(c=>Array.isArray(c.maps)?c.maps:[]);
-    }
-    if(allMaps.length===0)throw new Error('Danh má»¥c map trá»‘ng');
-    mapManifest={...root,maps:allMaps};
-    regions=allMaps;
-
-    const legacyRegionIds=['thanh_van_thon','linh_son_ngoai_vi','bach_ngoc_thanh','thanh_van_tong','van_dam_sa_mac','yeu_vuc','cam_dia_han_uyen','ma_vuc'];
-    const legacyIndex=Number.isInteger(S.region)?clamp(S.region,0,legacyRegionIds.length-1):0;
-    const legacyId=legacyRegionIds[legacyIndex]||root.defaultMap||DEFAULT_MAP_ID;
-    const requestedId=(typeof S.regionId==='string'&&S.regionId)?S.regionId:legacyId;
-    const resolvedId=regions.some(r=>r.id===requestedId)?requestedId:(root.defaultMap||DEFAULT_MAP_ID);
-    const resolvedIndex=Math.max(0,regions.findIndex(r=>r.id===resolvedId));
-    S.region=resolvedIndex;
-    S.regionId=resolvedId;
-  }catch(err){
-    console.warn('DÃ¹ng danh má»¥c map dá»± phÃ²ng:',err);
-    mapManifest={schemaVersion:1,defaultMap:DEFAULT_MAP_ID,maps:[DEFAULT_REGION]};
-    regions=mapManifest.maps;
-    S.region=0;
-    S.regionId=DEFAULT_MAP_ID;
-  }
-}
-
-function normalizeMapConfig(cfg,id,meta={}){
-  if(!cfg||typeof cfg!=='object')throw new Error('Dá»¯ liá»‡u map '+id+' khÃ´ng há»£p lá»‡');
-  cfg.id=cfg.id||id;
-  cfg.name=cfg.name||cfg.id;
-  cfg.trees=Array.isArray(cfg.trees)?cfg.trees:[];
-  cfg.rocks=Array.isArray(cfg.rocks)?cfg.rocks:[];
-  cfg.decor=Array.isArray(cfg.decor)?cfg.decor:[];
-  cfg.villageProps=Array.isArray(cfg.villageProps)?cfg.villageProps:[];
-  cfg.lanternPosts=Array.isArray(cfg.lanternPosts)?cfg.lanternPosts:[];
-  cfg.specialSpawns=Array.isArray(cfg.specialSpawns)?cfg.specialSpawns:[];
-  if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)){
-    cfg.treeCount=Math.min(cfg.treeCount||400,90);
-    cfg.rockCount=Math.min(cfg.rockCount||220,50);
-    cfg.grassCount=Math.min(cfg.grassCount||140,80);
-  }
-  return window.WorldSystem?window.WorldSystem.normalize(cfg,{...meta,id}):cfg;
-}
-
-async function getMapConfig(id){
-  if(MAP_CONFIGS[id])return MAP_CONFIGS[id];
-  const meta=regions.find(r=>r.id===id);
-  const file=(meta&&meta.file)||('maps/'+id+'.json');
-  try{
-    const raw=await fetchMapJson(file);
-    let cfg=raw;
-    if(raw&&raw.extends){
-      const base=await fetchMapJson(raw.extends);
-      cfg={...base,...raw,...(raw.overrides||{})};
-      delete cfg.extends;
-      delete cfg.overrides;
-    }
-    cfg=normalizeMapConfig(cfg,id,meta||{});
-    MAP_CONFIGS[id]=cfg;
-    return cfg;
-  }catch(err){
-    if(id===DEFAULT_MAP_ID)throw err;
-    console.warn('Map '+id+' chÆ°a cÃ³ file riÃªng, dÃ¹ng '+DEFAULT_MAP_ID,err);
-    const fallback=await getMapConfig(DEFAULT_MAP_ID);
-    const cfg={...fallback,id,name:(meta&&meta.name)||id,specialSpawns:[]};
-    MAP_CONFIGS[id]=cfg;
-    return cfg;
-  }
-}
-
-// Báº£n Ä‘á»“ tháº¿ giá»›i má»Ÿ rá»™ng 100 láº§n (1000m x 1000m = 1.000.000 mÂ²)
-const MAP_SIZE = 1000;
-const MAP_HALF = MAP_SIZE / 2; // 500
-const MAP_BOUND = MAP_HALF - 15; // 485
-const RADAR_RANGE = 75; // BÃ¡n kÃ­nh quÃ©t Radar minimap (mÃ©t)
-
-// ==========================================
-  // Há»† THá»NG Ká»¸ NÄ‚NG â€” MASTER DATA Tá»ª EXCEL
-  // 144 skill / 9 há»‡ / 4 cáº¥p / 4 pháº©m. VFX path giá»¯ nguyÃªn.
-  // ==========================================
-  const SKILL_MASTER=window.TuTienSkillMaster;
-  if(!SKILL_MASTER||!SKILL_MASTER.elements||SKILL_MASTER.skillCount!==144){
-    throw new Error('Skill master data chÆ°a táº£i hoáº·c khÃ´ng Ä‘á»§ 144 skill');
-  }
-  const SKILL_TIERS=SKILL_MASTER.tiers;
-  const SKILL_RANKS=SKILL_MASTER.ranks;
-  const ELEMENT_SKILL_NAMES=Object.fromEntries(Object.entries(SKILL_MASTER.elements).map(([name,e])=>[name,e.names]));
-  function getElementKey(elemName){const e=SKILL_MASTER.elements[elemName];return e?e.key:'kiem';}
-  function getElementNameFromKey(key){for(const [name,e] of Object.entries(SKILL_MASTER.elements))if(e.key===key)return name;return 'Kiáº¿m';}
-  function getElementColorByName(elemName){return {Kim:'#ffd86b',Há»a:'#ff6b3d',Thá»§y:'#64cfff',Thá»•:'#c9a56b',Má»™c:'#68df8b',Phong:'#a7f3dc',LÃ´i:'#9d8cff',Kiáº¿m:'#7ceaff',Äao:'#ff776d'}[elemName]||'#7ceaff';}
-  function getSkillId(elemName,tierIdx,rankIdx){return getElementKey(elemName)+'_'+tierIdx+'_'+rankIdx;}
-  function getSkillBalance(tierIdx,rankIdx){return SKILL_MASTER.balance[tierIdx*4+rankIdx]||null;}
-  function getSkillDef(skillId){
-    if(window.SkillSystem)return window.SkillSystem.get(skillId);
-    if(!skillId)return null;
-    const parts=skillId.split('_');if(parts.length<3)return null;
-    const elemKey=parts[0],tierIdx=parseInt(parts[1],10),rankIdx=parseInt(parts[2],10);
-    if(!Number.isFinite(tierIdx)||!Number.isFinite(rankIdx)||tierIdx<0||tierIdx>3||rankIdx<0||rankIdx>3)return null;
-    const element=getElementNameFromKey(elemKey),edata=SKILL_MASTER.elements[element],bal=getSkillBalance(tierIdx,rankIdx);
-    if(!edata||!bal)return null;
-    const tier=SKILL_TIERS[tierIdx],rank=SKILL_RANKS[rankIdx],flat=tierIdx*4+rankIdx,profile=edata.profiles[rankIdx]||{};
-    const name=edata.names[flat]||('BÃ­ KÃ­p '+tierIdx+'-'+rankIdx);
-    return {
-      id:skillId,name,element,elemKey,tierIdx,rankIdx,tierId:tier.id,rankId:rank.id,tierName:tier.name,rankName:rank.name,tierColor:tier.color,
-      badge:(tier.badge||tier.name||'')+'Â·'+String(rank.name||'').charAt(0),
-      minRealm:bal.minRealm,minLevel:bal.minLevel,mult:bal.mult,mp:bal.mp,cd:bal.cd,aoe:bal.aoe,hits:bal.hits,targetRange:bal.targetRange,
-      forceCritAoE:!!bal.forceCritAoE,spiritScaling:!!edata.spiritScaling,costStones:bal.costStones,costCult:bal.costCult,upgradeCosts:bal.upgradeCosts,
-      icon:'assets/skills/'+elemKey+'/'+tier.id+'_'+rank.id+'.png',
-      vfx:'assets/vfx/skills/'+elemKey+'/'+tier.id+'_'+rank.id+'.png',
-      role:profile.role||'',mechanicText:name+': '+(profile.mechanic||''),statusText:profile.status||'',effect:profile.effect||null
-    };
-  }
-  function getSkillUpgradeCost(skill,curLv){
-    if(!skill||curLv>=5)return null;
-    const list=skill.upgradeCosts||[],c=list[curLv-1];
-    return c?{stones:Number(c.stones)||0,cult:Number(c.cult)||0,toLevel:Number(c.toLevel)||curLv+1}:null;
-  }
-
-const defaultState={
-  name:'Linh Phong',level:1,xp:0,xpNeed:120,
-  hp:620,maxHp:620,mp:180,maxMp:180,
-  // Há»‡ thuá»™c tÃ­nh chiáº¿n Ä‘áº¥u chÃ­nh thá»©c â€” khÃ´ng cÃ²n atk/def/crit cÅ©.
-  damage:{physical:42,Kim:0,Há»a:0,Thá»§y:0,Má»™c:0,Thá»•:0,Phong:0,LÃ´i:0},
-  defense:{physical:8,Kim:0,Há»a:0,Thá»§y:0,Má»™c:0,Thá»•:0,Phong:0,LÃ´i:0},
-  critChance:.12,critDamage:1.8,
-  spiritSense:100,moveSpeed:6.2,attackSpeed:1.0,castSpeed:1.0,
-  hpRegenPct:0.015,mpRegenPct:0.035,
-  gold:1200,stones:500,
-  realm:0,realmStage:1,cultivation:0,
-  kills:0,questKills:0,bossKills:0,
-  auto:true,quality:1,daily:false,pet:false,
-  items:{'Linh Tháº¡ch':5,'Há»“i KhÃ­ Äan':3},
-  equipment:{weapon:null,armor:null,ring:null},
-  period:0,cultivationTechniques:makeDefaultTechniqueCultivation(),activeCultivationTechnique:'physical',heartMethod:0,heartMethodLevels:{0:1},region:0,skillElement:'Kiáº¿m',
-  equippedSkills:['kiem_0_0','kiem_0_1',null,null],
-  learnedSkills:{'kiem_0_0':1,'kiem_0_1':1},
-  skillTierTab:0,
-  pills:{1:3,2:0,3:0,4:0,5:0},
-  talismans:{1:1,2:0,3:0,4:0,5:0},
-  artifacts:{1:0,2:0,3:0,4:0,5:0},
-  progressionSystems:(window.TuTienSystems?window.TuTienSystems.defaultState():{})
-};
-
-let S;
-try{
-  let parsed=JSON.parse(localStorage.getItem(SAVE)||'{}');
-  S=Object.assign({},defaultState,parsed);
-  if(!S.items||typeof S.items!=='object'||Array.isArray(S.items)){
-    S.items={'Linh Tháº¡ch':5,'Há»“i KhÃ­ Äan':3};
-  }
-  if(!S.equipment||typeof S.equipment!=='object'){
-    S.equipment={weapon:null,armor:null,ring:null};
-  }
-  if(!Array.isArray(S.equippedSkills)){
-    let k=getElementKey(S.skillElement||'Kiáº¿m');
-    S.equippedSkills=[`${k}_0_0`,`${k}_0_1`,null,null];
-  }
-  if(!S.learnedSkills||typeof S.learnedSkills!=='object'||Array.isArray(S.learnedSkills)){
-    let k=getElementKey(S.skillElement||'Kiáº¿m');
-    S.learnedSkills={[`${k}_0_0`]:1,[`${k}_0_1`]:1};
-  }
-  if(typeof S.skillTierTab!=='number')S.skillTierTab=0;
-
-  // Migration save cÅ© -> damage thÃ nh pháº§n; Damage Tá»•ng Ä‘Æ°á»£c tÃ­nh báº±ng tá»•ng cÃ¡c thÃ nh pháº§n.
-  const statTypes=['physical','Kim','Há»a','Thá»§y','Má»™c','Thá»•','Phong','LÃ´i'];
-  const legacyAtk=typeof S.atk==='number'?S.atk:42;
-  const legacyDef=typeof S.def==='number'?S.def:8;
-  const legacyCrit=typeof S.crit==='number'?S.crit:.12;
-  const legacyDamageBonus=(S.damageBonus&&typeof S.damageBonus==='object')?S.damageBonus:{};
-  const legacyDefenseBonus=(S.defenseBonus&&typeof S.defenseBonus==='object')?S.defenseBonus:{};
-  const oldDamage=(S.damage&&typeof S.damage==='object')?{...S.damage}:null;
-
-  if(!S.damage||typeof S.damage!=='object')S.damage={};
-
-  // Náº¿u save Ä‘ang á»Ÿ báº£n "Damage Tá»•ng + % há»‡" trÆ°á»›c Ä‘Ã³, quy Ä‘á»•i vá» damage pháº³ng:
-  // giá»¯ Damage Tá»•ng cÅ© lÃ m Váº­t lÃ½ ná»n vÃ  biáº¿n % há»‡ thÃ nh lÆ°á»£ng damage há»‡ tÆ°Æ¡ng á»©ng.
-  if(oldDamage&&typeof oldDamage.total==='number'){
-    const oldTotal=Math.max(1,oldDamage.total);
-    S.damage.physical=oldTotal;
-    for(const t of statTypes){
-      if(t==='physical')continue;
-      const pct=Number(oldDamage[t])||0;
-      S.damage[t]=Math.max(0,oldTotal*pct/100);
-    }
-    delete S.damage.total;
-  }else{
-    for(const t of statTypes){
-      if(typeof S.damage[t]!=='number'){
-        if(t==='physical')S.damage[t]=legacyAtk+(Number(legacyDamageBonus.physical)||0);
-        else S.damage[t]=Math.max(0,Number(legacyDamageBonus[t])||0);
-      }
-    }
-  }
-
-  if(!S.defense||typeof S.defense!=='object')S.defense={};
-  for(const t of statTypes){
-    if(typeof S.defense[t]!=='number')S.defense[t]=(t==='physical'?legacyDef:0)+(Number(legacyDefenseBonus[t])||0);
-  }
-
-  // Kiáº¿m/Äao dÃ¹ng Váº­t lÃ½, khÃ´ng cÃ³ damage/phÃ²ng thá»§ riÃªng.
-  delete S.damage.Kiáº¿m;
-  delete S.damage.Äao;
-  delete S.defense.Kiáº¿m;
-  delete S.defense.Äao;
-
-  if(typeof S.critChance!=='number')S.critChance=legacyCrit;
-  if(typeof S.critDamage!=='number')S.critDamage=1.8;
-  if(typeof S.spiritSense!=='number')S.spiritSense=100;
-  if(typeof S.moveSpeed!=='number')S.moveSpeed=6.2;
-  if(typeof S.attackSpeed!=='number')S.attackSpeed=1.0;
-  if(typeof S.castSpeed!=='number')S.castSpeed=1.0;
-  if(typeof S.hpRegenPct!=='number')S.hpRegenPct=0.015;
-  if(typeof S.mpRegenPct!=='number')S.mpRegenPct=0.035;
-  // Migration cÃ´ng phÃ¡p cÅ© -> há»‡ cÃ´ng phÃ¡p riÃªng theo tá»«ng há»‡.
-  if(!S.cultivationTechniques||typeof S.cultivationTechniques!=='object'){
-    S.cultivationTechniques=makeDefaultTechniqueCultivation();
-    const oldGrade=clamp(Number(S.technique)||0,0,TECHNIQUE_GRADES.length-1);
-    const oldLv=Math.max(1,Number((S.techniqueLevels||{})[S.technique])||1);
-    S.cultivationTechniques.physical={grade:oldGrade,level:Math.min(10,oldLv)};
-  }
-  for(const type of CULTIVATION_TECH_TYPES)getTechniqueState(type);
-  delete S.technique;
-  delete S.techniqueLevels;
-  if(typeof S.activeCultivationTechnique!=='string')S.activeCultivationTechnique='physical';
-  S.activeCultivationTechnique=normalizeTechniqueType(S.activeCultivationTechnique);
-  for(const type of CULTIVATION_TECH_TYPES)getTechniqueState(type);
-  if(!isTechniqueRealmAllowed(S.activeCultivationTechnique)){
-    const fallback=CULTIVATION_TECH_TYPES.find(t=>isTechniqueRealmAllowed(t))||'physical';
-    S.activeCultivationTechnique=fallback;
-  }
-  if(typeof S.heartMethod!=='number')S.heartMethod=0;
-  if(!S.heartMethodLevels||typeof S.heartMethodLevels!=='object')S.heartMethodLevels={0:1};
-  if(typeof S.heartMethodLevels[S.heartMethod]!=='number')S.heartMethodLevels[S.heartMethod]=1;
-  if(window.TuTienSystems)window.TuTienSystems.migrate(S);
-
-  delete S.atk;
-  delete S.def;
-  delete S.crit;
-  delete S.damageBonus;
-  delete S.defenseBonus;
-}catch(e){
-  S=structuredClone(defaultState);
-}
-
-if(window.GameStateService){S=window.GameStateService.adopt(S);}
-if(window.InventorySystem)window.InventorySystem.attach(S);
-if(window.SaveService)window.SaveService.configure({stateGetter:()=>S,delay:900});
-const save=(force=false)=>{
-  if(window.SaveService){if(force)return window.SaveService.forceSave('game-force');window.SaveService.markDirty('game-state');return;}
-  try{localStorage.setItem(SAVE,JSON.stringify(S));}catch(e){}
-};
-
-let engine,scene,camera,player,petActor=null,actors=[],projectiles=[],effects=[],decor=[],boss=null;
-let worldGround=null,worldRiver=null;
-let last=performance.now(),spawnTimer=0,autoTimer=0,regenTimer=0,miniTimer=0,gameStarted=false,paused=false;
-const keys={}, joy={x:0,y:0,active:false,pid:null}, cooldown=[0,0,0,0,0], dashCd={t:0};
-const spriteMats={}, matCache={}, mapPropMaterials={}, skillVfxMats={};
-if(window.RuntimeTelemetry)window.RuntimeTelemetry.register('runtime',()=>({
- fps:engine?Math.round(engine.getFps()):0,frameMs:engine?Number((1000/Math.max(1,engine.getFps())).toFixed(1)):0,
- actors:actors.length,activeEnemy:actors.reduce((n,a)=>n+(!a.dead?1:0),0),activeVfx:effects.length,
- activeMeshes:scene?scene.getActiveMeshes().length:0,textures:scene?scene.textures.length:0,materials:scene?scene.materials.length:0,
- map:S&&S.regionId,renderScale:engine?Number(engine.getHardwareScalingLevel().toFixed(2)):0,quality:window.PerformanceProfile&&window.PerformanceProfile.name,
- scheduled:window.GameScheduler?window.GameScheduler.count():0,assets:window.AssetManager&&window.AssetManager.stats()
-}));
-
-// ===== VLTK-STYLE CAMERA STANDARD =====
-// ToÃ n bá»™ sprite/prop dÃ¹ng chung má»™t projection: orthographic 3/4 top-down,
-// gÃ³c nhÃ¬n 50Â°, khÃ´ng perspective scaling, hÆ°á»›ng nhÃ¬n tá»« Nam lÃªn Báº¯c.
-const CAMERA_STD={
-  elevationDeg:50,
-  distance:40,
-  viewHeight:38
-};
-
-function updateOrthoCameraBounds(){
-  if(!camera||!engine)return;
-  const aspect=Math.max(0.45,engine.getRenderWidth()/Math.max(1,engine.getRenderHeight()));
-  const halfH=CAMERA_STD.viewHeight*0.5;
-  camera.orthoTop=halfH;
-  camera.orthoBottom=-halfH;
-  camera.orthoLeft=-halfH*aspect;
-  camera.orthoRight=halfH*aspect;
-}
-
-function placeStandardCamera(x,z){
-  if(!camera)return;
-  const elev=CAMERA_STD.elevationDeg*Math.PI/180;
-  const horizontal=Math.cos(elev)*CAMERA_STD.distance;
-  const height=Math.sin(elev)*CAMERA_STD.distance;
-  camera.position.set(x,height,z-horizontal);
-  camera.setTarget(new BABYLON.Vector3(x,0,z));
-}
-
-// ===== THANH VÃ‚N THÃ”N â€” CURVED WALL COLLISION & SAFE ZONE =====
-// VÃ²ng tÆ°á»ng bo cong dáº¡ng oval quanh thÃ´n; cá»•ng Báº¯c/Nam lÃ  lá»‘i ra vÃ o duy nháº¥t.
-const VILLAGE_WALL_RX=43.0;
-const VILLAGE_WALL_RZ=40.0;
-const VILLAGE_SAFE_RX=40.5;
-const VILLAGE_SAFE_RZ=37.5;
-const VILLAGE_GATE_HALF_WIDTH=4.6;
-
-function ellipseNorm(x,z,rx,rz){
-  return Math.sqrt((x*x)/(rx*rx)+(z*z)/(rz*rz));
-}
-function isVillageSafe(x,z){
-  const current=regions&&regions.length?(regions[S.region||0]||regions[0]):null;
-  if(current&&current.id!==DEFAULT_MAP_ID)return false;
-  return ellipseNorm(x,z,VILLAGE_SAFE_RX,VILLAGE_SAFE_RZ)<1;
-}
-function isVillageGateLane(x,z){
-  return Math.abs(x)<=VILLAGE_GATE_HALF_WIDTH && Math.abs(z)>=VILLAGE_WALL_RZ-4.0;
-}
-function clampToEllipse(x,z,rx,rz,scaleBias=1){
-  let n=ellipseNorm(x,z,rx,rz);
-  if(n<0.0001)return {x:0,z:rz*scaleBias};
-  let s=scaleBias/n;
-  return {x:x*s,z:z*s};
-}
-function resolveVillageWallMove(fromX,fromZ,toX,toZ){
-  const current=regions&&regions.length?(regions[S.region||0]||regions[0]):null;
-  if(current&&current.id!==DEFAULT_MAP_ID)return {x:toX,z:toZ};
-  const fromN=ellipseNorm(fromX,fromZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ);
-  const toN=ellipseNorm(toX,toZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ);
-  const crossing=(fromN<1&&toN>=1)||(fromN>=1&&toN<1);
-  if(!crossing)return {x:toX,z:toZ};
-
-  if(isVillageGateLane(toX,toZ)||isVillageGateLane(fromX,fromZ)){
-    return {x:toX,z:toZ};
-  }
-
-  if(fromN<1){
-    return clampToEllipse(toX,toZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ,0.992);
-  }
-  return clampToEllipse(toX,toZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ,1.008);
-}
-function ejectEnemyFromVillage(a){
-  if(!a||!isVillageSafe(a.x,a.z))return;
-  let x=a.x,z=a.z;
-  if(Math.abs(x)<0.01&&Math.abs(z)<0.01)z=1;
-  let p=clampToEllipse(x,z,VILLAGE_WALL_RX+3,VILLAGE_WALL_RZ+3,1.02);
-  a.x=p.x;a.z=p.z;
-}
-
-function realmName(){return S.realm===0?`Luyá»‡n KhÃ­ Táº§ng ${S.realmStage}`:`${realms[S.realm]} Â· ${periods[S.period||0]}`}
-function gradeForLevel(){return clamp(1+Math.floor((S.level-1)/25),1,5)}
-function regionIndexById(id){
-  if(!id)return -1;
-  return regions.findIndex(r=>r.id===id);
-}
-function region(){
-  const byId=regionIndexById(S.regionId);
-  if(byId>=0){
-    S.region=byId;
-    return regions[byId];
-  }
-  const byIndex=regions[S.region||0]||regions[0]||DEFAULT_REGION;
-  if(byIndex)S.regionId=byIndex.id;
-  return byIndex;
-}
-function mapRealmLabel(r){
-  const a=realms[clamp(Number(r.minRealm)||0,0,realms.length-1)]||realms[0];
-  const b=realms[clamp(Number(r.maxRealm??r.minRealm)||0,0,realms.length-1)]||a;
-  return a===b?a:(a+' â†’ '+b);
-}
-function isMapAccessible(r){
-  if(!r)return false;
-  if(r.id===S.regionId||r===regions[S.region||0])return true;
-  const minRealm=Number(r.minRealm)||0;
-  const minLevel=Number(r.min)||1;
-  return (S.realm||0)>=minRealm && (S.level||1)>=minLevel;
-}
-function enemyDisplayName(id){
-  return ({boar:'SÆ¡n TrÆ°',archer:'Tiá»…n Thá»§',bandit:'Äáº¡o Táº·c',tiger:'Há»• Tháº§n',skeleton:'KhÃ´ Cá»‘t',undead:'Báº¡o Thi',ice_wolf:'BÄƒng Lang',wolf:'Ma Lang',fox:'Linh Há»“',golem:'Tháº¡ch KhÃ´i',shadow:'áº¢nh ThÃº'})[id]||id;
-}
-function renderWorldMapCards(){
-  const groups=new Map();
-  regions.forEach((r,i)=>{
-    const key=r.continentName||'Khu vá»±c khÃ¡c';
-    if(!groups.has(key))groups.set(key,[]);
-    groups.get(key).push({r,i});
-  });
-  let html=`<div class="card"><b>ğŸŒ NhÃ¢n Giá»›i</b><p>11 Ä‘áº¡i chÃ¢u/vá»±c Â· 22 khu vá»±c Â· ${regions.length} map. Map má»Ÿ theo cáº£nh giá»›i vÃ  cáº¥p Ä‘á»™ nhÃ¢n váº­t.</p><div class="stat"><span>Hiá»‡n táº¡i</span><b>${realmName()} Â· Lv.${S.level}</b></div></div>`;
-  for(const [continent,items] of groups){
-    const first=items[0]&&items[0].r;
-    html+=`<div class="card" style="margin-top:8px"><b>ğŸ—º ${continent}</b><p>${first&&first.element?'Thuá»™c tÃ­nh: '+first.element:''} ${first&&first.faction?'Â· '+first.faction:''}</p></div><div class="cards">`;
-    for(const {r,i} of items){
-      const current=(r.id===S.regionId)||i===S.region;
-      const unlocked=isMapAccessible(r);
-      const status=current?'Äang á»Ÿ Ä‘Ã¢y':unlocked?'Dá»‹ch chuyá»ƒn':`YÃªu cáº§u ${mapRealmLabel(r)} Â· Lv.${r.min}`;
-      html+=`<div class="card">
-        <b>${r.kind} Â· ${r.name}</b>
-        <p>${r.regionName||''}</p>
-        <p><b>${mapRealmLabel(r)}</b> Â· Lv.${r.min}â€“${r.max}</p>
-        <p>${r.element?'Há»‡ '+r.element+' Â· ':''}${r.faction||'Trung láº­p'}</p>
-        <p>${(r.enemy||[]).map(enemyDisplayName).join(', ')}</p>
-        <small>${(r.features||[]).join(' Â· ')}</small>
-        <button data-region="${i}" ${unlocked?'':'disabled'}>${status}</button>
-      </div>`;
-    }
-    html+='</div>';
-  }
-  return html;
-}
-function progress(p,msg){loadBar.style.width=p+'%';loadMsg.textContent=msg}
-
-// Material Pool / Cache to prevent memory leaks
-function mat(name,color,alpha=1){
-  let key=`${name}_${color}_${alpha}`;
-  if(matCache[key])return matCache[key];
-  let m=new BABYLON.StandardMaterial(key,scene);
-  m.diffuseColor=BABYLON.Color3.FromHexString(color);
-  m.emissiveColor=m.diffuseColor.scale(.25);
-  m.alpha=alpha;
-  m.specularColor=BABYLON.Color3.Black();
-  matCache[key]=m;
-  return m;
-}
-
-function drawProceduralCanvas(ctx, type, frame){
-  ctx.clearRect(0,0,128,128);
-  const bob=Math.sin(frame*0.8)*3;
-  if(type==='player'){
-    ctx.fillStyle='rgba(60,180,240,0.85)';
-    ctx.beginPath();ctx.arc(64,64+bob,38,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#f5e4c3';
-    ctx.beginPath();ctx.arc(64,48+bob,18,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#2a4b7c';
-    ctx.beginPath();ctx.arc(64,88+bob,28,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#7ef5ff';ctx.lineWidth=4;
-    ctx.beginPath();ctx.moveTo(90,20+bob);ctx.lineTo(105,75+bob);ctx.stroke();
-  }else if(type==='wolf'){
-    ctx.fillStyle='rgba(180,40,50,0.85)';
-    ctx.beginPath();ctx.arc(64,68+bob,32,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#ff3b30';
-    ctx.beginPath();ctx.arc(58,50+bob,4,0,Math.PI*2);ctx.arc(70,50+bob,4,0,Math.PI*2);ctx.fill();
-  }else if(type==='fox'){
-    ctx.fillStyle='rgba(255,145,45,0.9)';
-    ctx.beginPath();ctx.arc(64,66+bob,28,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#4dd8ff';
-    ctx.beginPath();ctx.arc(92,50+bob,10,0,Math.PI*2);ctx.fill();
-  }else if(type==='golem'){
-    ctx.fillStyle='rgba(95,115,105,0.95)';
-    ctx.fillRect(36,36+bob,56,60);
-    ctx.fillStyle='#7effc5';
-    ctx.fillRect(60,56+bob,8,16);
-  }else{
-    ctx.fillStyle='rgba(80,45,110,0.9)';
-    ctx.beginPath();ctx.arc(64,64+bob,36,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#b46aff';
-    ctx.beginPath();ctx.arc(58,56+bob,5,0,Math.PI*2);ctx.arc(70,56+bob,5,0,Math.PI*2);ctx.fill();
-  }
-}
-
-function makeSpriteMaterial(url, key){
-  if(spriteMats[key])return spriteMats[key];
-  let m=new BABYLON.StandardMaterial('sm_'+key,scene);
-  let t=new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
-  t.hasAlpha=true;
-  m.diffuseTexture=t;
-  m.emissiveTexture=t;
-  m.useAlphaFromDiffuseTexture=true;
-  m.emissiveColor=new BABYLON.Color3(1.0,1.0,1.0);
-  m.specularColor=BABYLON.Color3.Black();
-  m.disableLighting=true;
-  m.backFaceCulling=false;
-  m.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
-  spriteMats[key]=m;
-  return m;
-}
-
-// Má»™t sá»‘ actor Ä‘áº·c biá»‡t (pet/boss cÅ©) chÆ°a cÃ³ bá»™ PNG 16 frame riÃªng.
-// DÃ¹ng texture procedural thay vÃ¬ cá»‘ táº£i file khÃ´ng tá»“n táº¡i khiáº¿n actor bá»‹ vÃ´ hÃ¬nh
-// vÃ  táº¡o hÃ ng loáº¡t lá»—i 404 trÃªn trÃ¬nh duyá»‡t.
-function makeProceduralSpriteMaterial(type,frame,key){
-  if(spriteMats[key])return spriteMats[key];
-  let m=new BABYLON.StandardMaterial('sm_'+key,scene);
-  let t=new BABYLON.DynamicTexture('dt_'+key,{width:128,height:128},scene,false);
-  t.hasAlpha=true;
-  drawProceduralCanvas(t.getContext(),type,frame);
-  t.update(false);
-  m.diffuseTexture=t;
-  m.emissiveTexture=t;
-  m.useAlphaFromDiffuseTexture=true;
-  m.emissiveColor=new BABYLON.Color3(1.0,1.0,1.0);
-  m.specularColor=BABYLON.Color3.Black();
-  m.disableLighting=true;
-  m.backFaceCulling=false;
-  m.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
-  spriteMats[key]=m;
-  return m;
-}
-
-const PLAYER_ANIMS = {
-  idle: { frames: 4, fps: 6, loop: true },
-  run: { frames: 4, fps: 10, loop: true },
-  attack: { frames: 8, fps: 12, loop: false }
-};
-
-// Player uses one physical sprite set only (RIGHT).
-// LEFT is rendered by mirroring the billboard at runtime to halve player texture downloads/memory.
-const playerMaterials = { idle: [], run: [], attack: [] };
-
-function preloadPlayerMaterials(){
-  ['idle','run','attack'].forEach(state=>{
-    let n = PLAYER_ANIMS[state].frames;
-    for(let i=0; i<n; i++){
-      let s = String(i).padStart(2,'0');
-      let url = `assets/player/right/${state}/${s}.png?v=5`;
-      let key = `player_right_${state}_${s}`;
-      let m = new BABYLON.StandardMaterial('sm_'+key, scene);
-      let t = new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
-      t.hasAlpha = true;
-      m.diffuseTexture = t;
-      m.emissiveTexture = t;
-      m.useAlphaFromDiffuseTexture = true;
-      m.emissiveColor = new BABYLON.Color3(1.0, 1.0, 1.0);
-      m.specularColor = BABYLON.Color3.Black();
-      m.disableLighting = true;
-      m.backFaceCulling = false;
-      m.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-      playerMaterials[state].push(m);
-    }
-  });
-}
-
-function playerAnimMat(direction, state, frame){
-  let st = (state === 'idle' || state === 'run' || state === 'attack') ? state : 'idle';
-  let list = playerMaterials[st];
-  if(!list || list.length === 0) return null;
-  let idx = Math.min(Math.max(0, Math.floor(frame)), list.length - 1);
-  return list[idx] || list[0];
-}
-
-function applyPlayerFacing(){
-  if(!player || !player.mesh) return;
-  let sx = Math.abs(player.mesh.scaling.x) || 1;
-  player.mesh.scaling.x = player.facing === 'left' ? -sx : sx;
-}
-
-// Enemy sprites: 16 frames per type (00-07 = right, 08-15 = left mirrored)
-const FILE_SPRITE_TYPES=new Set(['archer','bandit','boar','ice_wolf','skeleton','tiger','undead']);
-function spriteFrames(type){
-  let n = 16, arr = [];
-  for(let i=0; i<n; i++){
-    let key=type+i;
-    if(FILE_SPRITE_TYPES.has(type)){
-      arr.push(makeSpriteMaterial(`assets/sprites/${type}_${String(i).padStart(2,'0')}.png?v=6`,key));
-    }else{
-      arr.push(makeProceduralSpriteMaterial(type,i,key));
-    }
-  }
-  return arr;
-}
-
-// Preload all new enemy sprites into spriteMats cache
-function preloadEnemySprites(){
-  const enemyTypes=['archer','bandit','boar','ice_wolf','skeleton','tiger','undead'];
-  for(let t of enemyTypes) spriteFrames(t);
-}
-
-function makeBillboard(name,type,size,x,z){
-  let p=BABYLON.MeshBuilder.CreatePlane(name,{size},scene);
-  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
-  p.position.set(x,size*.48,z);
-  p.isPickable=false;
-  if(type==='player'){
-    p.material=playerAnimMat('right','idle',0);
-  }else{
-    p.material=spriteFrames(type)[0];
-  }
-  return p;
-}
-
-let softShadowMat = null;
-function getSoftShadowMaterial(){
-  if(softShadowMat) return softShadowMat;
-  softShadowMat = new BABYLON.StandardMaterial('soft_shadow_mat', scene);
-  let t = new BABYLON.Texture('assets/maps/common/grounds/soft_shadow.png', scene, false, true);
-  t.hasAlpha = true;
-  softShadowMat.diffuseTexture = t;
-  softShadowMat.emissiveTexture = t;
-  softShadowMat.useAlphaFromDiffuseTexture = true;
-  softShadowMat.emissiveColor = new BABYLON.Color3(0.75, 0.75, 0.75);
-  softShadowMat.specularColor = BABYLON.Color3.Black();
-  softShadowMat.disableLighting = true;
-  softShadowMat.alpha = 0.62;
-  softShadowMat.zOffset = -2;
-  softShadowMat.backFaceCulling = false;
-  softShadowMat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-  return softShadowMat;
-}
-
-function getMapPropMaterial(url){
-  if(mapPropMaterials[url])return mapPropMaterials[url];
-  let m=new BABYLON.StandardMaterial('prop_'+url,scene);
-  let t=new BABYLON.Texture(url,scene,false,true,BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
-  t.hasAlpha=true;
-  m.diffuseTexture=t;
-  m.emissiveTexture=t;
-  m.useAlphaFromDiffuseTexture=true;
-  m.emissiveColor=new BABYLON.Color3(1.0,1.0,1.0);
-  m.specularColor=BABYLON.Color3.Black();
-  m.disableLighting=true;
-  m.backFaceCulling=false;
-  m.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
-  mapPropMaterials[url]=m;
-  return m;
-}
-
-function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
-  let scale=1.0+rnd(-sizeVariance,sizeVariance);
-  let w=propDef.width*scale;
-  let h=propDef.height*scale;
-  let p=BABYLON.MeshBuilder.CreatePlane(name,{width:w,height:h},scene);
-  // PNG environment luÃ´n quay tháº³ng vÃ o camera giá»‘ng player/enemy.
-  // Nhá» váº­y áº£nh pre-render khÃ´ng bá»‹ mÃ©o thÃªm bá»Ÿi gÃ³c nhÃ¬n 3D cá»§a plane.
-  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
-
-  // Chuáº©n chÃ¢n asset: tÃ¢m theo X, Ä‘Ã¡y PNG cháº¡m máº·t Ä‘áº¥t Y=0.
-  // KhÃ´ng dÃ¹ng yRatio khÃ¡c nhau ná»¯a vÃ¬ nÃ³ lÃ m cÃ¢y/Ä‘Ã¡/nhÃ  cÃ³ "camera" khÃ¡c nhau.
-  p.position.set(x,h*0.5,z);
-  p.material=getMapPropMaterial(propDef.file);
-  p.isPickable=false;
-
-  if(!propDef.noShadow && (!MOBILE_RUNTIME || Math.hypot(x,z)<82 || name.includes('village') || name.includes('gate'))){
-    let shadowSize=Math.max(w*0.82, 1.2);
-    let sh=BABYLON.MeshBuilder.CreatePlane(name+'_sh',{width:shadowSize,height:shadowSize*0.62},scene);
-    sh.rotation.x=Math.PI/2;
-    sh.position.set(x,0.02,z + 0.1);
-    sh.material=getSoftShadowMaterial();
-    sh.isPickable=false;
-    decor.push(p,sh);
-  }else{
-    decor.push(p);
-  }
-  return p;
-}
-
-function spawnVillageCurvedWall(){
-  // Bá»™ 9 PNG tÆ°á»ng Ä‘Ã¡ Ä‘Ã£ chuáº©n hÃ³a cÃ¹ng canvas + cÃ¹ng baseline,
-  // render sáºµn Ä‘Ãºng camera orthographic elevation 50Â° cá»§a GAME.
-  const wallFiles=[
-    'assets/maps/common/fences_gates/stone_wall_50deg_00.png',
-    'assets/maps/common/fences_gates/stone_wall_50deg_01.png',
-    'assets/maps/common/fences_gates/stone_wall_50deg_02.png',
-    'assets/maps/common/fences_gates/stone_wall_50deg_03.png',
-    'assets/maps/common/fences_gates/stone_wall_50deg_04.png',
-    'assets/maps/common/fences_gates/stone_wall_50deg_05.png',
-    'assets/maps/common/fences_gates/stone_wall_50deg_06.png',
-    'assets/maps/common/fences_gates/stone_wall_50deg_07.png',
-    'assets/maps/common/fences_gates/stone_wall_50deg_08.png'
-  ];
-
-  // TÃªn file Ä‘Æ°á»£c táº¡o theo lÃ´, khÃ´ng pháº£i thá»© tá»± gÃ³c nhÃ¬n liÃªn tá»¥c.
-  // Sáº¯p láº¡i theo silhouette: cáº¡nh má»ng -> chÃ©o pháº£i -> chÃ­nh diá»‡n
-  // -> chÃ©o trÃ¡i -> cáº¡nh má»ng, tÆ°Æ¡ng á»©ng -90Â°..+90Â°.
-  const wallFrameOrder=[6,5,2,1,4,0,7,3,8];
-
-  const rx=43.0,rz=40.0;
-  const count=MOBILE_RUNTIME?156:240; // adaptive wall density
-
-  // GÃ³c tiáº¿p tuyáº¿n ellipse -> frame gáº§n nháº¥t trong 9 hÆ°á»›ng (-90Â°..+90Â°, bÆ°á»›c 22.5Â°).
-  function frameForTangent(a){
-    const tx=-rx*Math.sin(a);
-    const tz= rz*Math.cos(a);
-    let deg=Math.atan2(tz,tx)*180/Math.PI;
-    while(deg>90)deg-=180;
-    while(deg<-90)deg+=180;
-    return Math.max(0,Math.min(8,Math.round((deg+90)/22.5)));
-  }
-
-  for(let i=0;i<count;i++){
-    const a=(i/count)*Math.PI*2;
-    const x=Math.cos(a)*rx;
-    const z=Math.sin(a)*rz;
-
-    // Chá»«a hai lá»‘i cá»•ng Báº¯c/Nam, cÃ¡c Ä‘oáº¡n cÃ²n láº¡i ná»‘i liÃªn tá»¥c quanh tráº¥n.
-    if(Math.abs(x)<7.0 && Math.abs(z)>rz-4.6)continue;
-
-    const fi=wallFrameOrder[frameForTangent(a)];
-    spawnMapProp(
-      'village_curve_wall_'+i,
-      {
-        file:wallFiles[fi],
-        // Asset dÃ¹ng canvas vuÃ´ng 256x256. Giá»¯ plane gáº§n vuÃ´ng Ä‘á»ƒ khÃ´ng Ã©p
-        // chiá»u ngang thÃ nh nhá»¯ng cá»™t Ä‘Ã¡ máº£nh nhÆ° báº£n cÅ©.
-        width:3.35,
-        height:3.35,
-        noShadow:true
-      },
-      x,z,0.0
-    );
-  }
-
-  // Hai cá»•ng chÃ­nh giá»¯ nguyÃªn.
-  spawnMapProp('village_gate_north',
-    {file:'assets/maps/common/fences_gates/gate_ornate_01.png',width:5.8,height:5.4},
-    0,-rz,0.01);
-  spawnMapProp('village_gate_south',
-    {file:'assets/maps/common/fences_gates/gate_wood_01.png',width:5.0,height:4.6},
-    0,rz,0.01);
-
-  const lamp={file:'assets/maps/common/lanterns/lantern_tall_wood_01.png',width:2.0,height:3.6};
-  spawnMapProp('gate_n_l',lamp,-6.2,-rz,0.01);
-  spawnMapProp('gate_n_r',lamp, 6.2,-rz,0.01);
-  spawnMapProp('gate_s_l',lamp,-6.2, rz,0.01);
-  spawnMapProp('gate_s_r',lamp, 6.2, rz,0.01);
-}
-
-const MAP_SPECIAL_SPAWNERS={villageCurvedWall:spawnVillageCurvedWall};
-
-async function loadMap(regionIdx){
-  const token=++mapLoadToken;
-  let reg=regions[regionIdx]||regions[0]||DEFAULT_REGION;
-  const previousMapId=S.regionId;
-  let cfg=await getMapConfig(reg.id);
-  if(token!==mapLoadToken)return false;
-
-  decor.forEach(m=>{
-    try{
-      if(m&&!m.isDisposed()){
-        m.dispose();
-      }
-    }catch(e){}
-  });
-  decor=[];
-
-  let sceneColor=reg.color?BABYLON.Color4.FromHexString(reg.color+'ff'):BABYLON.Color4.FromHexString(cfg.clearColor+'ff');
-  scene.clearColor=sceneColor;
-  scene.fogMode=BABYLON.Scene.FOGMODE_LINEAR;
-  scene.fogColor=new BABYLON.Color3(sceneColor.r,sceneColor.g,sceneColor.b);
-  scene.fogStart=cfg.fogStart||45;
-  scene.fogEnd=cfg.fogEnd||95;
-
-  if(worldGround){
-    const previousMaterial=worldGround.material;
-    let gm=new BABYLON.StandardMaterial('groundMat_'+reg.id,scene);
-    if(cfg.groundTexture){
-      let gt=new BABYLON.Texture(cfg.groundTexture,scene,false,true,BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
-      let gScale=cfg.groundScale||80;
-      gt.uScale=gScale;
-      gt.vScale=gScale;
-      gt.wrapU=BABYLON.Texture.WRAP_ADDRESSMODE;
-      gt.wrapV=BABYLON.Texture.WRAP_ADDRESSMODE;
-      gt.anisotropicFilteringLevel=MOBILE_RUNTIME?2:4;
-      gm.diffuseTexture=gt;
-      gm.specularColor=BABYLON.Color3.Black();
-      gm.backFaceCulling=false;
-    }
-    worldGround.material=gm;
-    if(previousMaterial&&previousMaterial!==gm){try{previousMaterial.dispose(true,true);}catch(e){}}
-  }
-
-  if(worldRiver){
-    try{worldRiver.dispose();}catch(e){}
-    worldRiver=null;
-  }
-
-  // CÃ¢y cá»‘i PNG (Trees)
-  const vcx=cfg.villageClearX||14, vcz=cfg.villageClearZ||16;
-  if(cfg.trees&&cfg.trees.length>0){
-    for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.treeCount||400),180):(cfg.treeCount||400));i++){
-      let x=rnd(-MAP_BOUND,MAP_BOUND),z=rnd(-MAP_BOUND,MAP_BOUND);
-      if(Math.abs(x)<vcx&&Math.abs(z)<vcz)continue;
-      if(cfg.river&&cfg.river.enabled&&Math.abs(x-cfg.river.x)<14)continue;
-      let treeDef=cfg.trees[Math.floor(Math.random()*cfg.trees.length)];
-      spawnMapProp('tree_'+i,treeDef,x,z,0.22);
-    }
-  }
-
-  // ÄÃ¡ PNG (Rocks)
-  if(cfg.rocks&&cfg.rocks.length>0){
-    for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.rockCount||220),105):(cfg.rockCount||220));i++){
-      let x=rnd(-MAP_BOUND,MAP_BOUND),z=rnd(-MAP_BOUND,MAP_BOUND);
-      if(Math.abs(x)<vcx&&Math.abs(z)<vcz)continue;
-      if(cfg.river&&cfg.river.enabled&&Math.abs(x-cfg.river.x)<12)continue;
-      let rockDef=cfg.rocks[Math.floor(Math.random()*cfg.rocks.length)];
-      spawnMapProp('rock_'+i,rockDef,x,z,0.2);
-    }
-  }
-
-  // ÄÃ¨n lá»“ng PNG (Lanterns)
-  if(cfg.lanternPosts&&cfg.decor&&cfg.decor[0]){
-    let lanternDef=cfg.decor[0];
-    cfg.lanternPosts.forEach((pt,i)=>{
-      spawnMapProp('lantern_'+i,lanternDef,pt.x,pt.z,0.05);
-    });
-  }
-
-  // Linh tháº£o / Bá»¥i cá» & Bá»¥i hoa PNG (Grass, Bush, Flowers)
-  let grassPool=(cfg.decor||[]).slice(1);
-  if(grassPool.length>0){
-    for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.grassCount||140),75):(cfg.grassCount||140));i++){
-      let x=rnd(-MAP_BOUND,MAP_BOUND),z=rnd(-MAP_BOUND,MAP_BOUND);
-      if(Math.abs(x)<vcx&&Math.abs(z)<vcz)continue;
-      let gDef=grassPool[Math.floor(Math.random()*grassPool.length)];
-      spawnMapProp('grass_'+i,gDef,x,z,0.22);
-    }
-  }
-
-  // Cáº£nh quan ThÃ´n LÃ ng (Village Landmarks)
-  if(cfg.villageProps&&cfg.villageProps.length>0){
-    cfg.villageProps.forEach((vp,i)=>{
-      spawnMapProp('village_prop_'+i,vp,vp.x,vp.z,0.02);
-    });
-  }
-
-  for(const name of cfg.specialSpawns){
-    const spawn=MAP_SPECIAL_SPAWNERS[name];
-    if(spawn)spawn(cfg);
-    else console.warn('ChÆ°a Ä‘Äƒng kÃ½ map special spawn:',name);
-  }
-  S.regionId=reg.id;
-  if(S.world)S.world.mapId=reg.id;
-  if(window.AssetManager&&previousMapId&&previousMapId!==reg.id)window.AssetManager.releaseMap(previousMapId);
-  if(window.GameEvents)window.GameEvents.emit('mapChanged',{from:previousMapId,to:reg.id,config:cfg});
-  return true;
-}
-
-async function createWorld(){
-  scene=new BABYLON.Scene(engine);
-  scene.skipPointerMovePicking=true;
-  scene.constantlyUpdateMeshUnderPointer=false;
-  scene.skipPointerMovePicking=true;
-  scene.constantlyUpdateMeshUnderPointer=false;
-  scene.skipPointerMovePicking=true;
-  scene.constantlyUpdateMeshUnderPointer=false;
-  camera=new BABYLON.FreeCamera('cam',BABYLON.Vector3.Zero(),scene);
-  camera.mode=BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
-  camera.minZ=.1;
-  camera.maxZ=180;
-  camera.inputs.clear();
-  placeStandardCamera(0,0);
-  updateOrthoCameraBounds();
-
-  // Ãnh sÃ¡ng tá»•ng thá»ƒ thá»‘ng nháº¥t: tá»« trÃªn-trÃ¡i xuá»‘ng.
-  // Asset PNG Ä‘Ã£ bake Ã¡nh sÃ¡ng váº«n disableLighting Ä‘á»ƒ giá»¯ mÃ u gá»‘c.
-  let light=new BABYLON.HemisphericLight('sky',new BABYLON.Vector3(-.45,1,-.35),scene);
-  light.intensity=1.12;
-  light.diffuse=new BABYLON.Color3(1.0,.98,.93);
-  light.groundColor=new BABYLON.Color3(.36,.44,.38);
-
-  worldGround=BABYLON.MeshBuilder.CreateGround('ground',{width:MAP_SIZE,height:MAP_SIZE,subdivisions:6},scene);
-  await loadMap(S.region||0);
-}
-
-function makeActor(type,x,z,elite=false){
-  // 7 loáº¡i quÃ¡i má»›i tá»« assets/sprites/{type}_00-15.png
-  let defs={
-    // Cáº¥p tháº¥p â€” ngoáº¡i Ã´, rá»«ng nÃºi
-    boar:    {hp:180, atk:12, speed:2.3,  size:2.6, xp:20, name:'SÆ¡n TrÆ°'},
-    archer:  {hp:140, atk:18, speed:1.9,  size:2.4, xp:22, name:'Tiá»…n Thá»§'},
-    // Cáº¥p giá»¯a â€” nhÃ¢n loáº¡i tÃ  Ã¡c, thÃº máº¡nh
-    bandit:  {hp:220, atk:22, speed:2.0,  size:2.5, xp:28, name:'Äáº¡o Táº·c'},
-    tiger:   {hp:280, atk:28, speed:2.6,  size:3.0, xp:36, name:'Há»• Tháº§n'},
-    // Cáº¥p cao â€” báº¥t tá»­, bÄƒng há»‡
-    skeleton:{hp:360, atk:32, speed:1.5,  size:2.8, xp:42, name:'KhÃ´ Cá»‘t'},
-    undead:  {hp:340, atk:36, speed:1.8,  size:2.9, xp:48, name:'Báº¡o Thi'},
-    ice_wolf:{hp:440, atk:42, speed:2.8,  size:3.1, xp:55, name:'BÄƒng Lang'},
-    // Legacy placeholders (kept for backwards compat)
-    wolf:    {hp:150, atk:14, speed:2.15, size:2.5, xp:18, name:'Ma Lang'},
-    fox:     {hp:210, atk:18, speed:1.9,  size:2.7, xp:24, name:'Linh Há»“'},
-    golem:   {hp:420, atk:26, speed:1.15, size:3.3, xp:38, name:'Tháº¡ch KhÃ´i'},
-    shadow:  {hp:300, atk:30, speed:2.35, size:2.8, xp:34, name:'áº¢nh ThÃº'}
-  };
-  let d=defs[type]||defs['wolf'];
-  let rr=region(), enemyLv=Math.max(rr.min,Math.min(rr.max,Math.round(S.level+rnd(-3,4)))),mult=1+enemyLv*.075;
-  if(elite)mult*=2.5;
-  let a={
-    id:Math.random(),type,x,z,
-    hp:d.hp*mult,maxHp:d.hp*mult,
-    atk:d.atk*mult,speed:d.speed,
-    size:d.size*(elite?1.22:1),xp:d.xp,
-    name:(elite?'Tinh Anh ':'')+d.name+' Lv.'+enemyLv,
-    enemyLv,elite,dead:false,
-    realmInfo:getEnemyRealmInfo(enemyLv),
-    damageType:({ice_wolf:'Thá»§y',fox:'Há»a',golem:'Thá»•',shadow:'LÃ´i',undead:'Má»™c'}[type]||'physical'),
-    attackCd:rnd(0,.7),bossSkillCd:4.5,
-    frame:0,frameT:0
-  };
-  a.mesh=makeBillboard('enemy',type,a.size,x,z);
-  let shW=a.size*0.85, shH=a.size*0.52;
-  a.shadow=BABYLON.MeshBuilder.CreatePlane('sh_'+a.id,{width:shW,height:shH},scene);
-  a.shadow.rotation.x=Math.PI/2;
-  a.shadow.position.set(x,0.018,z);
-  a.shadow.material=getSoftShadowMaterial();
-  a.shadow.isPickable=false;
-
-  actors.push(a);
-  return a;
-}
-
-function createPlayer(){
-  player={
-    x:0,z:0,
-    mesh:makeBillboard('player','player',3.4,0,0),
-    facing:'right',
-    state:'idle',
-    frame:0,
-    animTimer:0,
-    invuln:0
-  };
-  player.mesh.material=playerAnimMat(player.facing,'idle',0);
-  player.shadow=BABYLON.MeshBuilder.CreatePlane('player_sh',{width:2.2,height:1.35},scene);
-  player.shadow.rotation.x=Math.PI/2;
-  player.shadow.position.set(0,0.019,0);
-  player.shadow.material=getSoftShadowMaterial();
-  player.shadow.isPickable=false;
-
-  applyPlayerFacing();
-  syncPet();
-  updateHUD();
-}
-
-function triggerPlayerAttack(){
-  if(!player)return;
-  player.state='attack';
-  player.frame=0;
-  player.animTimer=0;
-  if(player.mesh){
-    player.mesh.material=playerAnimMat(player.facing,'attack',0);
-  }
-}
-
-function syncPet(){
-  if(S.pet){
-    if(!petActor){
-      petActor={
-        x:player.x-1.5,z:player.z-1.5,
-        mesh:makeBillboard('petFox','fox',2.0,player.x-1.5,player.z-1.5),
-        frame:0,frameT:0,shootCd:1.8
-      };
-      petActor.mesh.scaling.setAll(0.72);
-      petActor.shadow=BABYLON.MeshBuilder.CreatePlane('pet_sh',{width:1.5,height:0.95},scene);
-      petActor.shadow.rotation.x=Math.PI/2;
-      petActor.shadow.position.set(petActor.x,0.019,petActor.z);
-      petActor.shadow.material=getSoftShadowMaterial();
-      petActor.shadow.isPickable=false;
-    }
-  }else if(petActor){
-    if(petActor.mesh)petActor.mesh.dispose();
-    if(petActor.shadow)petActor.shadow.dispose();
-    petActor=null;
-  }
-}
-
-function enemySeedHash(text){
-  let h=2166136261>>>0;
-  for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}
-  return h>>>0;
-}
-function enemySeedRand(seed){
-  seed=(seed+0x6D2B79F5)>>>0;
-  let t=seed;
-  t=Math.imul(t^(t>>>15),t|1);
-  t^=t+Math.imul(t^(t>>>7),t|61);
-  return {seed,value:((t^(t>>>14))>>>0)/4294967296};
-}
-function buildFixedEnemySpawns(){
-  const rr=region();
-  const isVillage=rr.id==='thanh_van_thon';
-  const bands=isVillage?[
-    {min:56,max:120,count:6},
-    {min:120,max:240,count:16},
-    {min:240,max:360,count:28},
-    {min:360,max:470,count:46}
-  ]:[
-    {min:35,max:150,count:12},
-    {min:150,max:280,count:22},
-    {min:280,max:390,count:28},
-    {min:390,max:470,count:34}
-  ];
-  const pool=(rr.enemy&&rr.enemy.length)?rr.enemy:['boar'];
-  const points=[];
-  let slot=0;
-  for(let bi=0;bi<bands.length;bi++){
-    const b=bands[bi];
-    for(let i=0;i<b.count;i++,slot++){
-      let seed=enemySeedHash(rr.id+':'+bi+':'+i);
-      let r1=enemySeedRand(seed);seed=r1.seed;
-      let r2=enemySeedRand(seed);seed=r2.seed;
-      let r3=enemySeedRand(seed);seed=r3.seed;
-      let r4=enemySeedRand(seed);
-      const angle=((i+r1.value*.72)/b.count)*Math.PI*2 + bi*.31;
-      const radius=Math.sqrt(b.min*b.min+r2.value*(b.max*b.max-b.min*b.min));
-      let x=Math.cos(angle)*radius;
-      let z=Math.sin(angle)*radius;
-      x=clamp(x,-MAP_BOUND,MAP_BOUND);
-      z=clamp(z,-MAP_BOUND,MAP_BOUND);
-      if(isVillageSafe(x,z)){
-        const p=clampToEllipse(x||1,z||1,VILLAGE_WALL_RX+8,VILLAGE_WALL_RZ+8,1.02);
-        x=p.x;z=p.z;
-      }
-      points.push({
-        id:rr.id+'_mob_'+slot,
-        x,z,
-        type:pool[Math.floor(r3.value*pool.length)%pool.length],
-        elite:r4.value<(.025+bi*.012),
-        band:bi
-      });
-    }
-  }
-  return points;
-}
-function initializeFixedEnemies(){
-  for(const a of actors){
-    try{if(a.mesh)a.mesh.dispose();}catch(e){}
-    try{if(a.shadow)a.shadow.dispose();}catch(e){}
-  }
-  actors=[];
-  boss=null;
-  const points=buildFixedEnemySpawns();
-  for(const p of points){
-    const a=makeActor(p.type,p.x,p.z,p.elite);
-    a.fixedSpawn=true;
-    a.spawnId=p.id;
-    a.spawnBand=p.band;
-    a.homeX=p.x;
-    a.homeZ=p.z;
-    a.respawnDelay=12+p.band*3;
-  }
-  console.info('[EnemyPopulation] '+region().name+': '+points.length+' fixed spawn points');
-}
-function respawnFixedEnemy(a){
-  if(!a||!a.fixedSpawn)return;
-  a.x=a.homeX;a.z=a.homeZ;
-  a.hp=a.maxHp;
-  a.dead=false;
-  a.attackCd=rnd(.2,.8);
-  a.stunT=0;
-  a.skillStatus={};a.skillDots={};a.skillBurnExplode=null;
-  if(a.mesh){a.mesh.position.set(a.x,a.size*.48,a.z);a.mesh.setEnabled(true);}
-  if(a.shadow){a.shadow.position.x=a.x;a.shadow.position.z=a.z;a.shadow.setEnabled(true);}
-}
-
-function spawnBoss(){
-  if(boss||S.questKills<20)return;
-  let bx=clamp(player.x+12,-MAP_BOUND,MAP_BOUND);
-  let bz=clamp(player.z+8,-MAP_BOUND,MAP_BOUND);
-  if(isVillageSafe(bx,bz)){
-    // Náº¿u player Ä‘ang trong thÃ´n, boss xuáº¥t hiá»‡n ngoÃ i cá»•ng Nam thay vÃ¬ bÃªn trong khu an toÃ n.
-    bx=0;
-    bz=VILLAGE_WALL_RZ+12;
-  }
-  const bossRegion=region();
-  const bossType=bossRegion.bossType||'shadow';
-  boss=makeActor(bossType,bx,bz,true);
-  boss.name=bossRegion.boss||'XÃ­ch ViÃªm Ma Lang';
-  boss.maxHp*=5.5;
-  boss.hp=boss.maxHp;
-  boss.atk*=1.8;
-  boss.size=4.8;
-  boss.mesh.scaling.scaleInPlace(1.4);
-  if(boss.shadow)boss.shadow.scaling.scaleInPlace(1.4);
-  $('#bossBar').hidden=false;
-  $('#bossName').textContent=boss.name;
-  toast('âš  Boss xuáº¥t hiá»‡n: XÃ­ch ViÃªm Ma Lang!');
-  sfx('breakthrough');
-}
-
-const COMBAT_DAMAGE_TYPES=['physical','Kim','Há»a','Thá»§y','Má»™c','Thá»•','Phong','LÃ´i'];
-const DAMAGE_LABELS={
-  physical:'Váº­t lÃ½',Kim:'Kim',Há»a:'Há»a',Thá»§y:'Thá»§y',Má»™c:'Má»™c',
-  Thá»•:'Thá»•',Phong:'Phong',LÃ´i:'LÃ´i'
-};
-const DAMAGE_COLORS={
-  physical:'#ffd08a',Kim:'#ffd86b',Há»a:'#ff6b3d',Thá»§y:'#64cfff',Má»™c:'#68df8b',
-  Thá»•:'#c9a56b',Phong:'#a7f3dc',LÃ´i:'#9d8cff'
-};
-
-function normalizeDamageType(type='physical'){
-  return type==='Kiáº¿m'||type==='Äao'?'physical':type;
-}
-
-const MATCHING_DAMAGE_MULT=2.0;
-  const SKILL_RUNTIME={swordIntent:0,swordIntentExpire:0};
-  function nowMs(){return performance.now();}
-  function getSwordIntentStacks(){if(SKILL_RUNTIME.swordIntentExpire<=nowMs()){SKILL_RUNTIME.swordIntent=0;SKILL_RUNTIME.swordIntentExpire=0;}return SKILL_RUNTIME.swordIntent||0;}
-  function addSwordIntent(stacks=1,duration=4){SKILL_RUNTIME.swordIntent=Math.min(3,getSwordIntentStacks()+Math.max(0,stacks||0));SKILL_RUNTIME.swordIntentExpire=nowMs()+Math.max(0,duration||4)*1000;}
-  function consumeSwordIntent(){const n=getSwordIntentStacks();SKILL_RUNTIME.swordIntent=0;SKILL_RUNTIME.swordIntentExpire=0;return n;}
-  function actorSkillState(a){if(!a.skillStatus||typeof a.skillStatus!=='object')a.skillStatus={};if(!a.skillDots||typeof a.skillDots!=='object')a.skillDots={};return a.skillStatus;}
-  function timedStatus(a,key,amount,duration){if(!a||a.dead)return;const s=actorSkillState(a),end=nowMs()+Math.max(0,duration||0)*1000,old=s[key];if(old&&old.end>end&&Number(old.amount)>=Number(amount||0))return;s[key]={amount:Number(amount)||0,end};}
-  function statusAmount(a,key){const s=a&&a.skillStatus&&a.skillStatus[key];if(!s||s.end<=nowMs())return 0;return Number(s.amount)||0;}
-  function applyStun(a,duration){if(a&&!a.dead)a.stunT=Math.max(Number(a.stunT)||0,Math.max(0,Number(duration)||0));}
-  function applyRoot(a,duration){timedStatus(a,'root',1,duration);}
-  function applySlow(a,amount,duration){timedStatus(a,'slow',clamp(Number(amount)||0,0,.85),duration);}
-  function getActorMoveMultiplier(a){if(!a)return 1;if(statusAmount(a,'root')>0||statusAmount(a,'freeze')>0)return 0;return Math.max(.15,1-statusAmount(a,'slow'));}
-  function getActorAttackIntervalMultiplier(a){const slow=statusAmount(a,'attackSlow');return slow>0?1/Math.max(.2,1-slow):1;}
-  function getActorIncomingMultiplier(a,type='physical'){
-    if(!a)return 1;type=normalizeDamageType(type);let mult=1;
-    mult*=1+statusAmount(a,'shock');
-    if(type==='Há»a')mult*=1+statusAmount(a,'fireTaken');
-    const all=statusAmount(a,'shredAll'),phys=statusAmount(a,'shredPhysical'),kim=statusAmount(a,'shredKim');
-    if(all>0)mult*=1+all;if(type==='physical'&&phys>0)mult*=1+phys;if(type==='Kim'&&kim>0)mult*=1+kim;
-    return mult;
-  }
-  function applyDot(a,key,type,dps,duration,maxStacks=1){
-    if(!a||a.dead)return;actorSkillState(a);const now=nowMs(),old=a.skillDots[key];let stacks=1;
-    if(old&&old.end>now)stacks=Math.min(Math.max(1,maxStacks||1),(old.stacks||1)+1);
-    a.skillDots[key]={type:normalizeDamageType(type),dps:Math.max(Number(dps)||0,old&&old.end>now?Number(old.dps)||0:0),stacks,end:now+Math.max(.1,Number(duration)||1)*1000,next:old&&old.end>now?Math.min(old.next||now+1000,now+1000):now+1000};
-  }
-  function processActorSkillEffects(a){
-    if(!a||a.dead)return;const now=nowMs();
-    if(a.skillStatus)for(const [k,v] of Object.entries(a.skillStatus))if(!v||v.end<=now)delete a.skillStatus[k];
-    if(a.skillDots)for(const [k,dot] of Object.entries(a.skillDots)){if(!dot||dot.end<=now){delete a.skillDots[k];continue;}if(now>=dot.next){dot.next+=1000;damage(a,Math.max(1,(dot.dps||0)*(dot.stacks||1)),false,dot.type,true);if(a.dead)return;}}
-  }
-  function moveActorRadial(a,cx,cz,distance,pull=true){
-    if(!a||a.dead)return;let dx=a.x-cx,dz=a.z-cz,len=Math.hypot(dx,dz)||1,sign=pull?-1:1;
-    let nx=clamp(a.x+dx/len*distance*sign,-MAP_BOUND,MAP_BOUND),nz=clamp(a.z+dz/len*distance*sign,-MAP_BOUND,MAP_BOUND);
-    if(isVillageSafe(nx,nz)){const p=clampToEllipse(nx,nz,VILLAGE_WALL_RX+2,VILLAGE_WALL_RZ+2,1.02);nx=p.x;nz=p.z;}a.x=nx;a.z=nz;
-  }
-  function healPlayerPct(pct,label='Há»“i phá»¥c'){const heal=Math.max(1,Math.round((S.maxHp||1)*Math.max(0,Number(pct)||0))),before=S.hp;S.hp=Math.min(S.maxHp,S.hp+heal);const gained=Math.max(0,Math.round(S.hp-before));if(gained>0&&player&&player.mesh)floatText(player.mesh.position,'+'+gained+' '+label,'#7dff9c');return gained;}
-  function findWindPierceTarget(primary,range=6,dotMin=.55){
-    if(!primary||!player)return null;const vx=primary.x-player.x,vz=primary.z-player.z,vl=Math.hypot(vx,vz)||1,ux=vx/vl,uz=vz/vl;let best=null,bd=Infinity;
-    for(const a of actors){if(!a||a===primary||a.dead||isVillageSafe(a.x,a.z))continue;const wx=a.x-primary.x,wz=a.z-primary.z,d=Math.hypot(wx,wz);if(d<=.05||d>range)continue;const dot=(wx/d)*ux+(wz/d)*uz;if(dot>=dotMin&&d<bd){best=a;bd=d;}}
-    return best;
-  }
-  function applySkillStatus(target,skill,dealt,ctx={}){
-    if(!target||target.dead||!skill||!skill.effect)return;const e=skill.effect,k=e.kind;
-    switch(k){
-      case 'sword_intent': addSwordIntent(e.stackPerHit||1,e.duration||4); break;
-      case 'shred': for(const t of (e.types||['all'])){const key=t==='all'?'shredAll':t==='physical'?'shredPhysical':t==='Kim'?'shredKim':'shredAll';timedStatus(target,key,e.amount||0,e.duration||3);} break;
-      case 'sword_field': if((ctx.pulse||0)===0)applyRoot(target,e.root||.35); break;
-      case 'bleed': applyDot(target,'bleed','physical',dealt*(e.pctPerSec||.12),e.duration||3,e.maxStacks||1); break;
-      case 'burn': applyDot(target,'burn','Há»a',dealt*(e.pctPerSec||.1),e.duration||3,e.maxStacks||1); break;
-      case 'burn_vulnerability': applyDot(target,'burn','Há»a',dealt*(e.pctPerSec||.1),e.duration||4,e.maxStacks||1);timedStatus(target,'fireTaken',e.fireTaken||.08,e.duration||4); break;
-      case 'burn_explode': applyDot(target,'burn','Há»a',dealt*(e.pctPerSec||.1),e.duration||5,1);target.skillBurnExplode={damage:dealt*(e.explodeRatio||.5),radius:e.radius||4.8,end:nowMs()+(e.duration||5)*1000}; break;
-      case 'chance_stun': if(Math.random()<(e.chance||0))applyStun(target,e.duration||.3); break;
-      case 'shock': timedStatus(target,'shock',e.damageTaken||.06,e.duration||3); break;
-      case 'shock_stun': timedStatus(target,'shock',e.damageTaken||.1,e.duration||3);applyStun(target,e.stun||.5); break;
-      case 'slow': applySlow(target,e.amount||.18,e.duration||2.5); break;
-      case 'slow_freeze': applySlow(target,e.slow||.25,e.duration||3);if(Math.random()<(e.freezeChance||.12)){timedStatus(target,'freeze',1,e.freeze||.6);applyStun(target,e.freeze||.6);} break;
-      case 'chill_stack': {actorSkillState(target);const now=nowMs(),old=target.skillStatus.chill;let stacks=old&&old.end>now?Math.min(e.maxStacks||3,(old.stacks||0)+1):1;target.skillStatus.chill={amount:e.slow||.35,stacks,end:now+(e.duration||4)*1000};applySlow(target,e.slow||.35,e.duration||4);if(stacks>=(e.maxStacks||3)){timedStatus(target,'freeze',1,e.freeze||.8);applyStun(target,e.freeze||.8);delete target.skillStatus.chill;}break;}
-      case 'freeze': if(target===boss)applySlow(target,e.bossSlow||.3,e.bossSlowDuration||3);else{timedStatus(target,'freeze',1,e.duration||1);applyStun(target,e.duration||1);} break;
-      case 'poison': applyDot(target,'poison','Má»™c',dealt*(e.pctPerSec||.07),e.duration||4,e.maxStacks||1); break;
-      case 'root': if(target===boss)applySlow(target,e.bossSlow||.2,e.bossSlowDuration||2);else applyRoot(target,e.duration||.6); break;
-      case 'root_heal': applyRoot(target,e.root||.8); break;
-      case 'pull_slow': moveActorRadial(target,player.x,player.z,e.pullDistance||1.5,true);applySlow(target,e.slow||.15,e.slowDuration||2); break;
-      case 'knockback': if(!(target===boss&&e.bossImmune))moveActorRadial(target,player.x,player.z,e.distance||2.2,false); break;
-      case 'pull_push': moveActorRadial(target,player.x,player.z,e.pullDistance||2.5,true);setTimeout(()=>{if(target&&!target.dead)moveActorRadial(target,player.x,player.z,e.pushDistance||3.2,false);},Math.max(50,(e.pullDuration||.6)*1000)); break;
-      case 'stun': if(!(target===boss&&e.bossImmune))applyStun(target,e.duration||.45); break;
-      case 'attack_slow': timedStatus(target,'attackSlow',e.amount||.1,e.duration||3); break;
-      case 'stun_boss_slow': if(target===boss)applySlow(target,e.bossSlow||.25,e.bossSlowDuration||3);else applyStun(target,e.stun||.8); break;
-    }
-  }
-  function triggerSkillDeathEffect(a){
-    if(!a||!a.skillBurnExplode||a.skillBurnExplode.end<=nowMs())return;const info=a.skillBurnExplode;a.skillBurnExplode=null;
-    const nearby=actors.filter(x=>x&&!x.dead&&x!==a&&Math.hypot(x.x-a.x,x.z-a.z)<=info.radius);
-    ring(a.x,a.z,'#ff6b22',Math.max(2.5,info.radius*.7));burst(a.x,a.z,'#ff7a18',24,Math.max(3,info.radius));
-    for(const t of nearby)damage(t,info.damage,false,'Há»a',true);
-  }
-
-
-function getDamageComponent(type='physical'){
-  type=normalizeDamageType(type);
-  const base=Math.max(0,(S.damage&&Number(S.damage[type]))||0);
-  return base*getTechniqueStatMultiplier(type);
-}
-
-function getTotalDamage(){
-  return COMBAT_DAMAGE_TYPES.reduce((sum,t)=>sum+getDamageComponent(t),0);
-}
-
-function getPlayerDamageStat(type='physical'){
-  // Má»i skill dÃ¹ng toÃ n bá»™ Damage Tá»•ng.
-  // RiÃªng thÃ nh pháº§n trÃ¹ng há»‡ cá»§a skill Ä‘Æ°á»£c nhÃ¢n cao hÆ¡n.
-  type=normalizeDamageType(type);
-  const total=getTotalDamage();
-  const matching=getDamageComponent(type);
-  return total + matching*(MATCHING_DAMAGE_MULT-1);
-}
-
-function getPlayerDefenseStat(type='physical'){
-  type=normalizeDamageType(type);
-  const base=Math.max(0,(S.defense&&Number(S.defense[type]))||0);
-  const systemDef=window.TuTienSystems?window.TuTienSystems.getDefenseMultiplier(S,player):1;
-  return base*getTechniqueStatMultiplier(type)*getRealmPowerMultiplier()*getHeartMethodEffects().defense*systemDef;
-}
-
-function getSkillPower(skill,mult=1,crit=false){
-  let rawType=skill&&skill.element?skill.element:'physical';
-  let type=normalizeDamageType(rawType);
-  let base=getPlayerDamageStat(type);
-  const heartFx=getHeartMethodEffects();
-  let spiritMult=skill&&skill.spiritScaling?(1+(Math.max(0,S.spiritSense||0)*heartFx.spirit)/1000):1;
-  let petMult=S.pet?1.08:1.0;
-  let critMult=crit?(S.critDamage||1.8):1;
-  let realmMult=getRealmPowerMultiplier();
-  let swordMult=skill&&skill.element==='Kiáº¿m'?(1+getSwordIntentStacks()*.04):1;
-  return base*realmMult*mult*spiritMult*petMult*critMult*swordMult*rnd(.92,1.08);
-}
-
-function takePlayerDamage(raw,type='physical',attacker=null){
-  let defense=getPlayerDefenseStat(type);
-  const enemySuppress=getActorSuppressionVsPlayer(attacker);
-  const playerSuppress=getPlayerSuppressionVsActor(attacker);
-  // Náº¿u quÃ¡i cao cáº£nh giá»›i hÆ¡n: damage cá»§a quÃ¡i Ä‘Æ°á»£c nhÃ¢n bá»Ÿi Ã¡p cháº¿.
-  // Náº¿u ngÆ°á»i chÆ¡i cao hÆ¡n: damage nháº­n vÃ o bá»‹ chia bá»Ÿi Ã¡p cháº¿ cá»§a ngÆ°á»i chÆ¡i.
-  let realmFactor=enemySuppress/Math.max(1,playerSuppress);
-  if(window.TuTienSystems&&attacker){
-    const ward=window.TuTienSystems.getWardInfo(S);
-    if(ward){
-      const info=attacker.realmInfo||getEnemyRealmInfo(attacker.enemyLv||1);
-      const wardSuppress=getRealmSuppressionByScores(ward.score,ward.major,info.score,info.major);
-      const enemyVsWard=getRealmSuppressionByScores(info.score,info.major,ward.score,ward.major);
-      realmFactor*=enemyVsWard/Math.max(1,wardSuppress);
-      realmFactor/=Math.max(1,ward.quality||1);
-    }
-  }
-  let reduced=Math.max(1,raw*realmFactor-defense*rnd(.65,1.0));
-  S.hp-=reduced;
-  sfx('hit');
-  floatText(player.mesh.position,`-${Math.round(reduced)} ${DAMAGE_LABELS[type]||type}`,DAMAGE_COLORS[type]||'#ff776d');
-  if(S.hp<=0)playerDeath();
-  return reduced;
-}
-
-function damage(a,d,crit=false,type='physical',fromStatus=false){
-  if(!a||a.dead)return 0;
-  type=normalizeDamageType(type);
-  const suppression=getPlayerSuppressionVsActor(a);
-  d*=getActorIncomingMultiplier(a,type);
-  d=window.DamageSystem?window.DamageSystem.apply(a,{raw:d,incomingMultiplier:suppression,type,source:'player'}).damage:Math.max(1,Math.round(d*suppression));
-  if(!window.DamageSystem)a.hp-=d;
-  sfx(crit?'slash':'hit');
-  floatText(a.mesh.position,`${crit?'Báº¡o ':''}-${d} ${DAMAGE_LABELS[type]||''}`,crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
-  flash(a.mesh);
-  if(a===boss)$('#bossFill').style.width=clamp(a.hp/a.maxHp*100,0,100)+'%';
-  if(a.hp<=0){triggerSkillDeathEffect(a);kill(a);}
-  return d;
-}
-
-function damageFromRealmSource(a,d,sourceMajor,type='physical',crit=false,label=''){
-  if(!a||a.dead)return;
-  type=normalizeDamageType(type);
-  sourceMajor=clamp(Number(sourceMajor)||0,0,realms.length-1);
-  const sourceScore=sourceMajor===0?11:12+(sourceMajor-1)*4+3;
-  const info=a.realmInfo||getEnemyRealmInfo(a.enemyLv||1);
-  const sourceSuppress=getRealmSuppressionByScores(sourceScore,sourceMajor,info.score,info.major);
-  const defenderSuppress=getRealmSuppressionByScores(info.score,info.major,sourceScore,sourceMajor);
-  d=Math.max(1,Math.round(d*sourceSuppress/Math.max(1,defenderSuppress)));
-  a.hp-=d;
-  sfx(crit?'slash':'hit');
-  floatText(a.mesh.position,(label?label+' ':'')+'-'+d+' '+(DAMAGE_LABELS[type]||''),crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
-  flash(a.mesh);
-  if(a===boss)$('#bossFill').style.width=clamp(a.hp/a.maxHp*100,0,100)+'%';
-  if(a.hp<=0)kill(a);
-}
-
-function getSystemContext(){
-  return {
-    save,updateHUD,toast,sfx,openPanel,closePanel,
-    getActors:()=>actors,
-    getPlayer:()=>player,
-    realmDamage:damageFromRealmSource,
-    burst,ring,slash
-  };
-}
-
-function kill(a){
-  a.dead=true;
-  a.mesh.setEnabled(false);
-  if(a.shadow)a.shadow.setEnabled(false);
-  S.kills++;
-  S.questKills++;
-  gainXP(a.xp);
-  const formationCult=window.TuTienSystems?window.TuTienSystems.getCultivationMultiplier(S,player):1;
-  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation*getTechniqueCultivationMultiplier()*formationCult);
-
-  // Loot
-  if(Math.random()<.75){
-    let g=Math.round(rnd(6,25)*(1+S.level*.05));
-    S.gold+=g;
-    if(Math.random()<.2){
-      S.stones++;
-      addItem('Linh Tháº¡ch',1);
-      toast('ğŸ’ Nháº·t Linh Tháº¡ch x1');
-      sfx('item');
-    }
-    if(Math.random()<.1)dropEquipment();
-  }
-  const killMeta={boss:a===boss,enemyLv:a.enemyLv||1,realmInfo:a.realmInfo,damageType:a.damageType||'physical',actor:a,state:S,ctx:getSystemContext()};
-  if(window.TuTienSystems)window.TuTienSystems.onKill(S,killMeta,getSystemContext());
-  if(window.GameEvents)window.GameEvents.emit(a===boss?'bossKilled':'enemyKilled',killMeta);
-  if(a===boss){
-    S.bossKills++;
-    S.stones+=35;
-    S.gold+=600;
-    addItem('Boss Há»“n Tinh',1);
-    toast('ğŸ† ÄÃ£ diá»‡t Boss! +35 Linh Tháº¡ch & Há»“n Tinh');
-    sfx('breakthrough');
-    boss=null;
-    $('#bossBar').hidden=true;
-    S.questKills=0;
-  }
-  if(a.fixedSpawn){
-    const respawnMs=Math.max(8000,(a.respawnDelay||15)*1000);
-    if(window.GameScheduler)window.GameScheduler.schedule(respawnMs/1000,()=>respawnFixedEnemy(a),'enemy-respawn');
-    else setTimeout(()=>respawnFixedEnemy(a),respawnMs);
-  }else{
-    setTimeout(()=>{
-      if(a.mesh)a.mesh.dispose();
-      if(a.shadow)a.shadow.dispose();
-      actors=actors.filter(x=>x!==a);
-    },800);
-  }
-  save();
-  updateHUD();
-}
-
-function gainXP(v){
-  S.xp+=v;
-  while(S.xp>=S.xpNeed){
-    S.xp-=S.xpNeed;
-    S.level++;
-    S.xpNeed=Math.round(S.xpNeed*1.22);
-    // Má»—i cáº¥p nhÃ¢n váº­t tÄƒng toÃ n bá»™ chá»‰ sá»‘ ná»n.
-    S.maxHp+=60;
-    S.maxMp+=15;
-    for(const t of COMBAT_DAMAGE_TYPES){
-      S.damage[t]=(S.damage[t]||0)+8;
-      S.defense[t]=(S.defense[t]||0)+2;
-    }
-    S.spiritSense+=3;
-    S.critChance=Math.min(.75,(S.critChance||0)+.002);
-    S.critDamage=Math.min(4,(S.critDamage||1.8)+.01);
-    S.moveSpeed=Math.min(12,(S.moveSpeed||6.2)+.01);
-    S.attackSpeed=Math.min(3,(S.attackSpeed||1)+.005);
-    S.castSpeed=Math.min(3,(S.castSpeed||1)+.005);
-    S.hpRegenPct=Math.min(.12,(S.hpRegenPct||0)+.0003);
-    S.mpRegenPct=Math.min(.18,(S.mpRegenPct||0)+.0005);
-    S.hp=S.maxHp;
-    S.mp=S.maxMp;
-    toast(`âœ¨ Äá»™t phÃ¡ cáº¥p Ä‘á»™ Lv.${S.level}!`);
-    sfx('levelUp');
-    burst(player.x,player.z,'#7eeaff',24,5);
-  }
-  updateHUD();
-}
-
-function addItem(n,q=1){
-  if(!S.items||typeof S.items!=='object')S.items={};
-  S.items[n]=(S.items[n]||0)+q;
-}
-
-const gearNames=['Thanh VÃ¢n Kiáº¿m','Huyá»n Thiáº¿t GiÃ¡p','Ngá»c Linh Giá»›i','BÄƒng TÃ¢m Kiáº¿m','XÃ­ch ViÃªm BÃ o'];
-function dropEquipment(){
-  let n=gearNames[Math.floor(Math.random()*gearNames.length)],rare=Math.random()<.18?'Sá»­ Thi':'Hiáº¿m';
-  addItem(`${rare} ${n}`,1);
-  toast(`âœ¨ Nháº·t [${rare}] ${n}`);
-  sfx('item');
-}
-
-function playerAttack(target,mult=1){
-  if(!target)return;
-  triggerPlayerAttack();
-  let crit=Math.random()<(S.critChance||0);
-  let d=getSkillPower({element:'physical'},mult,crit);
-  slash(target.x,target.z,crit?'#ffe777':'#78dfff');
-  damage(target,d,crit,'physical');
-}
-
-function skillAttack(target,skill,mult=1,forceCrit=false,ctx={}){
-  if(!target||!skill||target.dead)return 0;
-  const e=skill.effect||{};
-  if(e.kind==='execute'&&target.maxHp>0&&target.hp/target.maxHp<(e.threshold||.25))mult*=1+(e.bonus||.2);
-  if(e.kind==='instant_pierce')mult*=1+(e.amount||.18);
-  let crit=forceCrit||Math.random()<(S.critChance||0);
-  let d=getSkillPower(skill,mult,crit);
-  const dealt=damage(target,d,crit,normalizeDamageType(skill.element));
-  applySkillStatus(target,skill,dealt,ctx);
-  return dealt;
-}
-
-function nearest(range=9){
-  let best=null,bd=range;
-  for(let a of actors){
-    if(a.dead||isVillageSafe(a.x,a.z))continue;
-    let d=Math.hypot(a.x-player.x,a.z-player.z);
-    if(d<bd){bd=d;best=a}
-  }
-  return best;
-}
-
-function getElementColor(){
-  return {
-    Kim:'#ffd86b',Há»a:'#ff6b3d',Thá»§y:'#64cfff',
-    Thá»•:'#c9a56b',Má»™c:'#68df8b',Phong:'#a7f3dc',
-    LÃ´i:'#9d8cff',Kiáº¿m:'#7ceaff',Äao:'#ff776d'
-  }[S.skillElement]||'#7ceaff';
-}
-
-function useSkill(n){
-  if(paused||cooldown[n]>0)return;
-  let slotIdx=n-1,skillId=(S.equippedSkills&&S.equippedSkills[slotIdx])||null;
-  if(!skillId){toast('Ã” ká»¹ nÄƒng '+n+' chÆ°a trang bá»‹ bÃ­ tá»‹ch!');return;}
-  let skill=getSkillDef(skillId);if(!skill)return;
-  if(S.mp<skill.mp){toast(`Linh lá»±c khÃ´ng Ä‘á»§ (${Math.round(S.mp)}/${skill.mp} MP)!`);return;}
-  S.mp=Math.max(0,S.mp-skill.mp);
-  cooldown[n]=skill.cd/Math.max(0.35,(S.castSpeed||1)*getHeartMethodEffects().cast);
-  triggerPlayerAttack();
-  let lv=(S.learnedSkills&&S.learnedSkills[skillId])||1;
-  let dmgMult=skill.mult*(1+(lv-1)*0.15),effect=skill.effect||{};
-  if(effect.kind==='sword_ultimate'){
-    const stacks=getSwordIntentStacks();
-    if(stacks>0){dmgMult*=1+stacks*(effect.bonusPerStack||.08);consumeSwordIntent();toast('âš” Kiáº¿m Ã bá»™c phÃ¡t Ã—'+stacks+'!');}
-  }
-  let ec=getElementColorByName(skill.element);sfx('skill'+Math.min(4,skill.tierIdx+1));
-  if(skill.aoe===0){
-    let t=nearest(skill.targetRange||11);
-    if(t){
-      const baseHit=dmgMult/2.4;let weights=[1,1,1];
-      if(effect.kind==='bleed'&&Array.isArray(effect.hitWeights))weights=effect.hitWeights;
-      for(let i=0;i<3;i++)setTimeout(()=>{if(t&&!t.dead)skillAttack(t,skill,baseHit*(weights[i]||1),false,{hit:i,isFinal:i===2});},i*75);
-      if(effect.kind==='pierce_secondary'){
-        const second=findWindPierceTarget(t,effect.maxDistance||6,effect.coneDot||.55);
-        if(second)for(let i=0;i<3;i++)setTimeout(()=>{if(second&&!second.dead)skillAttack(second,skill,baseHit*(effect.secondaryRatio||.6),false,{hit:i,isSecondary:true,isFinal:i===2});},i*75+30);
-      }
-      playSkillVfx(skill,t.x,t.z,3.4+skill.tierIdx*0.45,t.x-player.x,t.z-player.z,false);slash(t.x,t.z,ec);
-    }
-  }else{
-    let range=skill.aoe;
-    let targets=actors.filter(a=>!a.dead&&!isVillageSafe(a.x,a.z)&&Math.hypot(a.x-player.x,a.z-player.z)<range);
-    playSkillVfx(skill,player.x,player.z,Math.max(4.2,Math.min(10,range*0.95)),0,0,true);
-    ring(player.x,player.z,ec,range*0.65);
-    let particleCount=MOBILE_RUNTIME?(skill.tierIdx===3?36:skill.tierIdx===2?26:18):(skill.tierIdx===3?60:skill.tierIdx===2?40:24);burst(player.x,player.z,ec,particleCount,range*0.75);
-    if(skill.tierIdx>=2&&camera){let ox=camera.position.x,oz=camera.position.z,mag=skill.tierIdx===3?0.38:0.18;camera.position.x+=rnd(-mag,mag);camera.position.z+=rnd(-mag,mag);setTimeout(()=>{if(camera){camera.position.x=ox;camera.position.z=oz;}},120);}
-    let isCrit=skill.forceCritAoE||Math.random()<(S.critChance||0);
-    if(effect.kind==='sword_field'&&effect.pulses>1){
-      const pulses=Math.max(1,effect.pulses|0),gap=Math.max(80,effect.pulseGapMs||180);
-      for(let p=0;p<pulses;p++)setTimeout(()=>{for(const a of targets)if(a&&!a.dead)skillAttack(a,skill,dmgMult/pulses,isCrit,{pulse:p,isFinal:p===pulses-1});},p*gap);
-    }else{
-      targets.forEach((a,i)=>setTimeout(()=>{if(a&&!a.dead)skillAttack(a,skill,dmgMult,isCrit,{isFinal:true});},i*22));
-    }
-    if(effect.kind==='heal_pulse'){
-      const pulses=Math.max(1,effect.pulses||3),gap=Math.max(80,effect.pulseGapMs||240);
-      for(let p=0;p<pulses;p++)setTimeout(()=>{healPlayerPct(effect.healPct||.02,'Sinh lá»±c');updateHUD();},p*gap);
-    }else if(effect.kind==='root_heal'){healPlayerPct(effect.healPct||.06,'Sinh lá»±c');}
-  }
-  updateHUD();updateCooldownUI();
-}
-
-function useDash(){
-  if(paused||dashCd.t>0)return;
-  dashCd.t=1.5;
-  sfx('dash');
-  let mx=joy.x+(keys['a']||keys['arrowleft']?-1:0)+(keys['d']||keys['arrowright']?1:0);
-  let mz=joy.y+(keys['w']||keys['arrowup']?1:0)+(keys['s']||keys['arrowdown']?-1:0);
-  let l=Math.hypot(mx,mz);
-  if(l<0.05){mx=player.facing==='left'?-1:1;mz=0;}else{mx/=l;mz/=l;}
-
-  let dashX=clamp(player.x+mx*6.5,-MAP_BOUND,MAP_BOUND);
-  let dashZ=clamp(player.z+mz*6.5,-MAP_BOUND,MAP_BOUND);
-  let dashMove=resolveVillageWallMove(player.x,player.z,dashX,dashZ);
-  player.x=dashMove.x;
-  player.z=dashMove.z;
-  player.invuln=0.45;
-  burst(player.x,player.z,'#a8fce4',18,4);
-  updateCooldownUI();
-}
-
-function flash(mesh){
-  let s=mesh.scaling.clone();
-  mesh.scaling.scaleInPlace(1.12);
-  setTimeout(()=>{if(!mesh.isDisposed())mesh.scaling.copyFrom(s)},75);
-}
-
-function slash(x,z,color){
-  let tor=BABYLON.MeshBuilder.CreateTorus('slash',{diameter:2.3,thickness:.08,tessellation:20,arc:.55},scene);
-  tor.position.set(x,1.1,z);
-  tor.rotation.x=Math.PI/2;
-  tor.rotation.z=rnd(-1,1);
-  tor.material=mat('fx_slash',color,.85);
-  effects.push({mesh:tor,t:.26,max:.26,grow:2});
-}
-
-function ring(x,z,color,r=4){
-  let tor=BABYLON.MeshBuilder.CreateTorus('ring',{diameter:1,thickness:.06,tessellation:32},scene);
-  tor.position.set(x,.12,z);
-  tor.rotation.x=Math.PI/2;
-  tor.material=mat('fx_ring',color,.75);
-  effects.push({mesh:tor,t:.48,max:.48,grow:r*2});
-}
-
-function burst(x,z,color,count=18,r=5){
-  const profile=window.PerformanceProfile&&window.PerformanceProfile.current;
-  if(profile)count=Math.max(4,Math.round(count*profile.particleScale));
-  const maxVfx=profile?profile.maxVfx:100;
-  if(effects.length>=maxVfx)return;
-  count=Math.min(count,maxVfx-effects.length);
-  let cnt=Math.min(count,S.quality?50:24);
-  let m=mat('fx_burst',color,.9);
-  for(let i=0;i<cnt;i++){
-    let s=BABYLON.MeshBuilder.CreateSphere('p',{diameter:rnd(.06,.16),segments:3},scene);
-    s.position.set(x+rnd(-.4,.4),rnd(.2,1.4),z+rnd(-.4,.4));
-    s.material=m;
-    let a=rnd(0,6.28),sp=rnd(2,r);
-    effects.push({mesh:s,t:rnd(.3,.6),max:.6,vx:Math.cos(a)*sp,vz:Math.sin(a)*sp,vy:rnd(.3,1.8)});
-  }
-}
-
-function vfxDirectionCell(dx,dz,center=false){
-  // Sprite sheet 3x3:
-  // NW | N | NE
-  // W  | C | E
-  // SW | S | SE
-  if(center)return {row:1,col:1,key:'c'};
-  let len=Math.hypot(dx,dz);
-  if(len<0.001)return {row:1,col:1,key:'c'};
-  dx/=len; dz/=len;
-  const t=0.38;
-  let col=dx<-t?0:(dx>t?2:1);
-  let row=dz>t?0:(dz<-t?2:1);
-  const keys=[
-    ['nw','n','ne'],
-    ['w','c','e'],
-    ['sw','s','se']
-  ];
-  return {row,col,key:keys[row][col]};
-}
-
-function skillVfxMaterial(skill,row,col){
-  if(!skill||!skill.vfx)return null;
-  let key=`skill_vfx_${skill.id}_${row}_${col}`;
-  if(skillVfxMats[key])return skillVfxMats[key];
-
-  let m=new BABYLON.StandardMaterial('sm_'+key,scene);
-  let t=new BABYLON.Texture(skill.vfx,scene,false,true,BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
-  t.hasAlpha=true;
-
-  // Má»—i PNG skill lÃ  sprite sheet 3x3. Chá»‰ hiá»ƒn thá»‹ Ä‘Ãºng 1 Ã´.
-  t.uScale=1/3;
-  t.vScale=1/3;
-  t.uOffset=col/3;
-  // Babylon UV Ä‘i tá»« dÆ°á»›i lÃªn; Ä‘áº£o row Ä‘á»ƒ row=0 luÃ´n lÃ  hÃ ng trÃªn cá»§a áº£nh PNG.
-  t.vOffset=(2-row)/3;
-
-  m.diffuseTexture=t;
-  m.emissiveTexture=t;
-  m.useAlphaFromDiffuseTexture=true;
-  m.emissiveColor=new BABYLON.Color3(1,1,1);
-  m.specularColor=BABYLON.Color3.Black();
-  m.disableLighting=true;
-  m.backFaceCulling=false;
-  m.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
-  skillVfxMats[key]=m;
-  return m;
-}
-
-function preloadSkillVfx(skill){
-  if(!skill||!skill.vfx)return;
-  // Preload Ä‘á»§ 9 Ã´ cá»§a tá»‘i Ä‘a 4 skill Ä‘ang trang bá»‹.
-  for(let row=0;row<3;row++){
-    for(let col=0;col<3;col++) skillVfxMaterial(skill,row,col);
-  }
-}
-
-function playSkillVfx(skill,x,z,size=3.4,dx=0,dz=0,center=false){
-  if(!skill||!skill.vfx)return;
-  let cell=vfxDirectionCell(dx,dz,center);
-  let fxMat=skillVfxMaterial(skill,cell.row,cell.col);
-  if(!fxMat)return;
-
-  let plane=BABYLON.MeshBuilder.CreatePlane(
-    'skill_vfx_'+skill.id+'_'+cell.key,
-    {size:1,sideOrientation:BABYLON.Mesh.DOUBLESIDE},
-    scene
-  );
-  plane.position.set(x,1.35,z);
-  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
-  plane.material=fxMat;
-  plane.isPickable=false;
-  plane.renderingGroupId=2;
-
-  let base=Math.max(2.4,Math.min(10,size));
-  plane.scaling.setAll(base*0.72);
-  effects.push({mesh:plane,t:.82,max:.82,skillVfx:true,baseScale:base});
-}
-
-function floatText(pos,text,color){
-  let p=BABYLON.Vector3.Project(pos,BABYLON.Matrix.Identity(),scene.getTransformMatrix(),camera.viewport.toGlobal(engine.getRenderWidth(),engine.getRenderHeight()));
-  let e=document.createElement('div');
-  e.className='float';
-  e.textContent=text;
-  e.style.color=color;
-  e.style.left=p.x+'px';
-  e.style.top=p.y+'px';
-  $('#floatLayer').appendChild(e);
-  setTimeout(()=>e.remove(),950);
-}
-
-function toast(t){
-  let e=document.createElement('div');
-  e.textContent=t;
-  $('#lootToast').appendChild(e);
-  setTimeout(()=>e.remove(),2200);
-}
-
-function updateActor(a,dt){
-  if(a.dead)return;
-  processActorSkillEffects(a);
-  if(a.dead)return;
-  if((a.stunT||0)>0){
-    a.stunT=Math.max(0,(a.stunT||0)-dt);
-    return;
-  }
-
-  // Khu an toÃ n tuyá»‡t Ä‘á»‘i: actor nÃ o lá»t vÃ o sáº½ bá»‹ Ä‘áº©y ra ngoÃ i ngay.
-  ejectEnemyFromVillage(a);
-
-  let playerSafe=isVillageSafe(player.x,player.z);
-  let moveMult=getActorMoveMultiplier(a);
-  let dx=player.x-a.x,dz=player.z-a.z,d=Math.hypot(dx,dz)||1;
-  a.attackCd-=dt;
-  a.bossSkillCd=(a.bossSkillCd||4.5)-dt;
-
-  // Boss AoE Attack
-  if(a===boss&&a.bossSkillCd<=0){
-    a.bossSkillCd=6.0;
-    ring(player.x,player.z,'#ff3322',5);
-    toast('âš  Boss phÃ¡t Ä‘á»™ng XÃ­ch ViÃªm Tráº­n!');
-    setTimeout(()=>{
-      if(!a.dead&&!isVillageSafe(player.x,player.z)&&dist(player,{x:player.x,z:player.z})<4.5){
-        if(player.invuln<=0){
-          takePlayerDamage(a.atk*1.6,'Há»a',a);
-        }
-      }
-    },1100);
-  }
-
-  if(a.fixedSpawn && (playerSafe || d>=24)){
-    const hdx=a.homeX-a.x, hdz=a.homeZ-a.z, hd=Math.hypot(hdx,hdz);
-    if(hd>.35){
-      const homeStep=Math.min(hd,a.speed*.65*dt);
-      a.x+=hdx/Math.max(.001,hd)*homeStep;
-      a.z+=hdz/Math.max(.001,hd)*homeStep;
-    }
-  }
-
-  if(!playerSafe && d>1.7 && (d<24 || a===boss)){
-    let oldX=a.x, oldZ=a.z;
-    let nextX=a.x+dx/d*a.speed*moveMult*dt;
-    let nextZ=a.z+dz/d*a.speed*moveMult*dt;
-
-    // QuÃ¡i khÃ´ng bao giá» Ä‘Æ°á»£c xuyÃªn vÃ o khu an toÃ n, ká»ƒ cáº£ qua cá»•ng.
-    if(!isVillageSafe(nextX,nextZ)){
-      a.x=nextX;
-      a.z=nextZ;
-    }else{
-      a.x=oldX;
-      a.z=oldZ;
-    }
-  }else if(!playerSafe && a.attackCd<=0 && d<=1.7){
-    a.attackCd=(1.2+rnd(0,.4))*getActorAttackIntervalMultiplier(a);
-    if(player.invuln<=0){
-      takePlayerDamage(a.atk,a.damageType||'physical',a);
-    }
-  }
-
-  a.frameT+=dt;
-  if(a.frameT>.11){
-    a.frameT=0;
-    a.frame=(a.frame+1)%8;
-    // Chá»n Ä‘Ãºng frame theo hÆ°á»›ng di chuyá»ƒn: right=00-07, left=08-15
-    let dx2=player.x-a.x;
-    let frameIdx = dx2 < 0 ? (a.frame + 8) : a.frame; // hÆ°á»›ng trÃ¡i thÃ¬ flip
-    if(spriteMats[a.type+frameIdx])a.mesh.material=spriteMats[a.type+frameIdx];
-    else if(spriteMats[a.type+a.frame])a.mesh.material=spriteMats[a.type+a.frame];
-  }
-  a.mesh.position.x=a.x;
-  a.mesh.position.z=a.z;
-  a.mesh.position.y=a.size*.48;
-  if(a.shadow){
-    a.shadow.position.x=a.x;
-    a.shadow.position.z=a.z;
-  }
-  // Orthographic: tuyá»‡t Ä‘á»‘i khÃ´ng scale quÃ¡i theo khoáº£ng cÃ¡ch Z.
-  // Scale perspective giáº£ lÃ m sprite lá»‡ch tá»· lá»‡ so vá»›i player/props.
-  a.mesh.scaling.setAll(1);
-}
-
-function playerDeath(){
-  S.hp=0;
-  updateHUD();
-  paused=true;
-  toast('ğŸ’€ Äáº¡o thá»ƒ tan vá»¡â€¦ Ä‘ang ngÆ°ng tá»¥ linh há»“n');
-  setTimeout(()=>{
-    S.hp=S.maxHp;
-    S.mp=S.maxMp;
-    player.x=0;
-    player.z=0;
-    if(player.mesh)player.mesh.position.set(0,1.62,0);
-    if(player.shadow){
-      player.shadow.position.x=0;
-      player.shadow.position.z=0;
-    }
-    if(camera){
-      placeStandardCamera(0,0);
-    }
-    if(petActor){
-      petActor.x=-1.5; petActor.z=-1.5;
-      if(petActor.mesh)petActor.mesh.position.set(-1.5,petActor.mesh.position.y,-1.5);
-      if(petActor.shadow)petActor.shadow.position.set(-1.5,0.019,-1.5);
-    }
-    player.facing='right';
-    player.state='idle';
-    player.frame=0;
-    player.animTimer=0;
-    player.invuln=3.5;
-    if(player.mesh){
-      player.mesh.material=playerAnimMat('right','idle',0);
-      applyPlayerFacing();
-    }
-    paused=false;
-    toast('â˜¯ ÄÃ£ há»“i sinh táº¡i trung tÃ¢m Thanh VÃ¢n ThÃ´n');
-    updateHUD();
-  },2200);
-}
-
-function updatePlayer(dt){
-  player.invuln=Math.max(0,player.invuln-dt);
-  let mx=joy.x+(keys['a']||keys['arrowleft']?-1:0)+(keys['d']||keys['arrowright']?1:0);
-  let mz=joy.y+(keys['w']||keys['arrowup']?1:0)+(keys['s']||keys['arrowdown']?-1:0);
-  let l=Math.hypot(mx,mz);
-
-  if(mx>0.05){
-    player.facing='right';
-  }else if(mx<-0.05){
-    player.facing='left';
-  }
-
-  if(l>.05){
-    let nx=mx/Math.max(1,l);
-    let nz=mz/Math.max(1,l);
-    let systemMove=window.TuTienSystems?window.TuTienSystems.getMoveMultiplier(S):1;
-    let sp=Math.max(2.5,(S.moveSpeed||6.2)*getHeartMethodEffects().move*systemMove);
-    let nextX=clamp(player.x+nx*sp*dt,-MAP_BOUND,MAP_BOUND);
-    let nextZ=clamp(player.z+nz*sp*dt,-MAP_BOUND,MAP_BOUND);
-    let wallMove=resolveVillageWallMove(player.x,player.z,nextX,nextZ);
-    player.x=wallMove.x;
-    player.z=wallMove.z;
-  }
-
-  // Animation State Priority: Attack cannot be interrupted by run or idle
-  if(player.state==='attack'){
-    let anim=PLAYER_ANIMS.attack;
-    player.animTimer+=dt;
-    let step=1.0/(anim.fps*Math.max(0.35,(S.attackSpeed||1)*getHeartMethodEffects().attack));
-    if(player.animTimer>=step){
-      player.animTimer-=step;
-      player.frame++;
-      if(player.frame>=anim.frames){
-        player.state=l>.05?'run':'idle';
-        player.frame=0;
-        player.animTimer=0;
-      }
-    }
-  }else{
-    let nextState=l>.05?'run':'idle';
-    if(player.state!==nextState){
-      player.state=nextState;
-      player.frame=0;
-      player.animTimer=0;
-    }else{
-      let anim=PLAYER_ANIMS[player.state];
-      player.animTimer+=dt;
-      let step=1.0/anim.fps;
-      if(player.animTimer>=step){
-        player.animTimer-=step;
-        player.frame=(player.frame+1)%anim.frames;
-      }
-    }
-  }
-
-  player.mesh.position.set(player.x,1.62,player.z);
-  if(player.shadow){
-    player.shadow.position.x=player.x;
-    player.shadow.position.z=player.z;
-  }
-  player.mesh.material=playerAnimMat(player.facing,player.state,player.frame);
-  applyPlayerFacing(); // RIGHT = +X, LEFT = mirrored -X
-
-  // Camera lock â€” mobile anti-jitter.
-  // BÃ¡m trá»±c tiáº¿p vá»‹ trÃ­ player má»—i frame, khÃ´ng cÃ³ inertia/lerp nÃªn khi tháº£ joystick
-  // tuyá»‡t Ä‘á»‘i khÃ´ng cÃ²n 1-2 frame "Ä‘uá»•i theo" lÃ m map xÃª dá»‹ch.
-  const elev=CAMERA_STD.elevationDeg*Math.PI/180;
-  const horizontal=Math.cos(elev)*CAMERA_STD.distance;
-  const height=Math.sin(elev)*CAMERA_STD.distance;
-  camera.position.x=player.x;
-  camera.position.y=height;
-  camera.position.z=player.z-horizontal;
-  camera.setTarget(new BABYLON.Vector3(player.x,0,player.z));
-
-  // Update Companion Pet
-  if(petActor&&petActor.mesh){
-    let petOffsetX = player.facing==='left' ? 1.2 : -1.2;
-    petActor.x+=(player.x+petOffsetX-petActor.x)*dt*3.5;
-    petActor.z+=(player.z-1.0-petActor.z)*dt*3.5;
-    petActor.mesh.position.set(petActor.x,1.0,petActor.z);
-    if(petActor.shadow){
-      petActor.shadow.position.x=petActor.x;
-      petActor.shadow.position.z=petActor.z;
-    }
-    petActor.mesh.scaling.x=Math.abs(petActor.mesh.scaling.x)*(player.facing==='left'?-1:1);
-    petActor.frameT+=dt;
-    if(petActor.frameT>.12){
-      petActor.frameT=0;
-      petActor.frame=(petActor.frame+1)%8;
-      if(spriteMats['fox'+petActor.frame])petActor.mesh.material=spriteMats['fox'+petActor.frame];
-    }
-    petActor.shootCd-=dt;
-    if(petActor.shootCd<=0){
-      petActor.shootCd=2.0;
-      let target=nearest(8);
-      if(target){
-        slash(target.x,target.z,'#ff9944');
-        damage(target,getPlayerDamageStat('physical')*0.45,false,'physical');
-      }
-    }
-  }
-}
-
-function updateEffects(dt){
-  for(let e of effects){
-    e.t-=dt;
-    if(e.skillVfx&&e.mesh){
-      let p=1-clamp(e.t/e.max,0,1);
-      let k=(e.baseScale||1)*(0.72+0.28*Math.sin(Math.min(1,p)*Math.PI/2));
-      e.mesh.scaling.setAll(k);
-      e.mesh.visibility=clamp(e.t/0.16,0,1);
-    }
-    if(e.vx!=null){
-      e.mesh.position.x+=e.vx*dt;
-      e.mesh.position.z+=e.vz*dt;
-      e.mesh.position.y+=e.vy*dt;
-      e.vy-=3*dt;
-      e.mesh.scaling.scaleInPlace(.97);
-    }
-    if(e.grow){
-      let k=1+(1-e.t/e.max)*e.grow;
-      e.mesh.scaling.setAll(k);
-    }
-    if(e.t<=0){
-      e.mesh.dispose();
-    }
-  }
-  effects=effects.filter(e=>e.t>0);
-}
-
-function autoCombat(dt){
-  if(!S.auto)return;
-  autoTimer-=dt;
-  if(autoTimer<=0){
-    autoTimer=.52/Math.max(0.35,(S.attackSpeed||1)*getHeartMethodEffects().attack);
-    let t=nearest(7.5);
-    if(t)playerAttack(t,1);
-    // Enemy population is fixed by map coordinates.
-  }
-  for(let i=1;i<=4;i++){
-    let skillId=(S.equippedSkills&&S.equippedSkills[i-1])||null;
-    if(!skillId||cooldown[i]>0)continue;
-    let sk=getSkillDef(skillId);
-    if(!sk||S.mp<sk.mp)continue;
-    if(sk.aoe===0){
-      let tgt=nearest(9);
-      if(tgt)useSkill(i);
-    }else if(sk.aoe<=7.5){
-      let cnt=actors.filter(a=>!a.dead&&dist(a,player)<sk.aoe).length;
-      if(cnt>=2)useSkill(i);
-    }else{
-      if(boss&&dist(boss,player)<sk.aoe)useSkill(i);
-      else if(actors.filter(a=>!a.dead&&dist(a,player)<sk.aoe).length>=3)useSkill(i);
-    }
-  }
-}
-
-function tick(){
-  let now=performance.now();
-  const targetFps=window.PerformanceProfile?window.PerformanceProfile.current.targetFps:60;
-  if(now-last<(1000/targetFps)*.92)return;
-  let dt=Math.min(.05,(now-last)/1000);
-  last=now;
-  const profile=window.PerformanceProfile?window.PerformanceProfile.sample(dt):null;
-  if(window.GameScheduler)window.GameScheduler.update(now);
-  if(gameStarted&&!paused){
-    updatePlayer(dt);
-    for(let i=0;i<actors.length;i++){
-      const a=actors[i];if(!a||a.dead)continue;
-      const d=Math.hypot(a.x-player.x,a.z-player.z);
-      if(d>150&&a!==boss)continue;
-      const hz=!profile?60:(d<=30?profile.enemyNearHz:d<=80?profile.enemyMidHz:profile.enemyFarHz);
-      a._updateAcc=(a._updateAcc||0)+dt;
-      if(a._updateAcc>=1/hz){const actorDt=Math.min(.25,a._updateAcc);a._updateAcc=0;updateActor(a,actorDt);}
-      if(a.mesh)a.mesh.setEnabled(d<170||a===boss);
-      if(a.shadow)a.shadow.setEnabled((d<(profile?profile.shadowDistance:55))||a===boss);
-    }
-    updateEffects(dt);
-    for(let i=1;i<=4;i++)cooldown[i]=Math.max(0,cooldown[i]-dt);
-    dashCd.t=Math.max(0,dashCd.t-dt);
-    autoCombat(dt);
-    if(window.TuTienSystems)window.TuTienSystems.update(S,dt,getSystemContext());
-
-    // Passive HP/MP Regen
-    regenTimer-=dt;
-    if(regenTimer<=0){
-      regenTimer=1.2;
-      const heartFx=getHeartMethodEffects();
-      S.hp=Math.min(S.maxHp,S.hp+(S.maxHp*Math.max(0,S.hpRegenPct||0)+2)*heartFx.regen);
-      S.mp=Math.min(S.maxMp,S.mp+(S.maxMp*Math.max(0,S.mpRegenPct||0)+3)*heartFx.regen);
-      updateHUD();
-    }
-
-    spawnTimer-=dt;
-    if(spawnTimer<=0){
-      spawnTimer=2.2;
-      spawnBoss();
-    }
-    miniTimer-=dt;
-    if(miniTimer<=0){
-      miniTimer=.25;
-      drawMini();
-      updateHUD();
-    }
-    updateCooldownUI();
-  }
-  scene.render();
-}
-
-function updateCooldownUI(){
-  for(let i=1;i<=4;i++){
-    let e=$('#cd'+i);
-    if(e)e.textContent=cooldown[i]>0?cooldown[i].toFixed(cooldown[i]<1?1:0):'';
-  }
-  let d=$('#cdDash');
-  if(d)d.textContent=dashCd.t>0?dashCd.t.toFixed(dashCd.t<1?1:0):'';
-}
-
-function updateHUD(){
-  S.hp=clamp(S.hp,0,S.maxHp);
-  S.mp=clamp(S.mp,0,S.maxMp);
-  $('#pname').textContent=S.name;
-  $('#realm').textContent=realmName()+' Â· '+region().name;
-  $('#level').textContent=S.level;
-  $('#hpFill').style.width=(S.hp/S.maxHp*100)+'%';
-  $('#hpText').textContent=`${Math.round(S.hp)}/${S.maxHp}`;
-  $('#mpFill').style.width=(S.mp/S.maxMp*100)+'%';
-  $('#xpFill').style.width=(S.xp/S.xpNeed*100)+'%';
-  $('#gold').textContent=Math.floor(S.gold).toLocaleString();
-  $('#stones').textContent=S.stones.toLocaleString();
-  let petMult=S.pet?1.08:1.0;
-  let defScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.defense&&S.defense[t])||0),0);
-  let heartPower=getHeartMethodEffects().defense;
-  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+defScore*18)*getRealmPowerMultiplier()*petMult*heartPower).toLocaleString();
-  $('#questText').innerHTML=`[ChÃ­nh] Diá»‡t YÃªu ThÃº <span>${Math.min(20,S.questKills)}/20</span>`;
-  $('#autoBtn').classList.toggle('on',S.auto);
-  $('#miniName').textContent=region().name;
-
-  // Cáº­p nháº­t cÃ¡c nÃºt ká»¹ nÄƒng chiáº¿n Ä‘áº¥u (HUD)
-  for(let i=1;i<=4;i++){
-    let btn=document.querySelector(`.skill[data-skill="${i}"]`);
-    if(btn){
-      let skillId=(S.equippedSkills&&S.equippedSkills[i-1])||null;
-      let sk=skillId?getSkillDef(skillId):null;
-      let img=btn.querySelector('img.skill-icon-img');
-      let bTag=btn.querySelector('b');
-      let cdSpan=btn.querySelector('span');
-      if(!cdSpan){
-        btn.innerHTML+=`<span id="cd${i}"></span>`;
-      }
-      if(sk){
-        preloadSkillVfx(sk);
-        if(!img){
-          btn.innerHTML=`<img src="${sk.icon}" class="skill-icon-img" alt="${sk.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><b style="display:none">${sk.badge}</b><span id="cd${i}"></span>`;
-        }else if(img.getAttribute('src')!==sk.icon){
-          img.src=sk.icon;
-          img.style.display='block';
-        }
-      }else{
-        if(img||!bTag||bTag.textContent!=='+'){
-          btn.innerHTML=`<b>+</b><span id="cd${i}"></span>`;
-        }
-      }
-      btn.title=sk?`[${sk.tierName} Â· ${sk.rankName}] ${sk.name} (${sk.mp} MP) - PhÃ­m ${i}`:`Ã” ${i} [ChÆ°a trang bá»‹] - PhÃ­m ${i}`;
-      btn.style.opacity=(sk&&S.mp<sk.mp)?'0.45':'1';
-    }
-  }
-  let dashBtn=$('#dashBtn');
-  if(dashBtn&&!dashBtn.querySelector('img')){
-    dashBtn.innerHTML=`<img src="assets/skills/common/dash.png" class="skill-icon-img" alt="LÆ°á»›t" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><b style="display:none">ğŸ’¨</b><span id="cdDash"></span>`;
-  }
-}
-
-function drawMini(){
-  if(!player)return;
-  let c=$('#mini');
-  if(!c)return;
-  let x=c.getContext('2d');
-  x.clearRect(0,0,c.width,c.height);
-
-  let cx=c.width/2, cy=c.height/2;
-  let rx=c.width*0.44, ry=c.height*0.44;
-
-  // Ná»n Radar TiÃªn Giá»›i
-  let bgGrad=x.createRadialGradient(cx,cy,5,cx,cy,rx);
-  bgGrad.addColorStop(0,'#273934');
-  bgGrad.addColorStop(0.85,'#182622');
-  bgGrad.addColorStop(1,'#101b18');
-  x.fillStyle=bgGrad;
-  x.beginPath();
-  x.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
-  x.fill();
-
-  // VÃ²ng quÃ©t Radar
-  x.strokeStyle='rgba(117, 233, 255, 0.18)';
-  x.lineWidth=1;
-  x.beginPath();
-  x.ellipse(cx,cy,rx*0.5,ry*0.5,0,0,Math.PI*2);
-  x.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
-  x.stroke();
-
-  // QuÃ¡i váº­t & Boss
-  for(let a of actors){
-    if(a.dead)continue;
-    let dx=a.x-player.x, dz=a.z-player.z;
-    let d=Math.hypot(dx,dz);
-    if(d<=RADAR_RANGE){
-      let px=cx+(dx/RADAR_RANGE)*rx;
-      let py=cy+(dz/RADAR_RANGE)*ry;
-      if(a===boss){
-        x.fillStyle='#ffd700';
-        x.shadowColor='#ffd700';
-        x.shadowBlur=8;
-        x.beginPath();
-        x.arc(px,py,4.5,0,Math.PI*2);
-        x.fill();
-        x.shadowBlur=0;
-      }else{
-        x.fillStyle='#e53e3e';
-        x.beginPath();
-        x.arc(px,py,2.2,0,Math.PI*2);
-        x.fill();
-      }
-    }else if(a===boss){
-      // Con trá» hÆ°á»›ng Boss khi á»Ÿ xa
-      let angle=Math.atan2(dz,dx);
-      let edgeX=cx+Math.cos(angle)*(rx-4);
-      let edgeY=cy+Math.sin(angle)*(ry-4);
-      x.fillStyle='#ff9800';
-      x.beginPath();
-      x.arc(edgeX,edgeY,3.5,0,Math.PI*2);
-      x.fill();
-    }
-  }
-
-  // NhÃ¢n váº­t chÃ­nh á»Ÿ tÃ¢m Radar
-  x.fillStyle='#00ffff';
-  x.shadowColor='#00ffff';
-  x.shadowBlur=6;
-  x.beginPath();
-  x.arc(cx,cy,3.5,0,Math.PI*2);
-  x.fill();
-  x.shadowBlur=0;
-
-  // HÆ°á»›ng nhÃ¬n cá»§a nhÃ¢n váº­t
-  let dirX=player.facing==='left'?-1:1;
-  x.strokeStyle='#00ffff';
-  x.lineWidth=1.5;
-  x.beginPath();
-  x.moveTo(cx,cy);
-  x.lineTo(cx+dirX*6,cy);
-  x.stroke();
-
-  // Tá»a Ä‘á»™ ngÆ°á»i chÆ¡i & KÃ­ch thÆ°á»›c báº£n Ä‘á»“
-  x.fillStyle='rgba(255,255,255,0.75)';
-  x.font='9px sans-serif';
-  x.textAlign='center';
-  x.fillText(`X:${Math.round(player.x)} Z:${Math.round(player.z)} (1000m)`,cx,c.height-3);
-}
-
-function setupInput(){
-  window.addEventListener('keydown',e=>{
-    let k=e.key.toLowerCase();
-    keys[k]=true;
-    if(['1','2','3','4'].includes(k))useSkill(+k);
-    if(k===' '||k==='spacebar'){e.preventDefault();useDash();}
-    if(k==='q'){$('#autoBtn').click();}
-  });
-  window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-
-  let j=$('#joy'),k=$('#joyKnob');
-  function move(e){
-    if(!joy.active||e.pointerId!==joy.pid)return;
-    let r=j.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,m=Math.hypot(dx,dy),max=r.width*.32;
-    if(m>max){dx=dx/m*max;dy=dy/m*max}
-
-    // Mobile dead-zone: loáº¡i bá» rung/noise ráº¥t nhá» cá»§a ngÃ³n tay quanh tÃ¢m joystick.
-    let nx=dx/max, ny=-dy/max;
-    let nm=Math.hypot(nx,ny);
-    const JOY_DEADZONE=0.12;
-    if(nm<JOY_DEADZONE){
-      joy.x=0; joy.y=0;
-      dx=0; dy=0;
-    }else{
-      // Remap pháº§n cÃ²n láº¡i vá» 0..1 Ä‘á»ƒ khÃ´ng táº¡o "bÆ°á»›c nháº£y" sau dead-zone.
-      let scaled=(nm-JOY_DEADZONE)/(1-JOY_DEADZONE);
-      joy.x=(nx/nm)*scaled;
-      joy.y=(ny/nm)*scaled;
-    }
-    k.style.transform=`translate(${dx}px,${dy}px)`;
-  }
-  j.addEventListener('pointerdown',e=>{joy.active=true;joy.pid=e.pointerId;j.setPointerCapture(e.pointerId);move(e)});
-  j.addEventListener('pointermove',move);
-  let end=e=>{
-    if(e.pointerId!==joy.pid)return;
-    joy.active=false;joy.x=joy.y=0;
-    k.style.transform='';
-  };
-  j.addEventListener('pointerup',end);
-  j.addEventListener('pointercancel',end);
-
-  $$('.skill').forEach(b=>{
-    if(b.dataset.skill){
-      b.addEventListener('pointerdown',e=>{e.preventDefault();useSkill(+b.dataset.skill)});
-    }
-  });
-  $('#dashBtn').onclick=useDash;
-
-  $('#autoBtn').onclick=()=>{
-    S.auto=!S.auto;
-    save();
-    updateHUD();
-    toast(S.auto?'âš” Tá»± Ä‘á»™ng chiáº¿n Ä‘áº¥u: Báº¬T':'Tá»± Ä‘á»™ng chiáº¿n Ä‘áº¥u: Táº®T');
-  };
-
-  $('#menuBtn').onclick=()=>$('#menuGrid').hidden=!$('#menuGrid').hidden;
-  $$('[data-panel]').forEach(b=>b.addEventListener('click',()=>openPanel(b.dataset.panel)));
-
-  // Reliable panel close handlers
-  $('#closePanel').onclick=closePanel;
-  $('#panel').addEventListener('click',e=>{
-    if(e.target===$('#panel'))closePanel();
-  });
-
-  // Lifecycle/resize chá»‰ Ä‘Æ°á»£c Ä‘Äƒng kÃ½ má»™t láº§n á»Ÿ GameLifecycle.
-  if(!window.GameLifecycle){
-    let resizeTimer=0;
-    window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{engine.resize();updateOrthoCameraBounds();},160);});
-    document.addEventListener('visibilitychange',()=>{paused=document.hidden});
-  }
-}
-
-function useInventoryItem(name){
-  if(!S.items||!S.items[name]||S.items[name]<=0)return toast('ÄÃ£ háº¿t váº­t pháº©m');
-  S.items[name]--;
-  if(S.items[name]<=0)delete S.items[name];
-
-  if(name.includes('Há»“i KhÃ­ Äan')){
-    S.hp=S.maxHp;
-    S.mp=S.maxMp;
-    toast('ğŸ”´ ÄÃ£ dÃ¹ng Há»“i KhÃ­ Äan: Phá»¥c há»“i 100% KhÃ­ Huyáº¿t & Linh Lá»±c!');
-    sfx('item');
-  }else if(name.includes('Linh Tháº¡ch')){
-    const cultivateGain=Math.round(50*getTechniqueCultivationMultiplier()*getHeartMethodEffects().cultivation);
-    S.cultivation+=cultivateGain;
-    S.gold+=30;
-    toast('ğŸ’ Háº¥p thá»¥ Linh Tháº¡ch: +'+cultivateGain+' Tu vi, +30 VÃ ng');
-    sfx('item');
-  }else if(name.includes('Boss Há»“n Tinh')){
-    for(const t of COMBAT_DAMAGE_TYPES)S.damage[t]=(S.damage[t]||0)+3;
-    S.maxHp+=100;
-    S.hp=S.maxHp;
-    toast('ğŸ”¥ Dung há»£p Há»“n Tinh: +3 má»—i loáº¡i damage, +100 Sinh lá»±c!');
-    sfx('breakthrough');
-  }else{
-    toast('ÄÃ£ sá»­ dá»¥ng '+name);
-  }
-  save();
-  updateHUD();
-  openPanel('inventory');
-}
-
-function openPanel(kind){
-  paused=true;
-  $('#panel').hidden=false;
-  $('#panel').style.display='grid';
-  $('#menuGrid').hidden=true;
-  let title='TÃºi Äá»“',html='';
-
-  try {
-    if(kind==='inventory'){
-      title='TÃºi Äá»“ Â· Äan DÆ°á»£c Â· PhÃ¹ Lá»¥c Â· PhÃ¡p Báº£o';
-      let grade=gradeForLevel();
-      let entries=Object.entries(S.items||{});
-      html='<div class="cards">'+(entries.length?entries.map(([n,q])=>{
-        let canUse=n.includes('Äan')||n.includes('Linh Tháº¡ch')||n.includes('Há»“n Tinh');
-        return `<div class="card"><div class="slot"><div class="icon">${n.includes('Kiáº¿m')?'âš”':n.includes('GiÃ¡p')?'ğŸ›¡':n.includes('Äan')?'ğŸ”´':n.includes('Há»“n')?'ğŸ”¥':'ğŸ’'}</div><div><b>${n}</b><br><small>Sá»‘ lÆ°á»£ng: ${q}</small></div></div>${canUse?`<button class="btn-use" data-use="${n}">Sá»­ Dá»¥ng</button>`:''}</div>`;
-      }).join(''):'<div class="card"><p>TÃºi Ä‘á»“ hiá»‡n Ä‘ang trá»‘ng</p></div>')+'</div>'+`<div class="card" style="margin-top:12px"><b>Pháº©m cáº¥p trang bá»‹ hiá»‡n táº¡i: ${grade} pháº©m</b><p>Nháº¥t â†’ NgÅ© pháº©m má»Ÿ dáº§n theo cáº£nh giá»›i vÃ  cáº¥p Ä‘á»™ nhÃ¢n váº­t.</p></div>`;
-      setTimeout(()=>$('[data-use]').forEach(b=>b.onclick=()=>useInventoryItem(b.dataset.use)),0);
-      if(window.TuTienSystems){
-        const extInv=window.TuTienSystems.renderInventory(S,getSystemContext());
-        if(extInv){html+=extInv.html;setTimeout(()=>extInv.bind&&extInv.bind(),0);}
-      }
-      if(window.TuTienCraftingGameplay){
-        const craftInv=window.TuTienCraftingGameplay.renderInventory(S,getSystemContext());
-        if(craftInv){html+=craftInv.html;setTimeout(()=>craftInv.bind&&craftInv.bind(),0);}
-      }
-
-    }else if(kind==='character'){
-      title='ThÃ´ng Tin NhÃ¢n Váº­t';
-      let dmgRows=COMBAT_DAMAGE_TYPES.map(t=>`<div class="stat"><span>Damage ${DAMAGE_LABELS[t]}</span><b>${Math.round(getDamageComponent(t))} Â· Skill ${DAMAGE_LABELS[t]}: ${Math.round(getPlayerDamageStat(t))}</b></div>`).join('');
-      let defRows=COMBAT_DAMAGE_TYPES.map(t=>`<div class="stat"><span>PhÃ²ng thá»§ ${DAMAGE_LABELS[t]}</span><b>${Math.round(getPlayerDefenseStat(t))}</b></div>`).join('');
-      html=`
-        <div class="card"><b>ğŸ‘¤ CÆ¡ Báº£n</b>
-          <div class="stat"><span>TÃªn nhÃ¢n váº­t</span><b>${S.name}</b></div>
-          <div class="stat"><span>Cáº£nh giá»›i</span><b>${realmName()}</b></div>
-          <div class="stat"><span>Khu vá»±c</span><b>${region().name}</b></div>
-          <div class="stat"><span>Há»‡ ká»¹ nÄƒng</span><b>${S.skillElement}</b></div>
-          <div class="stat"><span>Sinh lá»±c (HP)</span><b>${Math.round(S.hp)} / ${S.maxHp}</b></div>
-          <div class="stat"><span>PhÃ¡p lá»±c (MP)</span><b>${Math.round(S.mp)} / ${S.maxMp}</b></div>
-          <div class="stat"><span>Tháº§n thá»©c</span><b>${Math.round(S.spiritSense)}</b></div>
-          <div class="stat"><span>Há»‡ sá»‘ stat cáº£nh giá»›i</span><b>${getRealmPowerText()}</b></div>
-          <div class="stat"><span>CÃ´ng phÃ¡p tu luyá»‡n</span><b>${getActiveTechnique().grade.name} Â· ${getActiveTechnique().rank.name} Â· ${getActiveTechnique().name}</b></div>
-          <div class="stat"><span>Há»‡ sá»‘ thuá»™c tÃ­nh CÃ´ng phÃ¡p</span><b>${CULTIVATION_TECH_LABELS[getActiveTechniqueType()]} ${getTechniqueStatText()}</b></div>
-          <div class="stat"><span>TÃ¢m phÃ¡p</span><b>${getHeartMethodDef().name} Â· Lv.${getHeartMethodLevel()}</b></div>
-          <div class="stat"><span>Ãp cháº¿ cáº£nh giá»›i</span><b>+35% / tiá»ƒu cáº£nh Â· +75% / Ä‘áº¡i cáº£nh</b></div>
-        </div>
-        <div class="card" style="margin-top:8px"><b>âš” SÃ¡t ThÆ°Æ¡ng</b>
-          <div class="stat"><span>Damage Tá»•ng</span><b>${Math.round(getTotalDamage())}</b></div>
-          <div class="stat"><span>Æ¯u tiÃªn Ä‘Ãºng há»‡</span><b>x${MATCHING_DAMAGE_MULT.toFixed(1)} pháº§n damage Ä‘Ãºng há»‡</b></div>
-          ${dmgRows}
-          <div class="stat"><span>Tá»· lá»‡ báº¡o kÃ­ch</span><b>${Math.round((S.critChance||0)*100)}%</b></div>
-          <div class="stat"><span>SÃ¡t thÆ°Æ¡ng báº¡o kÃ­ch</span><b>${Math.round((S.critDamage||1.8)*100)}%</b></div>
-        </div>
-        <div class="card" style="margin-top:8px"><b>ğŸ›¡ PhÃ²ng Thá»§</b>${defRows}</div>
-        <div class="card" style="margin-top:8px"><b>â˜¯ Tá»‘c Äá»™ & Há»“i Phá»¥c</b>
-          <div class="stat"><span>Tá»‘c Ä‘á»™ di chuyá»ƒn</span><b>${(S.moveSpeed||6.2).toFixed(2)} m/s</b></div>
-          <div class="stat"><span>Tá»‘c Ä‘á»™ Ä‘Ã¡nh</span><b>${Math.round((S.attackSpeed||1)*100)}%</b></div>
-          <div class="stat"><span>Tá»‘c Ä‘á»™ thi triá»ƒn</span><b>${Math.round((S.castSpeed||1)*100)}%</b></div>
-          <div class="stat"><span>Há»“i Sinh lá»±c</span><b>${((S.hpRegenPct||0)*100).toFixed(1)}% / nhá»‹p</b></div>
-          <div class="stat"><span>Há»“i PhÃ¡p lá»±c</span><b>${((S.mpRegenPct||0)*100).toFixed(1)}% / nhá»‹p</b></div>
-          <div class="stat"><span>Linh ThÃº há»— trá»£</span><b>${S.pet?'Cá»­u VÄ© Linh Há»“ (+8% sÃ¡t thÆ°Æ¡ng)':'KhÃ´ng'}</b></div>
-          <div class="stat"><span>YÃªu thÃº Ä‘Ã£ diá»‡t</span><b>${S.kills}</b></div>
-        </div>`;
-
-      if(window.TuTienSystems)html+=window.TuTienSystems.professionSummary(S);
-
-    }else if(kind==='skills'){
-      title='TÃ ng Kinh CÃ¡c Â· Ká»¹ NÄƒng Cá»­u Há»‡';
-      let currentElem = S.skillElement || 'Kiáº¿m';
-      let currentTier = typeof S.skillTierTab === 'number' ? S.skillTierTab : 0;
-      let tierDef = SKILL_TIERS[currentTier] || SKILL_TIERS[0];
-
-      // 1. Equipped Bar
-      let equippedHtml = `<div class="card" style="margin-bottom:8px">
-        <b>âš” Ã” Ká»¹ NÄƒng Äang DÃ¹ng (Chiáº¿n Äáº¥u: PhÃ­m 1, 2, 3, 4)</b>
-        <div class="equipped-bar">
-          ${[0,1,2,3].map(slotIdx => {
-            let skId = S.equippedSkills ? S.equippedSkills[slotIdx] : null;
-            let sk = skId ? getSkillDef(skId) : null;
-            let lv = skId ? (S.learnedSkills[skId] || 1) : 0;
-            if(sk){
-              return `<div class="equipped-slot filled">
-                <img src="${sk.icon}" class="skill-slot-img tier-border-${sk.tierId}" alt="${sk.name}" onerror="this.style.display='none'">
-                <span class="badge-tier tier-${sk.tierId}">${sk.badge}</span>
-                <b>${sk.name}</b>
-                <small>Ã” ${slotIdx + 1} Â· Lv.${lv} Â· ${sk.mp}MP</small>
-                <button data-unequip-slot="${slotIdx}">ThÃ¡o</button>
-              </div>`;
-            } else {
-              return `<div class="equipped-slot">
-                <div style="width:36px;height:36px;border-radius:50%;border:1px dashed rgba(255,255,255,.3);display:grid;place-items:center;margin-bottom:4px;font-size:18px;color:#888">+</div>
-                <b>[Ã” ${slotIdx + 1} Trá»‘ng]</b>
-                <small>ChÆ°a gÃ¡n bÃ­ tá»‹ch</small>
-              </div>`;
-            }
-          }).join('')}
-        </div>
-      </div>`;
-
-      // 2. Element Switcher Tabs
-      let elemTabsHtml = `<div class="card" style="margin-bottom:8px">
-        <b>ğŸ”® Chá»n Há»‡ Linh CÄƒn Tu TiÃªn:</b>
-        <div class="skill-tabs">
-          ${elements.map(([n, ic]) => `
-            <button data-skill-elem="${n}" class="${currentElem === n ? 'active' : ''}">${ic} ${n}</button>
-          `).join('')}
-        </div>
-      </div>`;
-
-      // 3. Tier Tabs (HoÃ ng, Huyá»n, Äá»‹a, ThiÃªn)
-      let tierTabsHtml = `<div class="card" style="margin-bottom:8px">
-        <b>ğŸ“œ Äáº³ng Cáº¥p Ká»¹ NÄƒng:</b>
-        <div class="skill-tabs">
-          ${SKILL_TIERS.map((t, idx) => `
-            <button data-skill-tier="${idx}" class="${currentTier === idx ? 'active' : ''}">
-              ${t.name} (Y/c: ${realms[t.minRealm]})
-            </button>
-          `).join('')}
-        </div>
-      </div>`;
-
-      // 4. 4 Skill Cards for the selected Tier & Element (Háº¡ Pháº©m, Trung Pháº©m, ThÆ°á»£ng Pháº©m, Cá»±c Pháº©m)
-      let cardsHtml = '<div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">';
-      for(let rankIdx = 0; rankIdx < 4; rankIdx++){
-        let skillId = getSkillId(currentElem, currentTier, rankIdx);
-        let sk = getSkillDef(skillId);
-        let isLearned = S.learnedSkills && S.learnedSkills[skillId];
-        let lv = isLearned ? S.learnedSkills[skillId] : 0;
-        let canLearn = S.realm >= sk.minRealm && S.level >= sk.minLevel;
-        let upCost = getSkillUpgradeCost(sk,Math.max(1,lv));
-        let upCostStones = upCost ? upCost.stones : 0;
-        let upCostCult = upCost ? upCost.cult : 0;
-        let dmgPercent = Math.round(sk.mult * 100 * (1 + Math.max(0, lv - 1) * 0.15));
-
-        cardsHtml += `<div class="card skill-card ${isLearned ? 'learned' : ''}">
-          <div>
-            <div class="slot" style="margin-bottom:8px">
-              <img src="${sk.icon}" class="skill-thumb-img tier-border-${sk.tierId}" alt="${sk.name}">
-              <div>
-                <span class="badge-tier tier-${tierDef.id}">${sk.tierName} Â· ${sk.rankName}</span>
-                <b style="color:${tierDef.color};display:block;font-size:14px">${sk.name}</b>
-              </div>
-            </div>
-            <p style="margin-top:6px">
-              âš” SÃ¡t thÆ°Æ¡ng: <b style="color:#ffe07a">${dmgPercent}% CÃ´ng KÃ­ch</b><br>
-              ğŸ’§ Linh lá»±c: <b>${sk.mp} MP</b> Â· â± Há»“i chiÃªu: <b>${sk.cd}s</b><br>
-              ğŸ¯ Pháº¡m vi: <b>${sk.aoe === 0 ? 'ÄÆ¡n má»¥c tiÃªu (3 liÃªn tráº£m)' : sk.aoe + 'm (AoE diá»‡n rá»™ng)'}</b><br>
-              â˜¯ YÃªu cáº§u: <b>${realms[sk.minRealm]} (Lv.${sk.minLevel}+)</b><br>ğŸ§© Vai trÃ²: <b>${sk.role||'Ká»¹ nÄƒng chiáº¿n Ä‘áº¥u'}</b><br>âœ¨ Hiá»‡u á»©ng: <b>${sk.statusText||'KhÃ´ng'}</b>
-            </p>
-          </div>
-          <div>
-            <div style="font-size:11px;margin:6px 0">
-              ${isLearned ? `<span class="good">âœ“ ÄÃ£ lÄ©nh ngá»™ (Cáº¥p ${lv}/5)</span>` : `<span style="color:#a8b4be">ChÆ°a lÄ©nh ngá»™</span>`}
-            </div>
-            ${!isLearned ? `
-              <button class="btn-use" data-learn-skill="${sk.id}" ${(!canLearn || S.stones < sk.costStones || S.cultivation < sk.costCult) ? 'disabled' : ''}>
-                LÄ©nh Ngá»™ (ğŸ’${sk.costStones} Â· â˜¯${sk.costCult})
-              </button>
-            ` : `
-              ${lv < 5 ? `
-                <button data-upgrade-skill="${sk.id}" ${(S.stones < upCostStones || S.cultivation < upCostCult) ? 'disabled' : ''}>
-                  CÆ°á»ng HÃ³a (ğŸ’${upCostStones} Â· â˜¯${upCostCult})
-                </button>
-              ` : `<button disabled>ÄÃ£ Äáº¡t Cá»±c Háº¡n (Lv.5)</button>`}
-              <div class="skill-card-actions">
-                ${[1, 2, 3, 4].map(s => {
-                  let isCurrentInSlot = S.equippedSkills && S.equippedSkills[s - 1] === sk.id;
-                  return `<button data-equip-slot="${s}" data-equip-skill="${sk.id}" ${isCurrentInSlot ? 'disabled' : ''}>
-                    ${isCurrentInSlot ? 'Äang Ã” ' + s : 'GÃ¡n Ã” ' + s}
-                  </button>`;
-                }).join('')}
-              </div>
-            `}
-          </div>
-        </div>`;
-      }
-      cardsHtml += '</div>';
-
-      html = equippedHtml + elemTabsHtml + tierTabsHtml + cardsHtml;
-
-      setTimeout(() => {
-        $$('[data-skill-elem]').forEach(b => b.onclick = () => {
-          S.skillElement = b.dataset.skillElem;
-          save();
-          openPanel('skills');
-          updateHUD();
-          toast('ğŸ”® ÄÃ£ chuyá»ƒn sang phÃ¡i ' + S.skillElement);
-        });
-
-        $$('[data-skill-tier]').forEach(b => b.onclick = () => {
-          S.skillTierTab = parseInt(b.dataset.skillTier, 10);
-          save();
-          openPanel('skills');
-        });
-
-        $$('[data-learn-skill]').forEach(b => b.onclick = () => {
-          let skId = b.dataset.learnSkill;
-          let sk = getSkillDef(skId);
-          if(!sk) return;
-          if(S.realm < sk.minRealm || S.level < sk.minLevel) return toast('ChÆ°a Ä‘áº¡t Ä‘á»§ cáº£nh giá»›i hoáº·c cáº¥p Ä‘á»™ Ä‘á»ƒ lÄ©nh ngá»™!');
-          if(S.stones < sk.costStones) return toast('KhÃ´ng Ä‘á»§ Linh Tháº¡ch!');
-          if(S.cultivation < sk.costCult) return toast('KhÃ´ng Ä‘á»§ Tu Vi!');
-          S.stones -= sk.costStones;
-          S.cultivation -= sk.costCult;
-          if(!S.learnedSkills) S.learnedSkills = {};
-          S.learnedSkills[skId] = 1;
-
-          if(Array.isArray(S.equippedSkills)){
-            let emptyIdx = S.equippedSkills.indexOf(null);
-            if(emptyIdx !== -1){
-              S.equippedSkills[emptyIdx] = skId;
-            }
-          }
-
-          save();
-          openPanel('skills');
-          updateHUD();
-          toast('âœ¨ LÄ©nh ngá»™ thÃ nh cÃ´ng ' + sk.name + ' (' + sk.tierName + ' Â· ' + sk.rankName + ')!');
-          sfx('breakthrough');
-        });
-
-        $$('[data-upgrade-skill]').forEach(b => b.onclick = () => {
-          let skId = b.dataset.upgradeSkill;
-          let sk = getSkillDef(skId);
-          if(!sk) return;
-          let curLv = (S.learnedSkills && S.learnedSkills[skId]) || 1;
-          if(curLv >= 5) return toast('BÃ­ tá»‹ch Ä‘Ã£ Ä‘áº¡t cáº£nh giá»›i Ä‘áº¡i viÃªn mÃ£n!');
-          let upCost = getSkillUpgradeCost(sk,curLv);
-          if(!upCost) return toast('KhÃ´ng cÃ³ dá»¯ liá»‡u nÃ¢ng cáº¥p cho ká»¹ nÄƒng nÃ y');
-          let upCostStones = upCost.stones;
-          let upCostCult = upCost.cult;
-          if(S.stones < upCostStones) return toast('KhÃ´ng Ä‘á»§ Linh Tháº¡ch!');
-          if(S.cultivation < upCostCult) return toast('KhÃ´ng Ä‘á»§ Tu Vi!');
-          S.stones -= upCostStones;
-          S.cultivation -= upCostCult;
-          S.learnedSkills[skId] = curLv + 1;
-          save();
-          openPanel('skills');
-          updateHUD();
-          toast('âš” CÆ°á»ng hÃ³a thÃ nh cÃ´ng ' + sk.name + ' lÃªn Cáº¥p ' + (curLv + 1) + ' (+15% Uy lá»±c)!');
-          sfx('levelUp');
-        });
-
-        $$('[data-equip-slot]').forEach(b => b.onclick = () => {
-          let slot = parseInt(b.dataset.equipSlot, 10);
-          let skId = b.dataset.equipSkill;
-          let sk = getSkillDef(skId);
-          if(!sk) return;
-          if(!Array.isArray(S.equippedSkills)) S.equippedSkills = [null, null, null, null];
-          let oldSlot = S.equippedSkills.indexOf(skId);
-          if(oldSlot !== -1 && oldSlot !== slot - 1){
-            S.equippedSkills[oldSlot] = null;
-          }
-          S.equippedSkills[slot - 1] = skId;
-          save();
-          openPanel('skills');
-          updateHUD();
-          toast('ğŸ—¡ ÄÃ£ trang bá»‹ ' + sk.name + ' vÃ o Ã” ' + slot + '!');
-          sfx('item');
-        });
-
-        $$('[data-unequip-slot]').forEach(b => b.onclick = () => {
-          let slotIdx = parseInt(b.dataset.unequipSlot, 10);
-          if(Array.isArray(S.equippedSkills)){
-            S.equippedSkills[slotIdx] = null;
-            save();
-            openPanel('skills');
-            updateHUD();
-            toast('ÄÃ£ thÃ¡o ká»¹ nÄƒng khá»i Ã” ' + (slotIdx + 1));
-            sfx('item');
-          }
-        });
-      }, 0);
-
-    }else if(kind==='cultivate'){
-      title='Tu Vi Â· Cáº£nh Giá»›i Â· CÃ´ng PhÃ¡p Â· TÃ¢m PhÃ¡p';
-      let rawNeed=S.realm===0
-        ?Math.round(350*Math.pow(1.55,Math.max(0,(S.realmStage||1)-1)))
-        :Math.round(9000*Math.pow(4,S.realm-1)*Math.pow(2.4,S.period||0));
-      let need=window.TuTienSystems?window.TuTienSystems.getBreakthroughNeed(S,rawNeed):rawNeed;
-      const activeTech=getActiveTechnique();
-      const heart=getHeartMethodDef(),heartLv=getHeartMethodLevel(),heartFx=getHeartMethodEffects();
-
-      let techniqueCards=CULTIVATION_TECH_TYPES.map(type=>{
-        const t=getTechniqueDef(type),cost=techniqueRankUpgradeCost(type),breakCost=techniqueBreakthroughCost(type);
-        const next=t.gradeIndex<TECHNIQUE_GRADES.length-1?TECHNIQUE_GRADES[t.gradeIndex+1]:null;
-        const canBreak=canBreakTechniqueGrade(type);
-        const maxed=t.rankIndex>=TECHNIQUE_RANKS.length-1;
-        const nextRank=TECHNIQUE_RANKS[Math.min(t.rankIndex+1,TECHNIQUE_RANKS.length-1)];
-        return `<div class="card">
-          <b>ğŸ“œ ${CULTIVATION_TECH_LABELS[type]} Â· ${t.grade.name} Â· ${t.rank.name}</b>
-          <p><b>${t.name}</b></p>
-          <p>Hiá»‡u suáº¥t nháº­n Tu vi: Ã—${getTechniqueCultivationMultiplier(type).toFixed(2)}</p>
-          <p>Thuá»™c tÃ­nh ${CULTIVATION_TECH_LABELS[type]} khi váº­n hÃ nh: Ã—${(t.grade.stat*t.rank.stat).toFixed(2)}</p>
-          <p>YÃªu cáº§u cáº£nh giá»›i: ${realms[t.grade.minRealm]} trá»Ÿ lÃªn.</p>
-          <button data-tech-select="${type}" ${isTechniqueRealmAllowed(type)?'':'disabled'}>${getActiveTechniqueType()===type?'Äang váº­n hÃ nh':'Váº­n hÃ nh tu luyá»‡n'}</button>
-          <button data-tech-up="${type}" ${maxed?'disabled':''}>Tu luyá»‡n â†’ ${nextRank.name} Â· ${cost.cult} Tu vi + ${cost.stones} Linh Tháº¡ch</button>
-          ${next?`<button data-tech-break="${type}" ${canBreak?'':'disabled'}>Äá»™t phÃ¡ â†’ ${next.name} Â· Háº¡ pháº©m Â· ${breakCost.cult} Tu vi + ${breakCost.stones} Linh Tháº¡ch</button>`:'<p>ÄÃ£ Ä‘áº¡t ThiÃªn Â· Cá»±c pháº©m</p>'}
-        </div>`;
-      }).join('');
-
-      let heartCards=heartMethods.map((h,i)=>{
-        let lv=getHeartMethodLevel(i),locked=(S.realm||0)<h.minRealm,cost=heartUpgradeCost(i);
-        return `<div class="card">
-          <b>ğŸ§˜ ${h.grade} pháº©m Â· ${h.name}</b>
-          <p>${h.desc}</p>
-          <p>Lv.${lv}/10 Â· Há»“i phá»¥c Ã—${h.regen.toFixed(2)} Â· Tháº§n thá»©c Ã—${h.spirit.toFixed(2)} Â· PhÃ²ng thá»§ Ã—${h.defense.toFixed(2)}</p>
-          <p>Tu vi Ã—${h.cultivation.toFixed(2)} Â· Tá»‘c Ä‘Ã¡nh/thi triá»ƒn/di chuyá»ƒn Ä‘Æ°á»£c tÄƒng theo cáº¥p.</p>
-          <button data-heart-select="${i}" ${locked?'disabled':''}>${i===S.heartMethod?'Äang váº­n hÃ nh':'Váº­n hÃ nh tÃ¢m phÃ¡p'}</button>
-          <button data-heart-up="${i}" ${locked||lv>=10?'disabled':''}>NÃ¢ng cáº¥p Â· ${cost.cult} Tu vi + ${cost.stones} Linh Tháº¡ch</button>
-        </div>`;
-      }).join('');
-
-      html=`
-        <div class="card">
-          <b>â˜¯ Cáº£nh giá»›i: ${realmName()}</b>
-          <p>Tu vi: ${S.cultivation} / ${need}</p>
-          <p>Há»‡ sá»‘ stat cáº£nh giá»›i: <b>${getRealmPowerText()}</b></p>
-          <p>Ãp cháº¿: <b>+35% má»—i tiá»ƒu cáº£nh Â· +75% má»—i Ä‘áº¡i cáº£nh chÃªnh lá»‡ch</b></p>
-          <p>CÃ´ng phÃ¡p Ä‘ang váº­n hÃ nh: <b>${activeTech.grade.name} Â· ${activeTech.rank.name} Â· ${activeTech.name}</b></p>
-          <p>Hiá»‡u suáº¥t CÃ´ng phÃ¡p: <b>Ã—${getTechniqueCultivationMultiplier().toFixed(2)} Tu vi</b></p>
-          <p>Thuá»™c tÃ­nh ${CULTIVATION_TECH_LABELS[getActiveTechniqueType()]}: <b>${getTechniqueStatText()}</b></p>
-          <button class="action" id="breakBtn">Äá»™t PhÃ¡ Cáº£nh Giá»›i</button>
-        </div>
-        <div class="card" style="margin-top:8px">
-          <b>ğŸ“š CÃ´ng phÃ¡p tu luyá»‡n</b>
-          <p>Äáº¡i pháº©m: HoÃ ng â†’ Huyá»n â†’ Äá»‹a â†’ ThiÃªn.</p>
-          <p>Má»—i Ä‘áº¡i pháº©m: Háº¡ pháº©m â†’ Trung pháº©m â†’ ThÆ°á»£ng pháº©m â†’ Cá»±c pháº©m.</p>
-          <p>CÃ´ng phÃ¡p tÄƒng hiá»‡u suáº¥t Tu vi vÃ  nhÃ¢n riÃªng thuá»™c tÃ­nh Ä‘Ãºng há»‡ Ä‘ang tu; pháº©m cÃ ng cao há»‡ sá»‘ cÃ ng lá»›n.</p>
-          <p>CÃ´ng phÃ¡p pháº©m cao bá»‹ khÃ³a náº¿u cáº£nh giá»›i hiá»‡n táº¡i chÆ°a Ä‘áº¡t yÃªu cáº§u.</p>
-        </div>
-        <div class="cards">${techniqueCards}</div>
-        <div class="card" style="margin-top:10px">
-          <b>ğŸ§˜ TÃ¢m phÃ¡p Ä‘ang váº­n hÃ nh: ${heart.grade} pháº©m Â· ${heart.name} Â· Lv.${heartLv}</b>
-          <p>Há»“i phá»¥c Ã—${heartFx.regen.toFixed(2)} Â· Tháº§n thá»©c Ã—${heartFx.spirit.toFixed(2)} Â· Tu vi Ã—${heartFx.cultivation.toFixed(2)} Â· PhÃ²ng thá»§ Ã—${heartFx.defense.toFixed(2)}</p>
-        </div>
-        <div class="cards">${heartCards}</div>`;
-
-      setTimeout(()=>{
-        let bb=$('#breakBtn');
-        if(bb)bb.onclick=()=>{
-          if(S.realm>=realms.length-1&&(S.period||0)>=3)return toast('ÄÃ£ Ä‘áº¡t HÃ³a Tháº§n Â· Äá»‰nh Phong');
-          if(S.cultivation<need)return toast('ChÆ°a Ä‘á»§ tu vi Ä‘á»ƒ Ä‘á»™t phÃ¡');
-          S.cultivation-=need;
-          if(window.TuTienSystems)window.TuTienSystems.consumeBreakthroughAid(S);
-          if(S.realm===0){
-            S.realmStage++;
-            if(S.realmStage>12){S.realm=1;S.realmStage=0;S.period=0}
-          }else{
-            S.period=(S.period||0)+1;
-            if(S.period>3){S.period=0;S.realm=Math.min(4,S.realm+1)}
-          }
-          S.maxHp=Math.round(S.maxHp*1.22+120);
-          S.maxMp=Math.round(S.maxMp*1.18+35);
-          S.hp=S.maxHp; S.mp=S.maxMp;
-          S.damage.physical=Math.round((S.damage.physical||0)*1.15+12);
-          S.defense.physical=Math.round((S.defense.physical||0)*1.18+4);
-          S.spiritSense=Math.round((S.spiritSense||0)*1.12+8);
-          save(); closePanel();
-          burst(player.x,player.z,'#f6dd7c',50,8);
-          toast('â˜¯ Äá»™t phÃ¡ thÃ nh cÃ´ng: '+realmName()+'!');
-          sfx('breakthrough'); updateHUD();
-        };
-
-        $$('[data-tech-select]').forEach(b=>b.onclick=()=>{
-          const type=normalizeTechniqueType(b.dataset.techSelect);
-          if(!isTechniqueRealmAllowed(type))return toast('Cáº£nh giá»›i hiá»‡n táº¡i chÆ°a Ä‘á»§ Ä‘á»ƒ váº­n hÃ nh cÃ´ng phÃ¡p nÃ y');
-          S.activeCultivationTechnique=type;
-          save(); openPanel('cultivate'); updateHUD();
-          const t=getTechniqueDef(type);
-          toast('ğŸ“š Äang váº­n hÃ nh '+t.name+' Â· '+t.grade.name+' Â· '+t.rank.name);
-          sfx('item');
-        });
-
-        $$('[data-tech-up]').forEach(b=>b.onclick=()=>{
-          const type=normalizeTechniqueType(b.dataset.techUp);
-          const t=getTechniqueDef(type),cost=techniqueRankUpgradeCost(type);
-          if((S.realm||0)<t.grade.minRealm)return toast('Cáº£nh giá»›i hiá»‡n táº¡i chÆ°a Ä‘á»§ Ä‘á»ƒ tu luyá»‡n cÃ´ng phÃ¡p pháº©m nÃ y');
-          if(t.rankIndex>=TECHNIQUE_RANKS.length-1)return toast('ÄÃ£ Ä‘áº¡t Cá»±c pháº©m cá»§a Ä‘áº¡i pháº©m hiá»‡n táº¡i');
-          if(S.cultivation<cost.cult||S.stones<cost.stones)return toast('KhÃ´ng Ä‘á»§ Tu vi hoáº·c Linh Tháº¡ch');
-          S.cultivation-=cost.cult; S.stones-=cost.stones;
-          getTechniqueState(type).rank++;
-          const nt=getTechniqueDef(type);
-          save(); openPanel('cultivate'); updateHUD();
-          toast('ğŸ“œ '+nt.name+' Ä‘áº¡t '+nt.rank.name); sfx('levelUp');
-        });
-
-        $$('[data-tech-break]').forEach(b=>b.onclick=()=>{
-          const type=normalizeTechniqueType(b.dataset.techBreak);
-          const cost=techniqueBreakthroughCost(type);
-          if(!canBreakTechniqueGrade(type))return toast('Cáº§n Ä‘áº¡t Cá»±c pháº©m vÃ  Ä‘á»§ cáº£nh giá»›i Ä‘á»ƒ Ä‘á»™t phÃ¡ Ä‘áº¡i pháº©m');
-          if(!cost||S.cultivation<cost.cult||S.stones<cost.stones)return toast('KhÃ´ng Ä‘á»§ Tu vi hoáº·c Linh Tháº¡ch');
-          S.cultivation-=cost.cult; S.stones-=cost.stones;
-          const st=getTechniqueState(type); st.grade++; st.rank=0;
-          const nt=getTechniqueDef(type);
-          save(); openPanel('cultivate'); updateHUD();
-          toast('âœ¨ '+nt.name+' Ä‘á»™t phÃ¡ '+nt.grade.name+' Â· Háº¡ pháº©m');
-          sfx('breakthrough');
-        });
-
-        $$('[data-heart-select]').forEach(b=>b.onclick=()=>{
-          let i=+b.dataset.heartSelect,h=heartMethods[i];
-          if(!h||(S.realm||0)<h.minRealm)return toast('Cáº£nh giá»›i chÆ°a Ä‘á»§ Ä‘á»ƒ váº­n hÃ nh tÃ¢m phÃ¡p nÃ y');
-          S.heartMethod=i;
-          if(!S.heartMethodLevels[i])S.heartMethodLevels[i]=1;
-          save(); openPanel('cultivate'); updateHUD();
-          toast('ğŸ§˜ ÄÃ£ váº­n hÃ nh '+h.name); sfx('item');
-        });
-
-        $$('[data-heart-up]').forEach(b=>b.onclick=()=>{
-          let i=+b.dataset.heartUp,h=heartMethods[i],lv=getHeartMethodLevel(i),cost=heartUpgradeCost(i);
-          if(!h||(S.realm||0)<h.minRealm)return toast('Cáº£nh giá»›i chÆ°a Ä‘á»§');
-          if(lv>=10)return toast('TÃ¢m phÃ¡p Ä‘Ã£ Ä‘áº¡t Lv.10');
-          if(S.cultivation<cost.cult||S.stones<cost.stones)return toast('KhÃ´ng Ä‘á»§ Tu vi hoáº·c Linh Tháº¡ch');
-          S.cultivation-=cost.cult; S.stones-=cost.stones;
-          S.heartMethodLevels[i]=lv+1;
-          save(); openPanel('cultivate'); updateHUD();
-          toast('ğŸ§˜ '+h.name+' tÄƒng lÃªn Lv.'+(lv+1)); sfx('levelUp');
-        });
-      },0);
-
-    }else if((kind==='crafting'||kind==='formations')&&(window.TuTienSystems||window.TuTienCraftingGameplay)){
-      const extPanel=(window.TuTienCraftingGameplay&&window.TuTienCraftingGameplay.renderPanel(kind,S,getSystemContext()))||
-        (window.TuTienSystems&&window.TuTienSystems.renderPanel(kind,S,getSystemContext()));
-      if(extPanel){
-        title=extPanel.title;
-        html=extPanel.html;
-        setTimeout(()=>extPanel.bind&&extPanel.bind(),0);
-      }
-
-    }else if(kind==='shop'){
-      title='TiÃªn PhÆ°á»ng';
-      html='<div class="cards">'+[['Há»“i KhÃ­ Äan',100,'ğŸ”´'],['Linh Tháº¡ch',250,'ğŸ’'],['Thanh VÃ¢n Kiáº¿m',800,'âš”'],['Huyá»n Thiáº¿t GiÃ¡p',900,'ğŸ›¡']].map(([n,p,ic])=>`<div class="card"><div class="icon">${ic}</div><b>${n}</b><p>ğŸª™ ${p} VÃ ng</p><button data-buy="${n}" data-price="${p}">Mua</button></div>`).join('')+'</div>';
-      setTimeout(()=>$$('[data-buy]').forEach(b=>b.onclick=()=>{
-        let p=+b.dataset.price;
-        if(S.gold<p)return toast('KhÃ´ng Ä‘á»§ vÃ ng');
-        S.gold-=p;
-        addItem(b.dataset.buy,1);
-        save();
-        updateHUD();
-        toast('ÄÃ£ mua thÃ nh cÃ´ng '+b.dataset.buy);
-        sfx('item');
-      }),0);
-
-    }else if(kind==='daily'){
-      title='PhÃºc Lá»£i Tu TiÃªn';
-      html=`<div class="card"><b>QuÃ  Ä‘Äƒng nháº­p tu tiÃªn má»—i ngÃ y</b><p>ğŸ’ 25 Linh Tháº¡ch Â· ğŸª™ 600 VÃ ng</p><button id="dailyBtn" ${S.daily?'disabled':''}>${S.daily?'ÄÃ£ nháº­n hÃ´m nay':'Nháº­n PhÃºc Lá»£i'}</button></div>`;
-      setTimeout(()=>{$('#dailyBtn').onclick=()=>{
-        if(S.daily)return;
-        S.daily=true;
-        S.stones+=25;
-        S.gold+=600;
-        save();
-        updateHUD();
-        openPanel('daily');
-        toast('ğŸ ÄÃ£ nháº­n phÃºc lá»£i tu tiÃªn');
-        sfx('item');
-      }},0);
-
-    }else if(kind==='equipment'){
-      title='Trang Bá»‹ NhÃ¢n Váº­t';
-      html='<div class="cards">'+['weapon','armor','ring'].map((s,i)=>`<div class="card"><b>${['VÅ© KhÃ­','Ão GiÃ¡p','Nháº«n'][i]}</b><p>${(S.equipment&&S.equipment[s])||'ChÆ°a trang bá»‹'}</p><button data-equip="${s}">Trang bá»‹ mÃ³n tá»‘t nháº¥t</button></div>`).join('')+'</div>';
-      setTimeout(()=>$$('[data-equip]').forEach(b=>b.onclick=()=>equipBest(b.dataset.equip)),0);
-
-    }else if(kind==='pet'){
-      title='Linh ThÃº Äá»“ng HÃ nh';
-      html=`<div class="card"><div class="icon">ğŸ¦Š</div><b>Cá»­u VÄ© Linh Há»“</b><p>${S.pet?'Äang xuáº¥t chiáº¿n Â· Há»— trá»£ táº¥n cÃ´ng & +8% SÃ¡t thÆ°Æ¡ng':'ChÆ°a triá»‡u há»“i'}</p><button id="petBtn">${S.pet?'Thu há»“i Linh ThÃº':'Triá»‡u há»“i Xuáº¥t Chiáº¿n'}</button></div>`;
-      setTimeout(()=>$('#petBtn').onclick=()=>{
-        S.pet=!S.pet;
-        syncPet();
-        save();
-        openPanel('pet');
-        toast(S.pet?'ğŸ¦Š Cá»­u VÄ© Linh Há»“ xuáº¥t chiáº¿n!':'Linh Há»“ Ä‘Ã£ thu há»“i');
-        sfx(S.pet?'levelUp':'item');
-      },0);
-
-    }else if(kind==='map'){
-      title='NhÃ¢n Giá»›i Â· Äáº¡i Tháº¿ Giá»›i';
-      html=renderWorldMapCards();
-      setTimeout(()=>$$('[data-region]').forEach(b=>b.onclick=async()=>{
-        S.region=+b.dataset.region; S.regionId=(regions[S.region]||DEFAULT_REGION).id;
-        actors.forEach(a=>a.mesh&&a.mesh.dispose());
-        actors=[];
-        boss=null;
-        $('#bossBar').hidden=true;
-        player.x=0;player.z=2;
-        await loadMap(S.region);
-        initializeFixedEnemies();
-        save();
-        closePanel();
-        toast('ğŸ—º ÄÃ£ Ä‘áº¿n '+region().name);
-        sfx('levelUp');
-        updateHUD();
-      }),0);
-
-    }else{
-      title='CÃ i Äáº·t & Hiá»‡u NÄƒng';
-      html=`<div class="card"><b>TÃ¹y chá»‰nh Ä‘á»“ há»a</b><p>Cháº¿ Ä‘á»™: ${S.quality?'Cháº¥t lÆ°á»£ng cao (60 FPS)':'Tiáº¿t kiá»‡m pin'}</p><button id="qualityBtn">Äá»•i cháº¿ Ä‘á»™</button><button id="resetBtn" class="danger">XÃ³a dá»¯ liá»‡u chÆ¡i láº¡i tá»« Ä‘áº§u</button></div>`;
-      setTimeout(()=>{
-        $('#qualityBtn').onclick=()=>{
-          S.quality=S.quality?0:1;
-          applyEngineScaling();
-          save();
-          openPanel('settings');
-        };
-        $('#resetBtn').onclick=()=>{
-          if(confirm('Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a toÃ n bá»™ tiáº¿n trÃ¬nh tu tiÃªn?')){
-            localStorage.removeItem(SAVE);
-            location.reload();
-          }
-        };
-      },0);
-    }
-  }catch(err){
-    console.error('Lá»—i khi má»Ÿ panel:', err);
-    html=`<div class="card"><p>KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u: ${err.message}</p></div>`;
-  }
-
-  $('#panelTitle').textContent=title;
-  $('#panelBody').innerHTML=html;
-}
-
-function applyEngineScaling(){
-  if(!engine)return;
-  const scale=window.PerformanceProfile?window.PerformanceProfile.engineScale():(1/Math.min(window.devicePixelRatio||1,MOBILE_RUNTIME?1.5:2));
-  engine.setHardwareScalingLevel(scale);
-}
-
-function equipBest(slot){
-  let items=S.items||{};
-  let key=Object.keys(items).find(n=>slot==='weapon'?n.includes('Kiáº¿m'):slot==='armor'?n.includes('GiÃ¡p')||n.includes('BÃ o'):n.includes('Giá»›i'));
-  if(!key)return toast('KhÃ´ng cÃ³ trang bá»‹ phÃ¹ há»£p trong tÃºi');
-  if(!S.equipment)S.equipment={};
-  S.equipment[slot]=key;
-  if(slot==='weapon'){
-    S.damage.physical=(S.damage.physical||0)+20;
-  }else if(slot==='armor'){
-    S.maxHp+=150;
-    S.defense.physical=(S.defense.physical||0)+5;
-    for(const t of ['Kim','Há»a','Thá»§y','Má»™c','Thá»•','Phong','LÃ´i'])S.defense[t]=(S.defense[t]||0)+2;
-  }else{
-    S.critChance=(S.critChance||0)+.03;
-    S.spiritSense+=12;
-  }
-  save();
-  updateHUD();
-  openPanel('equipment');
-  toast('ÄÃ£ trang bá»‹ '+key);
-  sfx('item');
-}
-
-function closePanel(){
-  paused=false;
-  $('#panel').hidden=true;
-  $('#panel').style.display='none';
-}
-
-async function init(){
-  progress(5,'Äang Ä‘á»c danh má»¥c tiÃªn vá»±câ€¦');
-  await loadMapManifest();
-
-  progress(10,'Khá»Ÿi táº¡o Babylon.js Engineâ€¦');
-  engine=new BABYLON.Engine(canvas,true,{
-    preserveDrawingBuffer:false,
-    stencil:false,
-    antialias:!MOBILE_RUNTIME,
-    powerPreference:'high-performance',
-    adaptToDeviceRatio:false
-  });
-  applyEngineScaling();
-
-  progress(30,'Dá»±ng khÃ´ng gian tiÃªn cáº£nhâ€¦');
-  await createWorld();
-
-  progress(50,'Náº¡p tiÃªn thá»ƒ vÃ  linh thÃºâ€¦');
-  preloadPlayerMaterials();
-  createPlayer();
-  // Enemy texture lazy-load theo loáº¡i quÃ¡i thá»±c táº¿ xuáº¥t hiá»‡n
-  await new Promise(r=>setTimeout(r,MOBILE_RUNTIME?60:100));
-
-  progress(75,'Khai má»Ÿ tráº­n phÃ¡p & yÃªu vá»±câ€¦');
-  initializeFixedEnemies();
-  setupInput();
-  updateHUD();
-  drawMini();
-
-  progress(100,'TiÃªn Ä‘á»“ Ä‘Ã£ má»Ÿ!');
-  startBtn.hidden=false;
-  loadMsg.textContent='Cháº¡m Ä‘á»ƒ bÆ°á»›c vÃ o tiÃªn Ä‘á»“';
-
-  startBtn.onclick=()=>{
-    getAudio();
-    loading.remove();
-    hud.hidden=false;
-    gameStarted=true;
-    last=performance.now();
-    player.x=0;
-    player.z=0;
-    if(player.mesh)player.mesh.position.set(0,1.62,0);
-    if(player.shadow)player.shadow.position.set(0,0.019,0);
-    if(camera){
-      placeStandardCamera(0,0);
-    }
-    if(petActor){
-      petActor.x=-1.5; petActor.z=-1.5;
-      if(petActor.mesh)petActor.mesh.position.set(-1.5,petActor.mesh.position.y,-1.5);
-      if(petActor.shadow)petActor.shadow.position.set(-1.5,0.019,-1.5);
-    }
-    toast('â˜¯ ChÃ o má»«ng Ä‘áº¡o há»¯u Ä‘áº¿n '+region().name);
-    sfx('breakthrough');
-    save();
-  };
-
-  if(window.GameLifecycle)window.GameLifecycle.bind({
-    canvas,getEngine:()=>engine,
-    pause:()=>{paused=true;if(audioCtx&&audioCtx.state==='running')audioCtx.suspend().catch(()=>{});},
-    resume:()=>{paused=false;last=performance.now();},
-    onResize:updateOrthoCameraBounds
-  });
-  if(window.GameEvents)window.GameEvents.on('qualityChanged',()=>{applyEngineScaling();engine.resize();updateOrthoCameraBounds();});
-  engine.runRenderLoop(tick);
-  if('serviceWorker'in navigator){
-    navigator.serviceWorker.addEventListener('message',event=>{
-      if(!event.data||event.data.type!=='BUILD_ACTIVE')return;
-      const previous=localStorage.getItem('tutien_last_build');
-      localStorage.setItem('tutien_last_build',event.data.build);
-      if(previous&&previous!==event.data.build){save(true);toast('âœ¨ ÄÃ£ cáº­p nháº­t báº£n GAME má»›i. Báº£n má»›i dÃ¹ng khi táº£i láº¡i trang.');}
-    });
-    navigator.serviceWorker.register('./sw.js?v=20260918-architecture-v5').then(reg=>reg.update()).catch(()=>{});
-  }
-}
-
-init().catch(e=>{
-  console.error(e);
-  loadMsg.textContent='Lá»—i khá»Ÿi táº¡o: '+e.message;
-  startBtn.hidden=true;
-});
-})();
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíãŸyí:-jZ.¶›­–)Ş³R‚‚“Óç²wW6R7G&–7Bs°¦6öç7BÔô$”ÄUõ%TåD”ÔSÒö•†öæWÆ•GÆ•öGÄæG&ö–GÄÖö&–ÆRö’çFW7B†æf–vF÷"çW6W$vVçGÇÂrr—ÇÂ†æf–vF÷"æÖ…F÷V6…ö–çG7ÇÃ“ãÇÄÖF‚æÖ–â†–ææW%v–GF‡ÇÃ“““’Æ–ææW$†V–v‡GÇÃ“““’“Ãƒ#°¦6öç7BC×3ÓæFö7VÖVçBçVW'•6VÆV7F÷"‡2’ÂBC×3Óå²ââæFö7VÖVçBçVW'•6VÆV7F÷$ÆÂ‡2•Ó°¦6öç7B6çf3ÒB‚r7&VæFW$6çf2r’ÂÆöF–æsÒB‚r6ÆöF–ærr’ÂÆöD×6sÒB‚r6ÆöD×6rr’ÂÆöD&#ÒB‚r6ÆöD&"r’Â7F'D'FãÒB‚r77F'D'Fâr’Â‡VCÒB‚r6‡VBr“°¦6öç7B6Æ×Ò‡bÆÆ"“ÓäÖF‚æÖ‚†ÄÖF‚æÖ–â†"Çb’’Â&æCÒ†Æ"“Óæ´ÖF‚ç&æFöÒ‚’¢†"Ö’ÂF—7CÒ†Æ"“ÓäÖF‚æ‡—÷B†ç‚Ö"ç‚Æç¢Ö"ç¢“°¦6öç7B4dSÒwGWF–Våö6†–Æõ÷6fU÷c"s° ¢òòvV"VF–ò’7–çF†W6—¦W"…¦W&òW‡FW&æÂFWVæFVæ6–W2¦6öç7BVF–ô6öçFW‡BÒv–æF÷räVF–ô6öçFW‡BÇÂv–æF÷rçvV&¶—DVF–ô6öçFW‡C°¦ÆWBVF–ô7G‚ÒçVÆÃ°¦gVæ7F–öâvWDVF–ò‚—°¢–b‚VF–ô7G‚—·G'—¶VF–ô7GƒÖæWrVF–ô6öçFW‡B‚—Ö6F6‚†R—·×Ğ¢–b†VF–ô7G‚bfVF–ô7G‚ç7FFSÓÓÒw7W7VæFVBr—¶VF–ô7G‚ç&W7VÖR‚—Ğ¢&WGW&âVF–ô7Gƒ°§Ğ¦gVæ7F–öâ6g‚‡G—R—°¢G'—°¢6öç7B7GƒÖvWDVF–ò‚“¶–b‚7G‚—&WGW&ã°¢6öç7Bæ÷sÖ7G‚æ7W'&VçEF–ÖS°¢–b‡G—SÓÓÒw6Æ6‚r—°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒw6wFö÷F‚s°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖRƒCcÆæ÷r“°¢÷62æg&WVVæ7’æW‡öæVçF–Å&×FõfÇVTEF–ÖRƒ“Ææ÷r³ã"“°¢ræv–âç6WEfÇVTEF–ÖRƒã#"Ææ÷r“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r³ã"“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r“¶÷62ç7F÷†æ÷r³ã"“°¢ÖVÇ6R–b‡G—SÓÓÒv†—Br—°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒwG&–ævÆRs°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖRƒSÆæ÷r“°¢÷62æg&WVVæ7’æW‡öæVçF–Å&×FõfÇVTEF–ÖRƒ3RÆæ÷r³ã“°¢ræv–âç6WEfÇVTEF–ÖRƒã#‚Ææ÷r“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r³ã“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r“¶÷62ç7F÷†æ÷r³ã“°¢ÖVÇ6R–b‡G—SÓÓÒw6¶–ÆÃr—°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒw7V&Rs°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖRƒSƒÆæ÷r“°¢÷62æg&WVVæ7’æW‡öæVçF–Å&×FõfÇVTEF–ÖRƒƒÆæ÷r³ã‚“°¢ræv–âç6WEfÇVTEF–ÖRƒã‚Ææ÷r“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r³ã‚“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r“¶÷62ç7F÷†æ÷r³ã‚“°¢ÖVÇ6R–b‡G—SÓÓÒw6¶–ÆÃ"r—°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒw6–æRs°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖRƒ#cÆæ÷r“°¢÷62æg&WVVæ7’æW‡öæVçF–Å&×FõfÇVTEF–ÖRƒsCÆæ÷r³ã3"“°¢ræv–âç6WEfÇVTEF–ÖRƒã#RÆæ÷r“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r³ã3"“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r“¶÷62ç7F÷†æ÷r³ã3"“°¢ÖVÇ6R–b‡G—SÓÓÒw6¶–ÆÃ2r—°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒw6wFö÷F‚s°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖRƒ#CÆæ÷r“°¢÷62æg&WVVæ7’æÆ–æV%&×FõfÇVTEF–ÖRƒSRÆæ÷r³ã3b“°¢ræv–âç6WEfÇVTEF–ÖRƒã2Ææ÷r“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r³ã3b“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r“¶÷62ç7F÷†æ÷r³ã3b“°¢ÖVÇ6R–b‡G—SÓÓÒw6¶–ÆÃBr—°¢³3“"ÂS#2ÂcS’ÂsƒEÒæf÷$V6‚‚†bÆ’“Óç°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒw6–æRs°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖR†bÆæ÷r¶’£ãr“°¢ræv–âç6WEfÇVTEF–ÖRƒã"Ææ÷r¶’£ãr“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r¶’£ãr³ãCR“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r¶’£ãr“¶÷62ç7F÷†æ÷r¶’£ãr³ãCR“°¢Ò“°¢ÖVÇ6R–b‡G—SÓÓÒvF6‚r—°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒwG&–ævÆRs°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖRƒ3ƒÆæ÷r“°¢÷62æg&WVVæ7’æW‡öæVçF–Å&×FõfÇVTEF–ÖRƒƒÆæ÷r³ãR“°¢ræv–âç6WEfÇVTEF–ÖRƒã#"Ææ÷r“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r³ãR“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r“¶÷62ç7F÷†æ÷r³ãR“°¢ÖVÇ6R–b‡G—SÓÓÒvÆWfVÅWr—°¢³S#2ÂcS’ÂsƒBÂCeÒæf÷$V6‚‚†bÆ’“Óç°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒwG&–ævÆRs°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖR†bÆæ÷r¶’£ã’“°¢ræv–âç6WEfÇVTEF–ÖRƒã#RÆæ÷r¶’£ã’“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r¶’£ã’³ã3R“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r¶’£ã’“¶÷62ç7F÷†æ÷r¶’£ã’³ã3R“°¢Ò“°¢ÖVÇ6R–b‡G—SÓÓÒv'&V·F‡&÷Vv‚r—°¢³#cÂ3#’Â3“"ÂS#2ÂcS’ÂsƒBÂCeÒæf÷$V6‚‚†bÆ’“Óç°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒw6–æRs°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖR†bÆæ÷r¶’£ã‚“°¢ræv–âç6WEfÇVTEF–ÖRƒã2Ææ÷r¶’£ã‚“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r¶’£ã‚³ãSR“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r¶’£ã‚“¶÷62ç7F÷†æ÷r¶’£ã‚³ãSR“°¢Ò“°¢ÖVÇ6R–b‡G—SÓÓÒv—FVÒr—°¢6öç7B÷63Ö7G‚æ7&VFT÷66–ÆÆF÷"‚’ÆsÖ7G‚æ7&VFTv–â‚“°¢÷62çG—SÒw6–æRs°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖRƒƒƒÆæ÷r“°¢÷62æg&WVVæ7’ç6WEfÇVTEF–ÖRƒ3#Ææ÷r³ãr“°¢ræv–âç6WEfÇVTEF–ÖRƒã‚Ææ÷r“°¢ræv–âæÆ–æV%&×FõfÇVTEF–ÖRƒãÆæ÷r³ã"“°¢÷62æ6öææV7B†r“¶ræ6öææV7B†7G‚æFW7F–æF–öâ“°¢÷62ç7F'B†æ÷r“¶÷62ç7F÷†æ÷r³ã"“°¢Ğ¢Ö6F6‚†R—·Ğ§Ğ ¦6öç7B&VÆ×3Õ²tÇW¸vâ¶Œ:ÒrÂuG,;¦2<jrÂt¾«÷BIârÂtæwWœ:¦âæ‚rÂtŒ;6FªvâuÓ°¦6öç7BW&–öG3Õ²u<j¾»2rÂuG'Vær¾»2rÂtª×R¾»2rÂ|I¸–æ‚†öæruÓ° ¢òòÓÓÓÓÒ>ª$ä‚t¹¤’²84«â>ª$ä‚t¹¤’ÓÓÓÓĞ¢òò7FBî¸â6¸’LH6ærnº¶ª6’â6Œ:¦æ‚Î¸v6‚Fª×B>»I«öâNº²,:6«ò>ª6æ‚v¹¶’"à¦6öç7B$TÄÕô$4UõõtU#Õ³Ã"ãRÃbÃRÃ3eÓ°¦6öç7B$TÄÕôÔ”äõ%ôÕTÅCÓã#S°¦6öç7B•õ5DtUôÕTÅCÓãƒ° ¢òò86«ó¢6Œ:¦æ‚Ş¹v’F¸7R>ª6æ‚v¹¶’LH6ærÎº6’F«ò3RRà¢òòŞ¹v’Iª’>ª6æ‚v¹¶’6Œ:¦æ‚FŒ:¦Ò¸r>¹ãsRà¢òòv¹¶’ªâI¸26öÖ&B¶Œ;Færnº>¹æŒkærnª¶âNªò>ª6Òvœ:2'G.¹Ö’n¹¶’IªWB"à¦6öç7B5U$U55ôÔ”äõ%ôÕTÅCÓã3S°¦6öç7B5U$U55ôÔ¤õ%ôÕTÅCÓãsS°¦6öç7B5U$U55ôÔƒÓ#° ¦gVæ7F–öâvWE&VÆÕ÷vW$×VÇF—Æ–W"‚—°¢–b‚…2ç&VÆ×ÇÃ“ÓÓÓ—°¢&WGW&âÖF‚ç÷r…•õ5DtUôÕTÅBÄÖF‚æÖ‚ƒÂ…2ç&VÆÕ7FvWÇÃ’Ó’“°¢Ğ¢6öç7B&VÆÔ–GƒÖ6Æ×…2ç&VÆ×ÇÃÃÅ$TÄÕô$4UõõtU"æÆVæwF‚Ó“°¢6öç7BÖ–æ÷#Ö6Æ×…2çW&–öGÇÃÃÃ2“°¢&WGW&â$TÄÕô$4UõõtU%·&VÆÔ–G…Ò¤ÖF‚ç÷r…$TÄÕôÔ”äõ%ôÕTÅBÆÖ–æ÷"“°§Ğ ¦gVæ7F–öâvWE&VÆÕ÷vW%FW‡B‚—°¢&WGW&âvWE&VÆÕ÷vW$×VÇF—Æ–W"‚’çFôf—†VBƒ"’²|9rs°§Ğ ¦gVæ7F–öâvWEÆ–W%&VÆÕ66÷&R‚—°¢–b‚…2ç&VÆ×ÇÃ“ÓÓÓ—&WGW&â6Æ×‚…2ç&VÆÕ7FvWÇÃ’ÓÃÃ“°¢&WGW&â"²„ÖF‚æÖ‚ƒÅ2ç&VÆÒ’Ó’£B¶6Æ×…2çW&–öGÇÃÃÃ2“°§Ğ ¦gVæ7F–öâvWEÆ–W$Ö¦÷%&VÆÔ–æFW‚‚—°¢&WGW&â6Æ×…2ç&VÆ×ÇÃÃÇ&VÆ×2æÆVæwF‚Ó“°§Ğ ¢òò\:’†¸vâL;–ærÆWfVÂÂì:¦âW’I¹V’ÆWfVÂÓâ.ªÖ2GRÇW¸vâI¸2¸r:6«ò†şªBI¹–æræv’à¢òòÓ"ÒÇW¸vâ¶Œ:ÒÓ#²6RI;2Ş¹v’"ÆWfVÂªW¸’Iª’>ª6æ‚v¹¶’À¢òòl:6†–FŒ:æ‚BF¸7R>ª6æ‚v¹¶’G&öærIª’>ª6æ‚v¹¶’I;2à¦gVæ7F–öâvWDVæV×•&VÆÔ–æfò†VæV×”ÇcÓ—°¢–b‡v–æF÷rå&VÆÕ7—7FVÒ—&WGW&âv–æF÷rå&VÆÕ7—7FVÒæVæV×”–æfò†VæV×”Çb“°¢6öç7BÇcÔÖF‚æÖ‚ƒÄÖF‚ç&÷VæB†VæV×”ÇgÇÃ’“°¢–b†ÇcÃÓ"—&WGW&â¶Ö¦÷#£ÆÖ–æ÷#¦ÇbÓÇ66÷&S¦ÇbÓÓ°¢6öç7BÖ¦÷#Ö6Æ×ƒ´ÖF‚æfÆö÷"‚†ÇbÓ2’ó#‚’ÃÇ&VÆ×2æÆVæwF‚Ó“°¢6öç7BÆö6ÃÒ†ÇbÓ2’S#ƒ°¢6öç7BW&–öCÖ6Æ×„ÖF‚æfÆö÷"†Æö6Âór’ÃÃ2“°¢&WGW&â¶Ö¦÷"ÆÖ–æ÷#§W&–öBÇ66÷&S£"²†Ö¦÷"Ó’£B·W&–öGÓ°§Ğ ¦gVæ7F–öâvWE&VÆÕ7W&W76–öä'•66÷&W2†GF6¶W%66÷&RÆGF6¶W$Ö¦÷"ÆFVfVæFW%66÷&RÆFVfVæFW$Ö¦÷"—°¢–b‡v–æF÷rå&VÆÕ7—7FVÒ—&WGW&âv–æF÷rå&VÆÕ7—7FVÒævWE7W&W76–öâ‡·66÷&S¦GF6¶W%66÷&RÆÖ¦÷#¦GF6¶W$Ö¦÷'ÒÇ·66÷&S¦FVfVæFW%66÷&RÆÖ¦÷#¦FVfVæFW$Ö¦÷'Ò“°¢6öç7BF–fcÖGF6¶W%66÷&RÖFVfVæFW%66÷&S°¢–b†F–fcÃÓ—&WGW&â°¢6öç7BÖ¦÷$F–fcÔÖF‚æÖ‚ƒÆGF6¶W$Ö¦÷"ÖFVfVæFW$Ö¦÷"“°¢6öç7BÖ–æ÷$f7F÷#ÔÖF‚ç÷r…5U$U55ôÔ”äõ%ôÕTÅBÆF–fb“°¢6öç7BÖ¦÷$f7F÷#ÔÖF‚ç÷r…5U$U55ôÔ¤õ%ôÕTÅBÆÖ¦÷$F–fb“°¢&WGW&âÖF‚æÖ–â…5U$U55ôÔ‚ÆÖ–æ÷$f7F÷"¦Ö¦÷$f7F÷"“°§Ğ ¦gVæ7F–öâvWEÆ–W%7W&W76–öåg47F÷"†7F÷"—°¢–b‚7F÷"—&WGW&â°¢6öç7B–æfóÖ7F÷"ç&VÆÔ–æf÷ÇÆvWDVæV×•&VÆÔ–æfò†7F÷"æVæV×”ÇgÇÃ“°¢&WGW&âvWE&VÆÕ7W&W76–öä'•66÷&W2€¢vWEÆ–W%&VÆÕ66÷&R‚’ÆvWEÆ–W$Ö¦÷%&VÆÔ–æFW‚‚’À¢–æfòç66÷&RÆ–æfòæÖ¦÷ ¢“°§Ğ ¦gVæ7F–öâvWD7F÷%7W&W76–öåg5Æ–W"†7F÷"—°¢–b‚7F÷"—&WGW&â°¢6öç7B–æfóÖ7F÷"ç&VÆÔ–æf÷ÇÆvWDVæV×•&VÆÔ–æfò†7F÷"æVæV×”ÇgÇÃ“°¢&WGW&âvWE&VÆÕ7W&W76–öä'•66÷&W2€¢–æfòç66÷&RÆ–æfòæÖ¦÷"À¢vWEÆ–W%&VÆÕ66÷&R‚’ÆvWEÆ–W$Ö¦÷%&VÆÔ–æFW‚‚¢“°§Ğ ¦6öç7B5TÅD•dD”ôåõDT4…õE•U3Õ²w‡—6–6ÂrÂt¶–ÒrÂt¸örÂuFºw’rÂtŞ¹–2rÂuF¹RrÂu†öærrÂtÌ;F’uÓ°¦6öç7B5TÅD•dD”ôåõDT4…ôÄ$TÅ3×°¢‡—6–6Ã¢uF¸2GRònª×BÌ;ÒrÄ¶–Ó¢t¶–ÒrÄ¸ö¢t¸örÅFºw“¢uFºw’rÄŞ¹–3¢tŞ¹–2rÅF¹S¢uF¹RrÅ†öæs¢u†öærrÄÌ;F“¢tÌ;F’p§Ó°¦6öç7BDT4„ä•TUôu$DU3Õ°¢¶–C¢v†öærrÆæÖS¢t†ü:ærrÆÖ–å&VÆÓ£Æ7VÇF—fF–öã£ãÇ7FC£ãÇVæÆö6´6÷7C£ÒÀ¢¶–C¢v‡W–VârÆæÖS¢t‡W¸ârÆÖ–å&VÆÓ£Æ7VÇF—fF–öã£ãSRÇ7FC£ã3RÇVæÆö6´6÷7C£#ÒÀ¢¶–C¢vF–rÆæÖS¢|I¸¶rÆÖ–å&VÆÓ£"Æ7VÇF—fF–öã£"ãCÇ7FC£ãsRÇVæÆö6´6÷7C£C#ÒÀ¢¶–C¢wF†–VârÆæÖS¢uF†œ:¦ârÆÖ–å&VÆÓ£2Æ7VÇF—fF–öã£2ãcÇ7FC£"ã3ÇVæÆö6´6÷7C£#Ğ¥Ó°¦6öç7BDT4„ä•TUõ$äµ3Õ°¢¶–C¢v†rÆæÖS¢tªª–ÒrÆ7VÇF—fF–öã£ãÇ7FC£ãÒÀ¢¶–C¢wG'VærrÆæÖS¢uG'Værª–ÒrÆ7VÇF—fF–öã£ã‚Ç7FC£ã'ÒÀ¢¶–C¢wF‡VöærrÆæÖS¢uFŒkº6ærª–ÒrÆ7VÇF—fF–öã£ãC"Ç7FC£ã#‡ÒÀ¢¶–C¢v7V2rÆæÖS¢t>»2ª–ÒrÆ7VÇF—fF–öã£ãsRÇ7FC£ãSĞ¥Ó°¦6öç7BDT4„ä•TUôäÔU3×°¢‡—6–6Ã¥²tÇW¸vâF¸2W«÷BrÂt‡W¸â<kjær,:F¸2rÂ|I¸¶<:BÇW¸vâF¸2¶–æ‚rÂuF†œ:¦â<kjær.ªWBF¸wBF¸2uÒÀ¢¶–Ó¥²t¶–ÒÆ–æ‚W«÷BrÂt‡W¸â¶–Ò6Œ:&â¶–æ‚rÂ|I¸¶¶–ÒFªvâI¸6ârÂuF†œ:¦â¶–Ònªâ¶«÷¶–æ‚uÒÀ¢¸ö¥²uŒ:Ö6‚¸öW«÷BrÂt‡W¸â¸ö6Œ:&â¶–æ‚rÂ|I¸¶fœ:¦ÒFªvâI¸6ârÂuF†œ:¦â¸öªvâF«ò¶–æ‚uÒÀ¢Fºw“¥²tŒ:âFºw’W«÷BrÂt‡W¸âFºw’6Œ:&â¶–æ‚rÂ|I¸¶ª6’FªvâI¸6ârÂuF†œ:¦âŒ:nªâFºw’¶–æ‚uÒÀ¢Ş¹–3¥²uF†æ‚Ş¹–2W«÷BrÂt‡W¸âŞ¹–26Œ:&â¶–æ‚rÂ|I¸¶Şª6‚6–æ‚Æ–æ‚¶–æ‚rÂuF†œ:¦âŞ¹–2G,k¹Öær6–æ‚¶–æ‚uÒÀ¢F¹S¥²tª×RF¹RW«÷BrÂt‡W¸âF¹R6Œ:&â¶–æ‚rÂ|I¸¶æª2FªvâI¸6ârÂuF†œ:¦â<jâG.ªVâv¹¶’¶–æ‚uÒÀ¢†öæs¥²uF†æ‚†öærW«÷BrÂt‡W¸â†öær6Œ:&â¶–æ‚rÂ|I¸¶†öærl;Bª&æ‚¶–æ‚rÂuF†œ:¦â†öær>º×RFœ:§R¶–æ‚uÒÀ¢Ì;F“¥²tNª¶âÌ;F’W«÷BrÂt‡W¸âÌ;F’6Œ:&â¶–æ‚rÂ|I¸¶Ì;F’FªvâI¸6ârÂuF†œ:¦âÌ;F’nªâ¶«÷¶–æ‚uĞ§Ó°¦gVæ7F–öâÖ¶TFVfVÇEFV6†æ—VT7VÇF—fF–öâ‚—°¢6öç7B÷WC×·Ó°¢f÷"†6öç7BG—Röb5TÅD•dD”ôåõDT4…õE•U2–÷WE·G—UÓ×¶w&FS£Ç&æ³£Ó°¢&WGW&â÷WC°§Ğ¦gVæ7F–öâæ÷&ÖÆ—¦UFV6†æ—VUG—R‡G—SÒw‡—6–6Âr—°¢G—SÖæ÷&ÖÆ—¦TFÖvUG—R‡G—R“°¢&WGW&â5TÅD•dD”ôåõDT4…õE•U2æ–æ6ÇVFW2‡G—R“÷G—S¢w‡—6–6Âs°§Ğ¦gVæ7F–öâvWEFV6†æ—VU7FFR‡G—SÒw‡—6–6Âr—°¢G—SÖæ÷&ÖÆ—¦UFV6†æ—VUG—R‡G—R“°¢–b‚2æ7VÇF—fF–öåFV6†æ—VW7ÇÇG—Vöb2æ7VÇF—fF–öåFV6†æ—VW2ÓÒvö&¦V7Br•2æ7VÇF—fF–öåFV6†æ—VW3ÖÖ¶TFVfVÇEFV6†æ—VT7VÇF—fF–öâ‚“°¢–b‚2æ7VÇF—fF–öåFV6†æ—VW5·G—U×ÇÇG—Vöb2æ7VÇF—fF–öåFV6†æ—VW5·G—UÒÓÒvö&¦V7Br•2æ7VÇF—fF–öåFV6†æ—VW5·G—UÓ×¶w&FS£Ç&æ³£Ó°¢6öç7B7CÕ2æ7VÇF—fF–öåFV6†æ—VW5·G—UÓ°¢–b‡G—Vöb7Bç&æ²ÓÒvçVÖ&W"r—°¢6öç7BöÆDÇcÔÖF‚æÖ‚ƒÄçVÖ&W"‡7BæÆWfVÂ—ÇÃ“°¢7Bç&æ³ÖöÆDÇcãÓƒó3¦öÆDÇcãÓSó#¦öÆDÇcãÓ3ó£°¢FVÆWFR7BæÆWfVÃ°¢Ğ¢7Bæw&FSÖ6Æ×„çVÖ&W"‡7Bæw&FR—ÇÃÃÅDT4„ä•TUôu$DU2æÆVæwF‚Ó“°¢7Bç&æ³Ö6Æ×„çVÖ&W"‡7Bç&æ²—ÇÃÃÅDT4„ä•TUõ$äµ2æÆVæwF‚Ó“°¢&WGW&â7C°§Ğ¦gVæ7F–öâvWEFV6†æ—VTFVb‡G—SÒw‡—6–6Âr—°¢G—SÖæ÷&ÖÆ—¦UFV6†æ—VUG—R‡G—R“°¢6öç7B7CÖvWEFV6†æ—VU7FFR‡G—R“°¢&WGW&â°¢G—RÆw&FT–æFWƒ§7Bæw&FRÇ&æ´–æFWƒ§7Bç&æ²À¢w&FS¥DT4„ä•TUôu$DU5·7Bæw&FUÒÇ&æ³¥DT4„ä•TUõ$äµ5·7Bç&æµÒÀ¢æÖS¢…DT4„ä•TUôäÔU5·G—U×ÇÅDT4„ä•TUôäÔU2ç‡—6–6Â•·7Bæw&FUĞ¢Ó°§Ğ¦gVæ7F–öâvWD7F—fUFV6†æ—VUG—R‚—·&WGW&âæ÷&ÖÆ—¦UFV6†æ—VUG—R…2æ7F—fT7VÇF—fF–öåFV6†æ—VWÇÂw‡—6–6Âr—Ğ¦gVæ7F–öâvWD7F—fUFV6†æ—VR‚—·&WGW&âvWEFV6†æ—VTFVb†vWD7F—fUFV6†æ—VUG—R‚’—Ğ¦gVæ7F–öâvWEFV6†æ—VT7VÇF—fF–öä×VÇF—Æ–W"‡G—SÖvWD7F—fUFV6†æ—VUG—R‚’—°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R“°¢&WGW&âBæw&FRæ7VÇF—fF–öâ§Bç&æ²æ7VÇF—fF–öã°§Ğ¦gVæ7F–öâ—5FV6†æ—VU&VÆÔÆÆ÷vVB‡G—SÒw‡—6–6Âr—°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R“°¢&WGW&â…2ç&VÆ×ÇÃ“ã×Bæw&FRæÖ–å&VÆÓ°§Ğ¦gVæ7F–öâvWEFV6†æ—VU7FD×VÇF—Æ–W"‡G—SÒw‡—6–6Âr—°¢G—SÖæ÷&ÖÆ—¦UFV6†æ—VUG—R‡G—R“°¢–b†vWD7F—fUFV6†æ—VUG—R‚’Ó×G—R—&WGW&â°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R“°¢–b‚…2ç&VÆ×ÇÃ“ÇBæw&FRæÖ–å&VÆÒ—&WGW&â°¢&WGW&âBæw&FRç7FB§Bç&æ²ç7FC°§Ğ¦gVæ7F–öâvWEFV6†æ—VU7FEFW‡B‡G—SÖvWD7F—fUFV6†æ—VUG—R‚’—°¢&WGW&âvWEFV6†æ—VU7FD×VÇF—Æ–W"‡G—R’çFôf—†VBƒ"’²|9rs°§Ğ¦gVæ7F–öâFV6†æ—VU&æµWw&FT6÷7B‡G—SÒw‡—6–6Âr—°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R“°¢&WGW&â¶7VÇC¤ÖF‚ç&÷VæBƒ3¤ÖF‚ç÷rƒ"ÇBç&æ´–æFW‚’¢ƒ·Bæw&FT–æFW‚£"ã"’’Ç7FöæW3¤ÖF‚ç&÷VæBƒ¤ÖF‚ç÷rƒãrÇBç&æ´–æFW‚’¢ƒ·Bæw&FT–æFW‚£ãb’—Ó°§Ğ¦gVæ7F–öâ6ä'&VµFV6†æ—VTw&FR‡G—SÒw‡—6–6Âr—°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R“°¢–b‡Bæw&FT–æFWƒãÕDT4„ä•TUôu$DU2æÆVæwF‚Ó—&WGW&âfÇ6S°¢&WGW&âBç&æ´–æFWƒÓÓÕDT4„ä•TUõ$äµ2æÆVæwF‚Óbb…2ç&VÆ×ÇÃ“ãÕDT4„ä•TUôu$DU5·Bæw&FT–æFW‚³ÒæÖ–å&VÆÓ°§Ğ¦gVæ7F–öâFV6†æ—VT'&V·F‡&÷Vv„6÷7B‡G—SÒw‡—6–6Âr—°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R“°¢–b‡Bæw&FT–æFWƒãÕDT4„ä•TUôu$DU2æÆVæwF‚Ó—&WGW&âçVÆÃ°¢6öç7BæW‡CÕDT4„ä•TUôu$DU5·Bæw&FT–æFW‚³Ó°¢&WGW&â¶7VÇC¤ÖF‚ç&÷VæBƒ3¤ÖF‚ç÷rƒBÇBæw&FT–æFW‚’’Ç7FöæW3¦æW‡BçVæÆö6´6÷7GÓ°§Ğ ¦6öç7B†V'DÖWF†öG3Õ°¢¶–C¢vGVöæuö¶†’rÆw&FS¢t†ü:ærrÆæÖS¢tLkºær¶Œ:ÒL:&ÒŒ:rÆÖ–å&VÆÓ£Ç&VvVã£ãRÇ7—&—C£ãRÆÖ÷fS£ãÆGF6³£ãÆ67C£ãÆ7VÇF—fF–öã£ãÆFVfVç6S£ã2ÇW$ÆWfVÃ£ã‚ÆFW63¢|9FâLkºær¶Œ:Òª6’ÂLH6ær¹6’ºV2l:N¹2I¹’L:Ö6‚ÌZ—’GRf’âwÒÀ¢¶–C¢wF–æ…÷FÒrÆw&FS¢t‡W¸ârÆæÖS¢uLJ–æ‚L:&Ò‡W¸âŒ:rÆÖ–å&VÆÓ£Ç&VvVã£ã#RÇ7—&—C£ã"ÆÖ÷fS£ã"ÆGF6³£ã2Æ67C£ãbÆ7VÇF—fF–öã£ã‚ÆFVfVç6S£ã‚ÇW$ÆWfVÃ£ã#BÆFW63¢uL:&ÒæŒk6¸’Fºw’ÂLH6ærFªvâFº–2l:N¹2I¹’F†’G&¸6ââwÒÀ¢¶–C¢v¶–Õö6ærrÆw&FS¢|I¸¶rÆæÖS¢t¶–Ò6ær¹’L:&Ò¶–æ‚rÆÖ–å&VÆÓ£"Ç&VvVã£ã3RÇ7—&—C£ãbÆÖ÷fS£ã"ÆGF6³£ãRÆ67C£ãRÆ7VÇF—fF–öã£ã#RÆFVfVç6S£ã‚ÇW$ÆWfVÃ£ã3ÆFW63¢uL:&ÒŞª6‚æŒk¶–Ò6ærÂLH6ærŞªæ‚Œ;&ærFºrl:¹6’ºV2âwÒÀ¢¶–C¢wF†•÷F‡VöærrÆw&FS¢uF†œ:¦ârÆæÖS¢uFŒ:’FŒkº6ærföærL:Ææ‚W«÷BrÆÖ–å&VÆÓ£2Ç&VvVã£ãC‚Ç7—&—C£ã#‚ÆÖ÷fS£ãRÆGF6³£ã‚Æ67C£ã"Æ7VÇF—fF–öã£ã3‚ÆFVfVç6S£ã#RÇW$ÆWfVÃ£ã3‚ÆFW63¢uL:&Ò>ª6æ‚6œ:§Ræ†œ:¦âÂFü:âF¸vâLH6ærN¹2I¹’l:GRÇW¸vââwÒÀ¢¶–C¢wfõö7V5÷FÒrÆw&FS¢uFœ:¦ârÆæÖS¢ul;B>»2IªòL:&ÒrÆÖ–å&VÆÓ£BÇ&VvVã£ãcRÇ7—&—C£ãCRÆÖ÷fS£ã‚ÆGF6³£ã"Æ67C£ã‚Æ7VÇF—fF–öã£ãSRÆFVfVç6S£ã3RÇW$ÆWfVÃ£ãRÆFW63¢|IªòL:&Òl;B>»2ÂL:&ÒŒ:N¹’FŒkº6ær>ºvŒ;6FªvââwĞ¥Ó° ¦gVæ7F–öâvWD†V'DÖWF†öDFVb‚—·&WGW&â†V'DÖWF†öG5¶6Æ×…2æ†V'DÖWF†öGÇÃÃÆ†V'DÖWF†öG2æÆVæwF‚Ó•×ÇÆ†V'DÖWF†öG5³×Ğ¦gVæ7F–öâvWEFV6†æ—VTÆWfVÂ†“Õ2çFV6†æ—VWÇÃ—·&WGW&âÖF‚æÖ‚ƒÄçVÖ&W"‚…2çFV6†æ—VTÆWfVÇ7ÇÇ·Ò•¶•Ò—ÇÃ—Ğ¦gVæ7F–öâvWD†V'DÖWF†öDÆWfVÂ†“Õ2æ†V'DÖWF†öGÇÃ—·&WGW&âÖF‚æÖ‚ƒÄçVÖ&W"‚…2æ†V'DÖWF†öDÆWfVÇ7ÇÇ·Ò•¶•Ò—ÇÃ—Ğ   ¦gVæ7F–öâvWD†V'DÖWF†öDVffV7G2‚—°¢6öç7BƒÖvWD†V'DÖWF†öDFVb‚’ÆÇcÖvWD†V'DÖWF†öDÆWfVÂ‚“°¢6öç7Bw&÷sÓ²†ÇbÓ’¦‚çW$ÆWfVÃ°¢&WGW&â°¢&VvVã¦‚ç&VvVâ¦w&÷rÀ¢7—&—C¦‚ç7—&—B¦w&÷rÀ¢Ö÷fS£²†‚æÖ÷fRÓ’¦w&÷rÀ¢GF6³£²†‚æGF6²Ó’¦w&÷rÀ¢67C£²†‚æ67BÓ’¦w&÷rÀ¢7VÇF—fF–öã¦‚æ7VÇF—fF–öâ¦w&÷rÀ¢FVfVç6S¦‚æFVfVç6R¦w&÷p¢Ó°§Ğ ¦gVæ7F–öâ†V'EWw&FT6÷7B†“Õ2æ†V'DÖWF†öGÇÃ—°¢6öç7BÇcÖvWD†V'DÖWF†öDÆWfVÂ†’’ÆƒÖ†V'DÖWF†öG5¶•×ÇÆ†V'DÖWF†öG5³Ó°¢&WGW&â¶7VÇC¤ÖF‚ç&÷VæBƒ#c¤ÖF‚ç÷rƒã‚ÆÇb’¢ƒ¶‚æÖ–å&VÆÒ£ã’’’Ç7FöæW3¤ÖF‚ç&÷VæBƒ¤ÖF‚ç÷rƒãCRÆÇb’¢ƒ¶‚æÖ–å&VÆÒ’—Ó°§Ğ¦6öç7BVÆVÖVçG3Õ°¢²t¶–ÒrÂ~)©ÂuÒÅ²t¸örÂ	ùJRuÒÅ²uFºw’rÂ	ù*ruÒÀ¢²uF¹RrÂ~)»uÒÅ²tŞ¹–2rÂ	øËòuÒÅ²u†öærrÂ	øÊ¢uÒÀ¢²tÌ;F’rÂ~)ªuÒÅ²t¶«öÒrÂ~X¨ÒuÒÅ²|IòrÂ~XˆuĞ¥Ó°¢òòNºòÆ¸wRÖî«ÒG&öæröÖ2I¸2vÖRæ§2Ç\;Fâ~¸Öâ¶†’<;2Œ:ærG,H6Ò.ª6âI¹2à¦6öç7BÔôDDõdU%4”ôãÒs##c“‚Ó"s°¦6öç7BDTdTÅEôÔô”CÒwF†æ…÷få÷F†öâs°¦6öç7BDTdTÅEõ$Tt”ôã×¶–C¤DTdTÅEôÔô”BÆæÖS¢uF†æ‚l:&âFŒ;FârÆ¶–æC¢uFŒ;FârÆÖ–ã£ÆÖƒ£"Æ6öÆ÷#¢r3ccƒsrÆVæV×“¥²v&ö"rÂv&6†W"uÒÆf–ÆS¢vÖ2÷F†æ…÷få÷F†öâæ§6öâwÓ°¦ÆWB&Vv–öç3Õ´DTdTÅEõ$Tt”ôåÓ°¦ÆWBÖÖæ–fW7C×·66†VÖfW'6–öã£ÆFVfVÇDÖ¤DTdTÅEôÔô”BÆÖ3§&Vv–öç7Ó°¦6öç7BÔô4ôäd”u3Ôö&¦V7Bæ7&VFR†çVÆÂ“°¦ÆWBÖÆöEFö¶VãÓ° ¦7–æ2gVæ7F–öâfWF6„Ö§6öâ‡W&Â—°¢–b‡v–æF÷rä76WDÖævW"—&WGW&âv–æF÷rä76WDÖævW"æÆöD¥4ôâ‡W&Â“°¢6öç7B&W3Öv—BfWF6‚‡W&ÂÇ¶66†S¢vFVfVÇBwÒ“°¢–b‚&W2æö²—F‡&÷ræWrW'&÷"‚t¶Œ;FærNª6’Ikº62r·W&Â²r‚r·&W2ç7FGW2²r’r“°¢&WGW&â&W2æ§6öâ‚“°§Ğ ¦7–æ2gVæ7F–öâÆöDÖÖæ–fW7B‚—°¢G'—°¢6öç7B&ö÷CÖv—BfWF6„Ö§6öâ‚vÖ2öÖæ–fW7Bæ§6öâr“°¢ÆWBÆÄÖ3Ô'&’æ—4'&’‡&ö÷BæÖ2“÷&ö÷BæÖ3¥µÓ°¢–b†ÆÄÖ2æÆVæwFƒÓÓÓbd'&’æ—4'&’‡&ö÷Bæ6FÆöw2’bg&ö÷Bæ6FÆöw2æÆVæwF‚—°¢6öç7B6FÆöw3Öv—B&öÖ—6RæÆÂ‡&ö÷Bæ6FÆöw2æÖ†f–ÆSÓæfWF6„Ö§6öâ†f–ÆR’’“°¢ÆÄÖ3Ö6FÆöw2æfÆDÖ†3Óä'&’æ—4'&’†2æÖ2“ö2æÖ3¥µÒ“°¢Ğ¢–b†ÆÄÖ2æÆVæwFƒÓÓÓ—F‡&÷ræWrW'&÷"‚tFæ‚ŞºV2ÖG.¹ærr“°¢ÖÖæ–fW7C×²ââç&ö÷BÆÖ3¦ÆÄÖ7Ó°¢&Vv–öç3ÖÆÄÖ3° ¢6öç7BÆVv7•&Vv–öä–G3Õ²wF†æ…÷få÷F†öârÂvÆ–æ…÷6öåöævö•÷f’rÂv&6…öævö5÷F†æ‚rÂwF†æ…÷få÷FöærrÂwfåöFÕ÷6öÖ2rÂw–WU÷gV2rÂv6ÕöF–ö†å÷W–VârÂvÖ÷gV2uÓ°¢6öç7BÆVv7”–æFWƒÔçVÖ&W"æ—4–çFVvW"…2ç&Vv–öâ“ö6Æ×…2ç&Vv–öâÃÆÆVv7•&Vv–öä–G2æÆVæwF‚Ó“£°¢6öç7BÆVv7”–CÖÆVv7•&Vv–öä–G5¶ÆVv7”–æFW…×ÇÇ&ö÷BæFVfVÇDÖÇÄDTdTÅEôÔô”C°¢6öç7B&WVW7FVD–CÒ‡G—Vöb2ç&Vv–öä–CÓÓÒw7G&–ærrbe2ç&Vv–öä–B“õ2ç&Vv–öä–C¦ÆVv7”–C°¢6öç7B&W6öÇfVD–C×&Vv–öç2ç6öÖR‡#Óç"æ–CÓÓ×&WVW7FVD–B“÷&WVW7FVD–C¢‡&ö÷BæFVfVÇDÖÇÄDTdTÅEôÔô”B“°¢6öç7B&W6öÇfVD–æFWƒÔÖF‚æÖ‚ƒÇ&Vv–öç2æf–æD–æFW‚‡#Óç"æ–CÓÓ×&W6öÇfVD–B’“°¢2ç&Vv–öã×&W6öÇfVD–æFWƒ°¢2ç&Vv–öä–C×&W6öÇfVD–C°¢Ö6F6‚†W'"—°¢6öç6öÆRçv&â‚tL;–ærFæ‚ŞºV2ÖN»Œ;&æs¢rÆW'"“°¢ÖÖæ–fW7C×·66†VÖfW'6–öã£ÆFVfVÇDÖ¤DTdTÅEôÔô”BÆÖ3¥´DTdTÅEõ$Tt”ôå×Ó°¢&Vv–öç3ÖÖÖæ–fW7BæÖ3°¢2ç&Vv–öãÓ°¢2ç&Vv–öä–CÔDTdTÅEôÔô”C°¢Ğ§Ğ ¦gVæ7F–öâæ÷&ÖÆ—¦TÖ6öæf–r†6frÆ–BÆÖWF×·Ò—°¢–b‚6fwÇÇG—Vöb6frÓÒvö&¦V7Br—F‡&÷ræWrW'&÷"‚tNºòÆ¸wRÖr¶–B²r¶Œ;Færº7Î¸rr“°¢6fræ–CÖ6fræ–GÇÆ–C°¢6frææÖSÖ6frææÖWÇÆ6fræ–C°¢6frçG&VW3Ô'&’æ—4'&’†6frçG&VW2“ö6frçG&VW3¥µÓ°¢6frç&ö6·3Ô'&’æ—4'&’†6frç&ö6·2“ö6frç&ö6·3¥µÓ°¢6fræFV6÷#Ô'&’æ—4'&’†6fræFV6÷"“ö6fræFV6÷#¥µÓ°¢6frçf–ÆÆvU&÷3Ô'&’æ—4'&’†6frçf–ÆÆvU&÷2“ö6frçf–ÆÆvU&÷3¥µÓ°¢6fræÆçFW&å÷7G3Ô'&’æ—4'&’†6fræÆçFW&å÷7G2“ö6fræÆçFW&å÷7G3¥µÓ°¢6frç7V6–Å7vç3Ô'&’æ—4'&’†6frç7V6–Å7vç2“ö6frç7V6–Å7vç3¥µÓ°¢–b‚ôæG&ö–GÆ•†öæWÆ•GÆ•öGÄÖö&–ÆRö’çFW7B†æf–vF÷"çW6W$vVçB’—°¢6frçG&VT6÷VçCÔÖF‚æÖ–â†6frçG&VT6÷VçGÇÃCÃ““°¢6frç&ö6´6÷VçCÔÖF‚æÖ–â†6frç&ö6´6÷VçGÇÃ##ÃS“°¢6fræw&746÷VçCÔÖF‚æÖ–â†6fræw&746÷VçGÇÃCÃƒ“°¢Ğ¢&WGW&âv–æF÷råv÷&ÆE7—7FVÓ÷v–æF÷råv÷&ÆE7—7FVÒææ÷&ÖÆ—¦R†6frÇ²ââæÖWFÆ–GÒ“¦6fs°§Ğ ¦7–æ2gVæ7F–öâvWDÖ6öæf–r†–B—°¢–b„Ôô4ôäd”u5¶–EÒ—&WGW&âÔô4ôäd”u5¶–EÓ°¢6öç7BÖWF×&Vv–öç2æf–æB‡#Óç"æ–CÓÓÖ–B“°¢6öç7Bf–ÆSÒ†ÖWFbfÖWFæf–ÆR—ÇÂ‚vÖ2òr¶–B²ræ§6öâr“°¢G'—°¢6öç7B&sÖv—BfWF6„Ö§6öâ†f–ÆR“°¢ÆWB6fs×&s°¢–b‡&rbg&ræW‡FVæG2—°¢6öç7B&6SÖv—BfWF6„Ö§6öâ‡&ræW‡FVæG2“°¢6fs×²ââæ&6RÂââç&rÂâââ‡&ræ÷fW'&–FW7ÇÇ·Ò—Ó°¢FVÆWFR6fræW‡FVæG3°¢FVÆWFR6fræ÷fW'&–FW3°¢Ğ¢6fsÖæ÷&ÖÆ—¦TÖ6öæf–r†6frÆ–BÆÖWFÇÇ·Ò“°¢Ôô4ôäd”u5¶–EÓÖ6fs°¢&WGW&â6fs°¢Ö6F6‚†W'"—°¢–b†–CÓÓÔDTdTÅEôÔô”B—F‡&÷rW'#°¢6öç6öÆRçv&â‚tÖr¶–B²r6Œk<;2f–ÆR&œ:¦ærÂL;–ærr´DTdTÅEôÔô”BÆW'"“°¢6öç7BfÆÆ&6³Öv—BvWDÖ6öæf–r„DTdTÅEôÔô”B“°¢6öç7B6fs×²ââæfÆÆ&6²Æ–BÆæÖS¢†ÖWFbfÖWFææÖR—ÇÆ–BÇ7V6–Å7vç3¥µ×Ó°¢Ôô4ôäd”u5¶–EÓÖ6fs°¢&WGW&â6fs°¢Ğ§Ğ ¢òò.ª6âI¹2F«òv¹¶’Ş¹ò.¹–ærÎªvâƒÒ‚ÒÒããÜ+"¦6öç7BÔõ4•¤RÒ°¦6öç7BÔô„ÄbÒÔõ4•¤Rò#²òòS ¦6öç7BÔô$õTäBÒÔô„ÄbÒS²òòCƒP¦6öç7B$D%õ$ätRÒsS²òò,:â¼:Öæ‚\:—B&F"Ö–æ–Ö†Ü:—B ¢òòÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓĞ¢òò¸bD¹är¾»‚ìH$är(	BÔ5DU"DDNº¢U„4TÀ¢òòCB6¶–ÆÂò’¸ròB>ªWòBª–Òâde‚F‚vºòæwWœ:¦âà¢òòÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓÓĞ¢6öç7B4´”ÄÅôÔ5DU#×v–æF÷råGUF–Vå6¶–ÆÄÖ7FW#°¢–b‚4´”ÄÅôÔ5DU'ÇÂ4´”ÄÅôÔ5DU"æVÆVÖVçG7ÇÅ4´”ÄÅôÔ5DU"ç6¶–ÆÄ6÷VçBÓÓCB—°¢F‡&÷ræWrW'&÷"‚u6¶–ÆÂÖ7FW"FF6ŒkNª6’†ş«v2¶Œ;FærIºrCB6¶–ÆÂr“°¢Ğ¢6öç7B4´”ÄÅõD”U%3Õ4´”ÄÅôÔ5DU"çF–W'3°¢6öç7B4´”ÄÅõ$äµ3Õ4´”ÄÅôÔ5DU"ç&æ·3°¢6öç7BTÄTÔTåEõ4´”ÄÅôäÔU3Ôö&¦V7Bæg&öÔVçG&–W2„ö&¦V7BæVçG&–W2…4´”ÄÅôÔ5DU"æVÆVÖVçG2’æÖ‚…¶æÖRÆUÒ“Óå¶æÖRÆRææÖW5Ò’“°¢gVæ7F–öâvWDVÆVÖVçD¶W’†VÆVÔæÖR—¶6öç7BSÕ4´”ÄÅôÔ5DU"æVÆVÖVçG5¶VÆVÔæÖUÓ·&WGW&âSöRæ¶W“¢v¶–VÒs·Ğ¢gVæ7F–öâvWDVÆVÖVçDæÖTg&öÔ¶W’†¶W’—¶f÷"†6öç7B¶æÖRÆUÒöbö&¦V7BæVçG&–W2…4´”ÄÅôÔ5DU"æVÆVÖVçG2’––b†Ræ¶W“ÓÓÖ¶W’—&WGW&âæÖS·&WGW&ât¶«öÒs·Ğ¢gVæ7F–öâvWDVÆVÖVçD6öÆ÷$'”æÖR†VÆVÔæÖR—·&WGW&â´¶–Ó¢r6ffCƒf"rÄ¸ö¢r6fcf#6BrÅFºw“¢r3cF6ffbrÅF¹S¢r63–Sf"rÄŞ¹–3¢r3c†Fc†"rÅ†öæs¢r6vc6F2rÄÌ;F“¢r3–C†6fbrÄ¶«öÓ¢r3v6VfbrÌIó¢r6fcssfBwÕ¶VÆVÔæÖU×ÇÂr3v6Vfbs·Ğ¢gVæ7F–öâvWE6¶–ÆÄ–B†VÆVÔæÖRÇF–W$–G‚Ç&æ´–G‚—·&WGW&âvWDVÆVÖVçD¶W’†VÆVÔæÖR’²uòr·F–W$–G‚²uòr·&æ´–Gƒ·Ğ¢gVæ7F–öâvWE6¶–ÆÄ&Ææ6R‡F–W$–G‚Ç&æ´–G‚—·&WGW&â4´”ÄÅôÔ5DU"æ&Ææ6U·F–W$–G‚£B·&æ´–G…×ÇÆçVÆÃ·Ğ¢gVæ7F–öâvWE6¶–ÆÄFVb‡6¶–ÆÄ–B—°¢–b‡v–æF÷rå6¶–ÆÅ7—7FVÒ—&WGW&âv–æF÷rå6¶–ÆÅ7—7FVÒævWB‡6¶–ÆÄ–B“°¢–b‚6¶–ÆÄ–B—&WGW&âçVÆÃ°¢6öç7B'G3×6¶–ÆÄ–Bç7Æ—B‚uòr“¶–b‡'G2æÆVæwFƒÃ2—&WGW&âçVÆÃ°¢6öç7BVÆVÔ¶W“×'G5³ÒÇF–W$–Gƒ×'6T–çB‡'G5³ÒÃ’Ç&æ´–Gƒ×'6T–çB‡'G5³%ÒÃ“°¢–b‚çVÖ&W"æ—4f–æ—FR‡F–W$–G‚—ÇÂçVÖ&W"æ—4f–æ—FR‡&æ´–G‚—ÇÇF–W$–GƒÃÇÇF–W$–Gƒã7ÇÇ&æ´–GƒÃÇÇ&æ´–Gƒã2—&WGW&âçVÆÃ°¢6öç7BVÆVÖVçCÖvWDVÆVÖVçDæÖTg&öÔ¶W’†VÆVÔ¶W’’ÆVFFÕ4´”ÄÅôÔ5DU"æVÆVÖVçG5¶VÆVÖVçEÒÆ&ÃÖvWE6¶–ÆÄ&Ææ6R‡F–W$–G‚Ç&æ´–G‚“°¢–b‚VFFÇÂ&Â—&WGW&âçVÆÃ°¢6öç7BF–W#Õ4´”ÄÅõD”U%5·F–W$–G…ÒÇ&æ³Õ4´”ÄÅõ$äµ5·&æ´–G…ÒÆfÆC×F–W$–G‚£B·&æ´–G‚Ç&öf–ÆSÖVFFç&öf–ÆW5·&æ´–G…×ÇÇ·Ó°¢6öç7BæÖSÖVFFææÖW5¶fÆE×ÇÂ‚t,:Ò¼:×r·F–W$–G‚²rÒr·&æ´–G‚“°¢&WGW&â°¢–C§6¶–ÆÄ–BÆæÖRÆVÆVÖVçBÆVÆVÔ¶W’ÇF–W$–G‚Ç&æ´–G‚ÇF–W$–C§F–W"æ–BÇ&æ´–C§&æ²æ–BÇF–W$æÖS§F–W"ææÖRÇ&æ´æÖS§&æ²ææÖRÇF–W$6öÆ÷#§F–W"æ6öÆ÷"À¢&FvS¢‡F–W"æ&FvWÇÇF–W"ææÖWÇÂrr’²|+rrµ7G&–ær‡&æ²ææÖWÇÂrr’æ6†$Bƒ’À¢Ö–å&VÆÓ¦&ÂæÖ–å&VÆÒÆÖ–äÆWfVÃ¦&ÂæÖ–äÆWfVÂÆ×VÇC¦&Âæ×VÇBÆ×¦&Âæ×Æ6C¦&Âæ6BÆöS¦&ÂæöRÆ†—G3¦&Âæ†—G2ÇF&vWE&ævS¦&ÂçF&vWE&ævRÀ¢f÷&6T7&—DôS¢&Âæf÷&6T7&—DôRÇ7—&—E66Æ–æs¢VFFç7—&—E66Æ–ærÆ6÷7E7FöæW3¦&Âæ6÷7E7FöæW2Æ6÷7D7VÇC¦&Âæ6÷7D7VÇBÇWw&FT6÷7G3¦&ÂçWw&FT6÷7G2À¢–6öã¢v76WG2÷6¶–ÆÇ2òr¶VÆVÔ¶W’²ròr·F–W"æ–B²uòr·&æ²æ–B²rçærrÀ¢fgƒ¢v76WG2÷fg‚÷6¶–ÆÇ2òr¶VÆVÔ¶W’²ròr·F–W"æ–B²uòr·&æ²æ–B²rçærrÀ¢&öÆS§&öf–ÆRç&öÆWÇÂrrÆÖV6†æ–5FW‡C¦æÖR²s¢r²‡&öf–ÆRæÖV6†æ–7ÇÂrr’Ç7FGW5FW‡C§&öf–ÆRç7FGW7ÇÂrrÆVffV7C§&öf–ÆRæVffV7GÇÆçVÆÀ¢Ó°¢Ğ¢gVæ7F–öâvWE6¶–ÆÅWw&FT6÷7B‡6¶–ÆÂÆ7W$Çb—°¢–b‚6¶–ÆÇÇÆ7W$ÇcãÓR—&WGW&âçVÆÃ°¢6öç7BÆ—7C×6¶–ÆÂçWw&FT6÷7G7ÇÅµÒÆ3ÖÆ—7E¶7W$ÇbÓÓ°¢&WGW&â3÷·7FöæW3¤çVÖ&W"†2ç7FöæW2—ÇÃÆ7VÇC¤çVÖ&W"†2æ7VÇB—ÇÃÇFôÆWfVÃ¤çVÖ&W"†2çFôÆWfVÂ—ÇÆ7W$Çb³Ó¦çVÆÃ°¢Ğ ¦6öç7BFVfVÇE7FFS×°¢æÖS¢tÆ–æ‚†öærrÆÆWfVÃ£Ç‡£Ç‡æVVC£#À¢‡£c#ÆÖ„‡£c#Æ×£ƒÆÖ„×£ƒÀ¢òò¸rF‡^¹–2L:Öæ‚6†«öâIªWR6Œ:Öæ‚Fº–2(	B¶Œ;Fær<;&âF²öFVbö7&—B<Z’à¢FÖvS§·‡—6–6Ã£C"Ä¶–Ó£Ä¸ö£ÅFºw“£ÄŞ¹–3£ÅF¹S£Å†öæs£ÄÌ;F“£ÒÀ¢FVfVç6S§·‡—6–6Ã£‚Ä¶–Ó£Ä¸ö£ÅFºw“£ÄŞ¹–3£ÅF¹S£Å†öæs£ÄÌ;F“£ÒÀ¢7&—D6†æ6S¢ã"Æ7&—DFÖvS£ã‚À¢7—&—E6Vç6S£ÆÖ÷fU7VVC£bã"ÆGF6µ7VVC£ãÆ67E7VVC£ãÀ¢‡&VvVå7C£ãRÆ×&VvVå7C£ã3RÀ¢vöÆC£#Ç7FöæW3£SÀ¢&VÆÓ£Ç&VÆÕ7FvS£Æ7VÇF—fF–öã£À¢¶–ÆÇ3£ÇVW7D¶–ÆÇ3£Æ&÷74¶–ÆÇ3£À¢WFó§G'VRÇVÆ—G“£ÆF–Ç“¦fÇ6RÇWC¦fÇ6RÀ¢—FV×3§²tÆ–æ‚Fª6‚s£RÂt¹6’¶Œ:ÒIâs£7ÒÀ¢WV—ÖVçC§·vVöã¦çVÆÂÆ&Ö÷#¦çVÆÂÇ&–æs¦çVÆÇÒÀ¢W&–öC£Æ7VÇF—fF–öåFV6†æ—VW3¦Ö¶TFVfVÇEFV6†æ—VT7VÇF—fF–öâ‚’Æ7F—fT7VÇF—fF–öåFV6†æ—VS¢w‡—6–6ÂrÆ†V'DÖWF†öC£Æ†V'DÖWF†öDÆWfVÇ3§³£ÒÇ&Vv–öã£Ç6¶–ÆÄVÆVÖVçC¢t¶«öÒrÀ¢WV—VE6¶–ÆÇ3¥²v¶–VÕóórÂv¶–VÕóórÆçVÆÂÆçVÆÅÒÀ¢ÆV&æVE6¶–ÆÇ3§²v¶–VÕóós£Âv¶–VÕóós£ÒÀ¢6¶–ÆÅF–W%F#£À¢–ÆÇ3§³£2Ã#£Ã3£ÃC£ÃS£ÒÀ¢FÆ—6Öç3§³£Ã#£Ã3£ÃC£ÃS£ÒÀ¢'F–f7G3§³£Ã#£Ã3£ÃC£ÃS£ÒÀ¢&öw&W76–öå7—7FV×3¢‡v–æF÷råGUF–Vå7—7FV×3÷v–æF÷råGUF–Vå7—7FV×2æFVfVÇE7FFR‚“§·Ò§Ó° ¦ÆWB3°§G'—°¢ÆWB'6VCÔ¥4ôâç'6R†Æö6Å7F÷&vRævWD—FVÒ…4dR—ÇÂw·Òr“°¢3Ôö&¦V7Bæ76–vâ‡·ÒÆFVfVÇE7FFRÇ'6VB“°¢–b‚2æ—FV×7ÇÇG—Vöb2æ—FV×2ÓÒvö&¦V7BwÇÄ'&’æ—4'&’…2æ—FV×2’—°¢2æ—FV×3×²tÆ–æ‚Fª6‚s£RÂt¹6’¶Œ:ÒIâs£7Ó°¢Ğ¢–b‚2æWV—ÖVçGÇÇG—Vöb2æWV—ÖVçBÓÒvö&¦V7Br—°¢2æWV—ÖVçC×·vVöã¦çVÆÂÆ&Ö÷#¦çVÆÂÇ&–æs¦çVÆÇÓ°¢Ğ¢–b‚'&’æ—4'&’…2æWV—VE6¶–ÆÇ2’—°¢ÆWB³ÖvWDVÆVÖVçD¶W’…2ç6¶–ÆÄVÆVÖVçGÇÂt¶«öÒr“°¢2æWV—VE6¶–ÆÇ3Õ¶G¶·ÕóóÆG¶·ÕóóÆçVÆÂÆçVÆÅÓ°¢Ğ¢–b‚2æÆV&æVE6¶–ÆÇ7ÇÇG—Vöb2æÆV&æVE6¶–ÆÇ2ÓÒvö&¦V7BwÇÄ'&’æ—4'&’…2æÆV&æVE6¶–ÆÇ2’—°¢ÆWB³ÖvWDVÆVÖVçD¶W’…2ç6¶–ÆÄVÆVÖVçGÇÂt¶«öÒr“°¢2æÆV&æVE6¶–ÆÇ3×µ¶G¶·ÕóóÓ£Å¶G¶·ÕóóÓ£Ó°¢Ğ¢–b‡G—Vöb2ç6¶–ÆÅF–W%F"ÓÒvçVÖ&W"r•2ç6¶–ÆÅF–W%F#Ó° ¢òòÖ–w&F–öâ6fR<Z’ÓâFÖvRFŒ:æ‚ªvã²FÖvRN¹VærIkº62L:Öæ‚.«ærN¹Vær<:2FŒ:æ‚ªvâà¢6öç7B7FEG—W3Õ²w‡—6–6ÂrÂt¶–ÒrÂt¸örÂuFºw’rÂtŞ¹–2rÂuF¹RrÂu†öærrÂtÌ;F’uÓ°¢6öç7BÆVv7”F³×G—Vöb2æF³ÓÓÒvçVÖ&W"sõ2æF³£C#°¢6öç7BÆVv7”FVc×G—Vöb2æFVcÓÓÒvçVÖ&W"sõ2æFVc£ƒ°¢6öç7BÆVv7”7&—C×G—Vöb2æ7&—CÓÓÒvçVÖ&W"sõ2æ7&—C¢ã#°¢6öç7BÆVv7”FÖvT&öçW3Ò…2æFÖvT&öçW2bgG—Vöb2æFÖvT&öçW3ÓÓÒvö&¦V7Br“õ2æFÖvT&öçW3§·Ó°¢6öç7BÆVv7”FVfVç6T&öçW3Ò…2æFVfVç6T&öçW2bgG—Vöb2æFVfVç6T&öçW3ÓÓÒvö&¦V7Br“õ2æFVfVç6T&öçW3§·Ó°¢6öç7BöÆDFÖvSÒ…2æFÖvRbgG—Vöb2æFÖvSÓÓÒvö&¦V7Br“÷²ââå2æFÖvWÓ¦çVÆÃ° ¢–b‚2æFÖvWÇÇG—Vöb2æFÖvRÓÒvö&¦V7Br•2æFÖvS×·Ó° ¢òòî«÷R6fRIær¹ò.ª6â$FÖvRN¹Vær²R¸r"G,k¹¶2I;2ÂW’I¹V’n¸FÖvR«6æs ¢òòvºòFÖvRN¹Vær<Z’Ì:Ònª×BÌ;Òî¸âl:&«öâR¸rFŒ:æ‚Ìkº6ærFÖvR¸rLkjærº–ærà¢–b†öÆDFÖvRbgG—VöböÆDFÖvRçF÷FÃÓÓÒvçVÖ&W"r—°¢6öç7BöÆEF÷FÃÔÖF‚æÖ‚ƒÆöÆDFÖvRçF÷FÂ“°¢2æFÖvRç‡—6–6ÃÖöÆEF÷FÃ°¢f÷"†6öç7BBöb7FEG—W2—°¢–b‡CÓÓÒw‡—6–6Âr–6öçF–çVS°¢6öç7B7CÔçVÖ&W"†öÆDFÖvU·EÒ—ÇÃ°¢2æFÖvU·EÓÔÖF‚æÖ‚ƒÆöÆEF÷FÂ§7Bó“°¢Ğ¢FVÆWFR2æFÖvRçF÷FÃ°¢ÖVÇ6W°¢f÷"†6öç7BBöb7FEG—W2—°¢–b‡G—Vöb2æFÖvU·EÒÓÒvçVÖ&W"r—°¢–b‡CÓÓÒw‡—6–6Âr•2æFÖvU·EÓÖÆVv7”F²²„çVÖ&W"†ÆVv7”FÖvT&öçW2ç‡—6–6Â—ÇÃ“°¢VÇ6R2æFÖvU·EÓÔÖF‚æÖ‚ƒÄçVÖ&W"†ÆVv7”FÖvT&öçW5·EÒ—ÇÃ“°¢Ğ¢Ğ¢Ğ ¢–b‚2æFVfVç6WÇÇG—Vöb2æFVfVç6RÓÒvö&¦V7Br•2æFVfVç6S×·Ó°¢f÷"†6öç7BBöb7FEG—W2—°¢–b‡G—Vöb2æFVfVç6U·EÒÓÒvçVÖ&W"r•2æFVfVç6U·EÓÒ‡CÓÓÒw‡—6–6ÂsöÆVv7”FVc£’²„çVÖ&W"†ÆVv7”FVfVç6T&öçW5·EÒ—ÇÃ“°¢Ğ ¢òò¶«öÒüIòL;–ærnª×BÌ;ÒÂ¶Œ;Fær<;2FÖvR÷Œ;&ærFºr&œ:¦ærà¢FVÆWFR2æFÖvRä¶«öÓ°¢FVÆWFR2æFÖvRìIó°¢FVÆWFR2æFVfVç6Rä¶«öÓ°¢FVÆWFR2æFVfVç6RìIó° ¢–b‡G—Vöb2æ7&—D6†æ6RÓÒvçVÖ&W"r•2æ7&—D6†æ6SÖÆVv7”7&—C°¢–b‡G—Vöb2æ7&—DFÖvRÓÒvçVÖ&W"r•2æ7&—DFÖvSÓãƒ°¢–b‡G—Vöb2ç7—&—E6Vç6RÓÒvçVÖ&W"r•2ç7—&—E6Vç6SÓ°¢–b‡G—Vöb2æÖ÷fU7VVBÓÒvçVÖ&W"r•2æÖ÷fU7VVCÓbã#°¢–b‡G—Vöb2æGF6µ7VVBÓÒvçVÖ&W"r•2æGF6µ7VVCÓã°¢–b‡G—Vöb2æ67E7VVBÓÒvçVÖ&W"r•2æ67E7VVCÓã°¢–b‡G—Vöb2æ‡&VvVå7BÓÒvçVÖ&W"r•2æ‡&VvVå7CÓãS°¢–b‡G—Vöb2æ×&VvVå7BÓÒvçVÖ&W"r•2æ×&VvVå7CÓã3S°¢òòÖ–w&F–öâ<;FærŒ:<Z’Óâ¸r<;FærŒ:&œ:¦ærF†VòNº¶ær¸rà¢–b‚2æ7VÇF—fF–öåFV6†æ—VW7ÇÇG—Vöb2æ7VÇF—fF–öåFV6†æ—VW2ÓÒvö&¦V7Br—°¢2æ7VÇF—fF–öåFV6†æ—VW3ÖÖ¶TFVfVÇEFV6†æ—VT7VÇF—fF–öâ‚“°¢6öç7BöÆDw&FSÖ6Æ×„çVÖ&W"…2çFV6†æ—VR—ÇÃÃÅDT4„ä•TUôu$DU2æÆVæwF‚Ó“°¢6öç7BöÆDÇcÔÖF‚æÖ‚ƒÄçVÖ&W"‚…2çFV6†æ—VTÆWfVÇ7ÇÇ·Ò•µ2çFV6†æ—VUÒ—ÇÃ“°¢2æ7VÇF—fF–öåFV6†æ—VW2ç‡—6–6Ã×¶w&FS¦öÆDw&FRÆÆWfVÃ¤ÖF‚æÖ–âƒÆöÆDÇb—Ó°¢Ğ¢f÷"†6öç7BG—Röb5TÅD•dD”ôåõDT4…õE•U2–vWEFV6†æ—VU7FFR‡G—R“°¢FVÆWFR2çFV6†æ—VS°¢FVÆWFR2çFV6†æ—VTÆWfVÇ3°¢–b‡G—Vöb2æ7F—fT7VÇF—fF–öåFV6†æ—VRÓÒw7G&–ærr•2æ7F—fT7VÇF—fF–öåFV6†æ—VSÒw‡—6–6Âs°¢2æ7F—fT7VÇF—fF–öåFV6†æ—VSÖæ÷&ÖÆ—¦UFV6†æ—VUG—R…2æ7F—fT7VÇF—fF–öåFV6†æ—VR“°¢f÷"†6öç7BG—Röb5TÅD•dD”ôåõDT4…õE•U2–vWEFV6†æ—VU7FFR‡G—R“°¢–b‚—5FV6†æ—VU&VÆÔÆÆ÷vVB…2æ7F—fT7VÇF—fF–öåFV6†æ—VR’—°¢6öç7BfÆÆ&6³Ô5TÅD•dD”ôåõDT4…õE•U2æf–æB‡CÓæ—5FV6†æ—VU&VÆÔÆÆ÷vVB‡B’—ÇÂw‡—6–6Âs°¢2æ7F—fT7VÇF—fF–öåFV6†æ—VSÖfÆÆ&6³°¢Ğ¢–b‡G—Vöb2æ†V'DÖWF†öBÓÒvçVÖ&W"r•2æ†V'DÖWF†öCÓ°¢–b‚2æ†V'DÖWF†öDÆWfVÇ7ÇÇG—Vöb2æ†V'DÖWF†öDÆWfVÇ2ÓÒvö&¦V7Br•2æ†V'DÖWF†öDÆWfVÇ3×³£Ó°¢–b‡G—Vöb2æ†V'DÖWF†öDÆWfVÇ5µ2æ†V'DÖWF†öEÒÓÒvçVÖ&W"r•2æ†V'DÖWF†öDÆWfVÇ5µ2æ†V'DÖWF†öEÓÓ°¢–b‡v–æF÷råGUF–Vå7—7FV×2—v–æF÷råGUF–Vå7—7FV×2æÖ–w&FR…2“° ¢FVÆWFR2æF³°¢FVÆWFR2æFVc°¢FVÆWFR2æ7&—C°¢FVÆWFR2æFÖvT&öçW3°¢FVÆWFR2æFVfVç6T&öçW3°§Ö6F6‚†R—°¢3×7G'V7GW&VD6ÆöæR†FVfVÇE7FFR“°§Ğ ¦–b‡v–æF÷rävÖU7FFU6W'f–6R—µ3×v–æF÷rävÖU7FFU6W'f–6RæF÷B…2“·Ğ¦–b‡v–æF÷rä–çfVçF÷'•7—7FVÒ—v–æF÷rä–çfVçF÷'•7—7FVÒæGF6‚…2“°¦–b‡v–æF÷rå6fU6W'f–6R—v–æF÷rå6fU6W'f–6Ræ6öæf–wW&R‡·7FFTvWGFW#¢‚“Óå2ÆFVÆ“£“Ò“°¦6öç7B6fSÒ†f÷&6SÖfÇ6R“Óç°¢–b‡v–æF÷rå6fU6W'f–6R—¶–b†f÷&6R—&WGW&âv–æF÷rå6fU6W'f–6Ræf÷&6U6fR‚vvÖRÖf÷&6Rr“·v–æF÷rå6fU6W'f–6RæÖ&´F—'G’‚vvÖR×7FFRr“·&WGW&ã·Ğ¢G'—¶Æö6Å7F÷&vRç6WD—FVÒ…4dRÄ¥4ôâç7G&–æv–g’…2’“·Ö6F6‚†R—·Ğ§Ó° ¦ÆWBVæv–æRÇ66VæRÆ6ÖW&ÇÆ–W"ÇWD7F÷#ÖçVÆÂÆ7F÷'3ÕµÒÇ&ö¦V7F–ÆW3ÕµÒÆVffV7G3ÕµÒÆFV6÷#ÕµÒÆ&÷73ÖçVÆÃ°¦ÆWBv÷&ÆDw&÷VæCÖçVÆÂÇv÷&ÆE&—fW#ÖçVÆÃ°¦ÆWBÆ7C×W&f÷&Öæ6Rææ÷r‚’Ç7våF–ÖW#ÓÆWFõF–ÖW#ÓÇ&VvVåF–ÖW#ÓÆÖ–æ•F–ÖW#ÓÆvÖU7F'FVCÖfÇ6RÇW6VCÖfÇ6S°¦6öç7B¶W—3×·ÒÂ¦÷“×·ƒ£Ç“£Æ7F—fS¦fÇ6RÇ–C¦çVÆÇÒÂ6ööÆF÷vãÕ³ÃÃÃÃÒÂF6„6C×·C£Ó°¦6öç7B7&—FTÖG3×·ÒÂÖD66†S×·ÒÂÖ&÷ÖFW&–Ç3×·ÒÂ6¶–ÆÅfg„ÖG3×·Ó°¦–b‡v–æF÷rå'VçF–ÖUFVÆVÖWG'’—v–æF÷rå'VçF–ÖUFVÆVÖWG'’ç&Vv—7FW"‚w'VçF–ÖRrÂ‚“Óâ‡°¢g3¦Væv–æSôÖF‚ç&÷VæB†Væv–æRævWDg2‚’“£Æg&ÖT×3¦Væv–æSôçVÖ&W"‚ƒôÖF‚æÖ‚ƒÆVæv–æRævWDg2‚’’’çFôf—†VBƒ’“£À¢7F÷'3¦7F÷'2æÆVæwF‚Æ7F—fTVæV×“¦7F÷'2ç&VGV6R‚†âÆ“Óæâ²‚æFVCó£’Ã’Æ7F—fUfgƒ¦VffV7G2æÆVæwF‚À¢7F—fTÖW6†W3§66VæS÷66VæRævWD7F—fTÖW6†W2‚’æÆVæwFƒ£ÇFW‡GW&W3§66VæS÷66VæRçFW‡GW&W2æÆVæwFƒ£ÆÖFW&–Ç3§66VæS÷66VæRæÖFW&–Ç2æÆVæwFƒ£À¢Ö¥2be2ç&Vv–öä–BÇ&VæFW%66ÆS¦Væv–æSôçVÖ&W"†Væv–æRævWD†&Gv&U66Æ–ætÆWfVÂ‚’çFôf—†VBƒ"’“£ÇVÆ—G“§v–æF÷råW&f÷&Öæ6U&öf–ÆRbgv–æF÷råW&f÷&Öæ6U&öf–ÆRææÖRÀ¢66†VGVÆVC§v–æF÷rävÖU66†VGVÆW#÷v–æF÷rävÖU66†VGVÆW"æ6÷VçB‚“£Æ76WG3§v–æF÷rä76WDÖævW"bgv–æF÷rä76WDÖævW"ç7FG2‚§Ò’“° ¢òòÓÓÓÓÒdÅD²Õ5E”ÄR4ÔU$5DäD$BÓÓÓÓĞ¢òòFü:â.¹’7&—FR÷&÷L;–ær6‡VærŞ¹—B&ö¦V7F–öã¢÷'F†öw&†–22óBF÷ÖF÷vâÀ¢òò|;62æŒ:ÆâS+Â¶Œ;FærW'7V7F—fR66Æ–ærÂŒk¹¶æræŒ:ÆâNº²æÒÌ:¦â.ªö2à¦6öç7B4ÔU$õ5DC×°¢VÆWfF–öäFVs£SÀ¢F—7Fæ6S£CÀ¢f–Wt†V–v‡C£3€§Ó° ¦gVæ7F–öâWFFT÷'F†ô6ÖW&&÷VæG2‚—°¢–b‚6ÖW&ÇÂVæv–æR—&WGW&ã°¢6öç7B7V7CÔÖF‚æÖ‚ƒãCRÆVæv–æRævWE&VæFW%v–GF‚‚’ôÖF‚æÖ‚ƒÆVæv–æRævWE&VæFW$†V–v‡B‚’’“°¢6öç7B†ÆdƒÔ4ÔU$õ5DBçf–Wt†V–v‡B£ãS°¢6ÖW&æ÷'F†õF÷Ö†Ædƒ°¢6ÖW&æ÷'F†ô&÷GFöÓÒÖ†Ædƒ°¢6ÖW&æ÷'F†ôÆVgCÒÖ†Æd‚¦7V7C°¢6ÖW&æ÷'F†õ&–v‡CÖ†Æd‚¦7V7C°§Ğ ¦gVæ7F–öâÆ6U7FæF&D6ÖW&‡‚Ç¢—°¢–b‚6ÖW&—&WGW&ã°¢6öç7BVÆWcÔ4ÔU$õ5DBæVÆWfF–öäFVr¤ÖF‚å’óƒ°¢6öç7B†÷&—¦öçFÃÔÖF‚æ6÷2†VÆWb’¤4ÔU$õ5DBæF—7Fæ6S°¢6öç7B†V–v‡CÔÖF‚ç6–â†VÆWb’¤4ÔU$õ5DBæF—7Fæ6S°¢6ÖW&ç÷6—F–öâç6WB‡‚Æ†V–v‡BÇ¢Ö†÷&—¦öçFÂ“°¢6ÖW&ç6WEF&vWB†æWr$%”ÄôâåfV7F÷#2‡‚ÃÇ¢’“°§Ğ ¢òòÓÓÓÓÒD„ä‚l8$âDŒ9Dâ(	B5U%dTBtÄÂ4ôÄÄ•4”ôâb4dR¤ôäRÓÓÓÓĞ¢òòl;&ærLk¹Öær&ò6öærNªær÷fÂVæ‚FŒ;Fã²>¹Vær.ªö2ôæÒÌ:Î¹’&l:òGW’æªWBà¦6öç7Bd”ÄÄtUõtÄÅõ%ƒÓC2ã°¦6öç7Bd”ÄÄtUõtÄÅõ%£ÓCã°¦6öç7Bd”ÄÄtUõ4dUõ%ƒÓCãS°¦6öç7Bd”ÄÄtUõ4dUõ%£Ó3rãS°¦6öç7Bd”ÄÄtUôtDUô„Äeõt”EDƒÓBãc° ¦gVæ7F–öâVÆÆ—6Tæ÷&Ò‡‚Ç¢Ç'‚Ç'¢—°¢&WGW&âÖF‚ç7'B‚‡‚§‚’ò‡'‚§'‚’²‡¢§¢’ò‡'¢§'¢’“°§Ğ¦gVæ7F–öâ—5f–ÆÆvU6fR‡‚Ç¢—°¢6öç7B7W'&VçC×&Vv–öç2bg&Vv–öç2æÆVæwFƒò‡&Vv–öç5µ2ç&Vv–öçÇÃ×ÇÇ&Vv–öç5³Ò“¦çVÆÃ°¢–b†7W'&VçBbf7W'&VçBæ–BÓÔDTdTÅEôÔô”B—&WGW&âfÇ6S°¢&WGW&âVÆÆ—6Tæ÷&Ò‡‚Ç¢Åd”ÄÄtUõ4dUõ%‚Åd”ÄÄtUõ4dUõ%¢“Ã°§Ğ¦gVæ7F–öâ—5f–ÆÆvTvFTÆæR‡‚Ç¢—°¢&WGW&âÖF‚æ'2‡‚“ÃÕd”ÄÄtUôtDUô„Äeõt”ED‚bbÖF‚æ'2‡¢“ãÕd”ÄÄtUõtÄÅõ%¢ÓBã°§Ğ¦gVæ7F–öâ6Æ×FôVÆÆ—6R‡‚Ç¢Ç'‚Ç'¢Ç66ÆT&–3Ó—°¢ÆWBãÖVÆÆ—6Tæ÷&Ò‡‚Ç¢Ç'‚Ç'¢“°¢–b†ãÃã—&WGW&â·ƒ£Ç£§'¢§66ÆT&–7Ó°¢ÆWB3×66ÆT&–2öã°¢&WGW&â·ƒ§‚§2Ç£§¢§7Ó°§Ğ¦gVæ7F–öâ&W6öÇfUf–ÆÆvUvÆÄÖ÷fR†g&öÕ‚Æg&öÕ¢ÇFõ‚ÇFõ¢—°¢6öç7B7W'&VçC×&Vv–öç2bg&Vv–öç2æÆVæwFƒò‡&Vv–öç5µ2ç&Vv–öçÇÃ×ÇÇ&Vv–öç5³Ò“¦çVÆÃ°¢–b†7W'&VçBbf7W'&VçBæ–BÓÔDTdTÅEôÔô”B—&WGW&â·ƒ§Fõ‚Ç£§Fõ§Ó°¢6öç7Bg&öÔãÖVÆÆ—6Tæ÷&Ò†g&öÕ‚Æg&öÕ¢Åd”ÄÄtUõtÄÅõ%‚Åd”ÄÄtUõtÄÅõ%¢“°¢6öç7BFôãÖVÆÆ—6Tæ÷&Ò‡Fõ‚ÇFõ¢Åd”ÄÄtUõtÄÅõ%‚Åd”ÄÄtUõtÄÅõ%¢“°¢6öç7B7&÷76–æsÒ†g&öÔãÃbgFôããÓ—ÇÂ†g&öÔããÓbgFôãÃ“°¢–b‚7&÷76–ær—&WGW&â·ƒ§Fõ‚Ç£§Fõ§Ó° ¢–b†—5f–ÆÆvTvFTÆæR‡Fõ‚ÇFõ¢—ÇÆ—5f–ÆÆvTvFTÆæR†g&öÕ‚Æg&öÕ¢’—°¢&WGW&â·ƒ§Fõ‚Ç£§Fõ§Ó°¢Ğ ¢–b†g&öÔãÃ—°¢&WGW&â6Æ×FôVÆÆ—6R‡Fõ‚ÇFõ¢Åd”ÄÄtUõtÄÅõ%‚Åd”ÄÄtUõtÄÅõ%¢Ãã““"“°¢Ğ¢&WGW&â6Æ×FôVÆÆ—6R‡Fõ‚ÇFõ¢Åd”ÄÄtUõtÄÅõ%‚Åd”ÄÄtUõtÄÅõ%¢Ãã‚“°§Ğ¦gVæ7F–öâV¦V7DVæV×”g&öÕf–ÆÆvR†—°¢–b‚ÇÂ—5f–ÆÆvU6fR†ç‚Æç¢’—&WGW&ã°¢ÆWBƒÖç‚Ç£Öç£°¢–b„ÖF‚æ'2‡‚“ÃãbdÖF‚æ'2‡¢“Ãã—£Ó°¢ÆWBÖ6Æ×FôVÆÆ—6R‡‚Ç¢Åd”ÄÄtUõtÄÅõ%‚³2Åd”ÄÄtUõtÄÅõ%¢³2Ãã"“°¢çƒ×çƒ¶ç£×ç£°§Ğ ¦gVæ7F–öâ&VÆÔæÖR‚—·&WGW&â2ç&VÆÓÓÓÓöÇW¸vâ¶Œ:ÒNªværGµ2ç&VÆÕ7FvWÖ¦G·&VÆ×5µ2ç&VÆÕ×Ò+rG·W&–öG5µ2çW&–öGÇÃ×ÖĞ¦gVæ7F–öâw&FTf÷$ÆWfVÂ‚—·&WGW&â6Æ×ƒ´ÖF‚æfÆö÷"‚…2æÆWfVÂÓ’ó#R’ÃÃR—Ğ¦gVæ7F–öâ&Vv–öä–æFW„'”–B†–B—°¢–b‚–B—&WGW&âÓ°¢&WGW&â&Vv–öç2æf–æD–æFW‚‡#Óç"æ–CÓÓÖ–B“°§Ğ¦gVæ7F–öâ&Vv–öâ‚—°¢6öç7B'”–C×&Vv–öä–æFW„'”–B…2ç&Vv–öä–B“°¢–b†'”–CãÓ—°¢2ç&Vv–öãÖ'”–C°¢&WGW&â&Vv–öç5¶'”–EÓ°¢Ğ¢6öç7B'”–æFWƒ×&Vv–öç5µ2ç&Vv–öçÇÃ×ÇÇ&Vv–öç5³×ÇÄDTdTÅEõ$Tt”ôã°¢–b†'”–æFW‚•2ç&Vv–öä–CÖ'”–æFW‚æ–C°¢&WGW&â'”–æFWƒ°§Ğ¦gVæ7F–öâÖ&VÆÔÆ&VÂ‡"—°¢6öç7B×&VÆ×5¶6Æ×„çVÖ&W"‡"æÖ–å&VÆÒ—ÇÃÃÇ&VÆ×2æÆVæwF‚Ó•×ÇÇ&VÆ×5³Ó°¢6öç7B#×&VÆ×5¶6Æ×„çVÖ&W"‡"æÖ…&VÆÓó÷"æÖ–å&VÆÒ—ÇÃÃÇ&VÆ×2æÆVæwF‚Ó•×ÇÆ°¢&WGW&âÓÓÖ#ö¢†²r(i"r¶"“°§Ğ¦gVæ7F–öâ—4Ö66W76–&ÆR‡"—°¢–b‚"—&WGW&âfÇ6S°¢–b‡"æ–CÓÓÕ2ç&Vv–öä–GÇÇ#ÓÓ×&Vv–öç5µ2ç&Vv–öçÇÃÒ—&WGW&âG'VS°¢6öç7BÖ–å&VÆÓÔçVÖ&W"‡"æÖ–å&VÆÒ—ÇÃ°¢6öç7BÖ–äÆWfVÃÔçVÖ&W"‡"æÖ–â—ÇÃ°¢&WGW&â…2ç&VÆ×ÇÃ“ãÖÖ–å&VÆÒbb…2æÆWfVÇÇÃ“ãÖÖ–äÆWfVÃ°§Ğ¦gVæ7F–öâVæV×”F—7Æ”æÖR†–B—°¢&WGW&â‡¶&ö#¢u<jâG,krÆ&6†W#¢uF¸VâFºrrÆ&æF—C¢|IªòN«v2rÇF–vW#¢t¹RFªvârÇ6¶VÆWFöã¢t¶Œ;B>¹BrÇVæFVC¢t.ªòF†’rÆ–6U÷vöÆc¢t,H6ærÆærrÇvöÆc¢tÖÆærrÆf÷ƒ¢tÆ–æ‚¹2rÆvöÆVÓ¢uFª6‚¶Œ;F’rÇ6†F÷s¢~ª&æ‚FŒ;¢wÒ•¶–E×ÇÆ–C°§Ğ¦gVæ7F–öâ&VæFW%v÷&ÆDÖ6&G2‚—°¢6öç7Bw&÷W3ÖæWrÖ‚“°¢&Vv–öç2æf÷$V6‚‚‡"Æ’“Óç°¢6öç7B¶W“×"æ6öçF–æVçDæÖWÇÂt¶‡Rn»2¶Œ:2s°¢–b‚w&÷W2æ†2†¶W’’–w&÷W2ç6WB†¶W’ÅµÒ“°¢w&÷W2ævWB†¶W’’çW6‚‡·"Æ—Ò“°¢Ò“°¢ÆWB‡FÖÃÖÆF—b6Æ73Ò&6&B#ãÆ#ï	øÈòæŒ:&âv¹¶“Âö#ãÇãIª’6Œ:'R÷n»2+r#"¶‡Rn»2+rG·&Vv–öç2æÆVæwF‡ÒÖâÖŞ¹òF†Vò>ª6æ‚v¹¶’l:>ªWI¹’æŒ:&ânª×BãÂ÷ãÆF—b6Æ73Ò'7FB#ãÇ7ãä†¸vâNª“Â÷7ããÆ#âG·&VÆÔæÖR‚—Ò+rÇbâGµ2æÆWfVÇÓÂö#ãÂöF—cãÂöF—cæ°¢f÷"†6öç7B¶6öçF–æVçBÆ—FV×5Òöbw&÷W2—°¢6öç7Bf—'7CÖ—FV×5³Òbf—FV×5³Òç#°¢‡FÖÂ³ÖÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–â×F÷£‡‚#ãÆ#ï	ù{¢G¶6öçF–æVçGÓÂö#ãÇâG¶f—'7Bbff—'7BæVÆVÖVçCòuF‡^¹–2L:Öæƒ¢r¶f—'7BæVÆVÖVçC¢rwÒG¶f—'7Bbff—'7Bæf7F–öãò|+rr¶f—'7Bæf7F–öã¢rwÓÂ÷ãÂöF—cãÆF—b6Æ73Ò&6&G2#æ°¢f÷"†6öç7B·"Æ—Òöb—FV×2—°¢6öç7B7W'&VçCÒ‡"æ–CÓÓÕ2ç&Vv–öä–B—ÇÆ“ÓÓÕ2ç&Vv–öã°¢6öç7BVæÆö6¶VCÖ—4Ö66W76–&ÆR‡"“°¢6öç7B7FGW3Ö7W'&VçCò|Iær¹òI:'’s§VæÆö6¶VCòtN¸¶6‚6‡W¸6âs¦œ:§R>ªwRG¶Ö&VÆÔÆ&VÂ‡"—Ò+rÇbâG·"æÖ–çÖ°¢‡FÖÂ³ÖÆF—b6Æ73Ò&6&B#à¢Æ#âG·"æ¶–æGÒ+rG·"ææÖWÓÂö#à¢ÇâG·"ç&Vv–öäæÖWÇÂrwÓÂ÷à¢ÇãÆ#âG¶Ö&VÆÔÆ&VÂ‡"—ÓÂö#â+rÇbâG·"æÖ–çŞ(	2G·"æÖ‡ÓÂ÷à¢ÇâG·"æVÆVÖVçCòt¸rr·"æVÆVÖVçB²r+rs¢rwÒG·"æf7F–öçÇÂuG'VærÎª×wÓÂ÷à¢ÇâG²‡"æVæV×—ÇÅµÒ’æÖ†VæV×”F—7Æ”æÖR’æ¦ö–â‚rÂr—ÓÂ÷à¢Ç6ÖÆÃâG²‡"æfVGW&W7ÇÅµÒ’æ¦ö–â‚r+rr—ÓÂ÷6ÖÆÃà¢Æ'WGFöâFF×&Vv–öãÒ"G¶—Ò"G·VæÆö6¶VCòrs¢vF—6&ÆVBwÓâG·7FGW7ÓÂö'WGFöãà¢ÂöF—cæ°¢Ğ¢‡FÖÂ³ÒsÂöF—câs°¢Ğ¢&WGW&â‡FÖÃ°§Ğ¦gVæ7F–öâ&öw&W72‡Æ×6r—¶ÆöD&"ç7G–ÆRçv–GFƒ×²rRs¶ÆöD×6rçFW‡D6öçFVçCÖ×6wĞ ¢òòÖFW&–ÂööÂò66†RFò&WfVçBÖVÖ÷'’ÆV·0¦gVæ7F–öâÖB†æÖRÆ6öÆ÷"ÆÇ†Ó—°¢ÆWB¶W“ÖG¶æÖWÕòG¶6öÆ÷'ÕòG¶Ç†Ö°¢–b†ÖD66†U¶¶W•Ò—&WGW&âÖD66†U¶¶W•Ó°¢ÆWBÓÖæWr$%”Äôâå7FæF&DÖFW&–Â†¶W’Ç66VæR“°¢ÒæF–fgW6T6öÆ÷#Ô$%”Äôâä6öÆ÷#2äg&öÔ†W…7G&–ær†6öÆ÷"“°¢ÒæVÖ—76—fT6öÆ÷#ÖÒæF–fgW6T6öÆ÷"ç66ÆR‚ã#R“°¢ÒæÇ†ÖÇ†°¢Òç7V7VÆ$6öÆ÷#Ô$%”Äôâä6öÆ÷#2ä&Æ6²‚“°¢ÖD66†U¶¶W•ÓÖÓ°¢&WGW&âÓ°§Ğ ¦gVæ7F–öâG&u&ö6VGW&Ä6çf2†7G‚ÂG—RÂg&ÖR—°¢7G‚æ6ÆV%&V7BƒÃÃ#‚Ã#‚“°¢6öç7B&ö#ÔÖF‚ç6–â†g&ÖR£ã‚’£3°¢–b‡G—SÓÓÒwÆ–W"r—°¢7G‚æf–ÆÅ7G–ÆSÒw&v&ƒcÃƒÃ#CÃãƒR’s°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒcBÃcB¶&ö"Ã3‚ÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢7G‚æf–ÆÅ7G–ÆSÒr6cVSF32s°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒcBÃC‚¶&ö"Ã‚ÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢7G‚æf–ÆÅ7G–ÆSÒr3&F#v2s°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒcBÃƒ‚¶&ö"Ã#‚ÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢7G‚ç7G&ö¶U7G–ÆSÒr3vVcVfbs¶7G‚æÆ–æUv–GFƒÓC°¢7G‚æ&Vv–åF‚‚“¶7G‚æÖ÷fUFòƒ“Ã#¶&ö"“¶7G‚æÆ–æUFòƒRÃsR¶&ö"“¶7G‚ç7G&ö¶R‚“°¢ÖVÇ6R–b‡G—SÓÓÒwvöÆbr—°¢7G‚æf–ÆÅ7G–ÆSÒw&v&ƒƒÃCÃSÃãƒR’s°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒcBÃc‚¶&ö"Ã3"ÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢7G‚æf–ÆÅ7G–ÆSÒr6fc6#3s°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒS‚ÃS¶&ö"ÃBÃÄÖF‚å’£"“¶7G‚æ&2ƒsÃS¶&ö"ÃBÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢ÖVÇ6R–b‡G—SÓÓÒvf÷‚r—°¢7G‚æf–ÆÅ7G–ÆSÒw&v&ƒ#SRÃCRÃCRÃã’’s°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒcBÃcb¶&ö"Ã#‚ÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢7G‚æf–ÆÅ7G–ÆSÒr3FFC†fbs°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒ“"ÃS¶&ö"ÃÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢ÖVÇ6R–b‡G—SÓÓÒvvöÆVÒr—°¢7G‚æf–ÆÅ7G–ÆSÒw&v&ƒ“RÃRÃRÃã“R’s°¢7G‚æf–ÆÅ&V7Bƒ3bÃ3b¶&ö"ÃSbÃc“°¢7G‚æf–ÆÅ7G–ÆSÒr3vVff3Rs°¢7G‚æf–ÆÅ&V7BƒcÃSb¶&ö"Ã‚Ãb“°¢ÖVÇ6W°¢7G‚æf–ÆÅ7G–ÆSÒw&v&ƒƒÃCRÃÃã’’s°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒcBÃcB¶&ö"Ã3bÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢7G‚æf–ÆÅ7G–ÆSÒr6#Cffbs°¢7G‚æ&Vv–åF‚‚“¶7G‚æ&2ƒS‚ÃSb¶&ö"ÃRÃÄÖF‚å’£"“¶7G‚æ&2ƒsÃSb¶&ö"ÃRÃÄÖF‚å’£"“¶7G‚æf–ÆÂ‚“°¢Ğ§Ğ ¦gVæ7F–öâÖ¶U7&—FTÖFW&–Â‡W&ÂÂ¶W’—°¢–b‡7&—FTÖG5¶¶W•Ò—&WGW&â7&—FTÖG5¶¶W•Ó°¢ÆWBÓÖæWr$%”Äôâå7FæF&DÖFW&–Â‚w6Õòr¶¶W’Ç66VæR“°¢ÆWBCÖæWr$%”ÄôâåFW‡GW&R‡W&ÂÂ66VæRÂfÇ6RÂG'VRÂ$%”ÄôâåFW‡GW&RåE$”Ä”äT%õ4ÕÄ”ätÔôDR“°¢Bæ†4Ç†×G'VS°¢ÒæF–fgW6UFW‡GW&S×C°¢ÒæVÖ—76—fUFW‡GW&S×C°¢ÒçW6TÇ†g&öÔF–fgW6UFW‡GW&S×G'VS°¢ÒæVÖ—76—fT6öÆ÷#ÖæWr$%”Äôâä6öÆ÷#2ƒãÃãÃã“°¢Òç7V7VÆ$6öÆ÷#Ô$%”Äôâä6öÆ÷#2ä&Æ6²‚“°¢ÒæF—6&ÆTÆ–v‡F–æs×G'VS°¢Òæ&6´f6T7VÆÆ–æsÖfÇ6S°¢ÒçG&ç7&Væ7”ÖöFSÔ$%”ÄôâäÖFW&–ÂäÔDU$”ÅôÅ„$ÄTäC°¢7&—FTÖG5¶¶W•ÓÖÓ°¢&WGW&âÓ°§Ğ ¢òòŞ¹—B>¹7F÷"I«v2&¸wB‡WBö&÷72<Z’’6Œk<;2.¹’ärbg&ÖR&œ:¦ærà¢òòL;–ærFW‡GW&R&ö6VGW&ÂF†’l:Â>¹Nª6’f–ÆR¶Œ;FærN¹6âNª’¶†«öâ7F÷".¸²l;BŒ:Ææ€¢òòl:NªòŒ:ærÆşªBÎ¹v’CBG,:¦âG,:Ææ‚GW¸wBà¦gVæ7F–öâÖ¶U&ö6VGW&Å7&—FTÖFW&–Â‡G—RÆg&ÖRÆ¶W’—°¢–b‡7&—FTÖG5¶¶W•Ò—&WGW&â7&—FTÖG5¶¶W•Ó°¢ÆWBÓÖæWr$%”Äôâå7FæF&DÖFW&–Â‚w6Õòr¶¶W’Ç66VæR“°¢ÆWBCÖæWr$%”ÄôâäG–æÖ–5FW‡GW&R‚vGEòr¶¶W’Ç·v–GFƒ£#‚Æ†V–v‡C£#‡ÒÇ66VæRÆfÇ6R“°¢Bæ†4Ç†×G'VS°¢G&u&ö6VGW&Ä6çf2‡BævWD6öçFW‡B‚’ÇG—RÆg&ÖR“°¢BçWFFR†fÇ6R“°¢ÒæF–fgW6UFW‡GW&S×C°¢ÒæVÖ—76—fUFW‡GW&S×C°¢ÒçW6TÇ†g&öÔF–fgW6UFW‡GW&S×G'VS°¢ÒæVÖ—76—fT6öÆ÷#ÖæWr$%”Äôâä6öÆ÷#2ƒãÃãÃã“°¢Òç7V7VÆ$6öÆ÷#Ô$%”Äôâä6öÆ÷#2ä&Æ6²‚“°¢ÒæF—6&ÆTÆ–v‡F–æs×G'VS°¢Òæ&6´f6T7VÆÆ–æsÖfÇ6S°¢ÒçG&ç7&Væ7”ÖöFSÔ$%”ÄôâäÖFW&–ÂäÔDU$”ÅôÅ„$ÄTäC°¢7&—FTÖG5¶¶W•ÓÖÓ°¢&WGW&âÓ°§Ğ ¦6öç7BÄ”U%ôä”Õ2Ò°¢–FÆS¢²g&ÖW3¢BÂg3¢bÂÆö÷¢G'VRÒÀ¢'Vã¢²g&ÖW3¢BÂg3¢ÂÆö÷¢G'VRÒÀ¢GF6³¢²g&ÖW3¢‚Âg3¢"ÂÆö÷¢fÇ6RĞ§Ó° ¢òòÆ–W"W6W2öæR‡—6–6Â7&—FR6WBöæÇ’…$”t…B’à¢òòÄTeB—2&VæFW&VB'’Ö—'&÷&–ærF†R&–ÆÆ&ö&BB'VçF–ÖRFò†ÇfRÆ–W"FW‡GW&RF÷væÆöG2öÖVÖ÷'’à¦6öç7BÆ–W$ÖFW&–Ç2Ò²–FÆS¢µÒÂ'Vã¢µÒÂGF6³¢µÒÓ° ¦gVæ7F–öâ&VÆöEÆ–W$ÖFW&–Ç2‚—°¢²v–FÆRrÂw'VârÂvGF6²uÒæf÷$V6‚‡7FFSÓç°¢ÆWBâÒÄ”U%ôä”Õ5·7FFUÒæg&ÖW3°¢f÷"†ÆWB“Ó²“Æã²’²²—°¢ÆWB2Ò7G&–ær†’’çE7F'Bƒ"Âsr“°¢ÆWBW&ÂÒ76WG2÷Æ–W"÷&–v‡BòG·7FFWÒòG·7Òçæs÷cÓV°¢ÆWB¶W’ÒÆ–W%÷&–v‡EòG·7FFWÕòG·7Ö°¢ÆWBÒÒæWr$%”Äôâå7FæF&DÖFW&–Â‚w6Õòr¶¶W’Â66VæR“°¢ÆWBBÒæWr$%”ÄôâåFW‡GW&R‡W&ÂÂ66VæRÂfÇ6RÂG'VRÂ$%”ÄôâåFW‡GW&RåE$”Ä”äT%õ4ÕÄ”ätÔôDR“°¢Bæ†4Ç†ÒG'VS°¢ÒæF–fgW6UFW‡GW&RÒC°¢ÒæVÖ—76—fUFW‡GW&RÒC°¢ÒçW6TÇ†g&öÔF–fgW6UFW‡GW&RÒG'VS°¢ÒæVÖ—76—fT6öÆ÷"ÒæWr$%”Äôâä6öÆ÷#2ƒãÂãÂã“°¢Òç7V7VÆ$6öÆ÷"Ò$%”Äôâä6öÆ÷#2ä&Æ6²‚“°¢ÒæF—6&ÆTÆ–v‡F–ærÒG'VS°¢Òæ&6´f6T7VÆÆ–ærÒfÇ6S°¢ÒçG&ç7&Væ7”ÖöFRÒ$%”ÄôâäÖFW&–ÂäÔDU$”ÅôÅ„$ÄTäC°¢Æ–W$ÖFW&–Ç5·7FFUÒçW6‚†Ò“°¢Ğ¢Ò“°§Ğ ¦gVæ7F–öâÆ–W$æ–ÔÖB†F—&V7F–öâÂ7FFRÂg&ÖR—°¢ÆWB7BÒ‡7FFRÓÓÒv–FÆRrÇÂ7FFRÓÓÒw'VârÇÂ7FFRÓÓÒvGF6²r’ò7FFR¢v–FÆRs°¢ÆWBÆ—7BÒÆ–W$ÖFW&–Ç5·7EÓ°¢–b‚Æ—7BÇÂÆ—7BæÆVæwF‚ÓÓÒ’&WGW&âçVÆÃ°¢ÆWB–G‚ÒÖF‚æÖ–â„ÖF‚æÖ‚ƒÂÖF‚æfÆö÷"†g&ÖR’’ÂÆ—7BæÆVæwF‚Ò“°¢&WGW&âÆ—7E¶–G…ÒÇÂÆ—7E³Ó°§Ğ ¦gVæ7F–öâÇ•Æ–W$f6–ær‚—°¢–b‚Æ–W"ÇÂÆ–W"æÖW6‚’&WGW&ã°¢ÆWB7‚ÒÖF‚æ'2‡Æ–W"æÖW6‚ç66Æ–ærç‚’ÇÂ°¢Æ–W"æÖW6‚ç66Æ–ærç‚ÒÆ–W"æf6–ærÓÓÒvÆVgBrò×7‚¢7ƒ°§Ğ ¢òòVæV×’7&—FW3¢bg&ÖW2W"G—RƒÓrÒ&–v‡BÂ‚ÓRÒÆVgBÖ—'&÷&VB¦6öç7Bd”ÄUõ5$•DUõE•U3ÖæWr6WB…²v&6†W"rÂv&æF—BrÂv&ö"rÂv–6U÷vöÆbrÂw6¶VÆWFöârÂwF–vW"rÂwVæFVBuÒ“°¦gVæ7F–öâ7&—FTg&ÖW2‡G—R—°¢ÆWBâÒbÂ'"ÒµÓ°¢f÷"†ÆWB“Ó²“Æã²’²²—°¢ÆWB¶W“×G—R¶“°¢–b„d”ÄUõ5$•DUõE•U2æ†2‡G—R’—°¢'"çW6‚†Ö¶U7&—FTÖFW&–Â†76WG2÷7&—FW2òG·G—WÕòGµ7G&–ær†’’çE7F'Bƒ"Âsr—Òçæs÷cÓfÆ¶W’’“°¢ÖVÇ6W°¢'"çW6‚†Ö¶U&ö6VGW&Å7&—FTÖFW&–Â‡G—RÆ’Æ¶W’’“°¢Ğ¢Ğ¢&WGW&â'#°§Ğ ¢òò&VÆöBÆÂæWrVæV×’7&—FW2–çFò7&—FTÖG266†P¦gVæ7F–öâ&VÆöDVæV×•7&—FW2‚—°¢6öç7BVæV×•G—W3Õ²v&6†W"rÂv&æF—BrÂv&ö"rÂv–6U÷vöÆbrÂw6¶VÆWFöârÂwF–vW"rÂwVæFVBuÓ°¢f÷"†ÆWBBöbVæV×•G—W2’7&—FTg&ÖW2‡B“°§Ğ ¦gVæ7F–öâÖ¶T&–ÆÆ&ö&B†æÖRÇG—RÇ6—¦RÇ‚Ç¢—°¢ÆWBÔ$%”ÄôâäÖW6„'V–ÆFW"ä7&VFUÆæR†æÖRÇ·6—¦WÒÇ66VæR“°¢æ&–ÆÆ&ö&DÖöFSÔ$%”ÄôâäÖW6‚ä$”ÄÄ$ô$DÔôDUôÄÃ°¢ç÷6—F–öâç6WB‡‚Ç6—¦R¢ãC‚Ç¢“°¢æ—5–6¶&ÆSÖfÇ6S°¢–b‡G—SÓÓÒwÆ–W"r—°¢æÖFW&–Ã×Æ–W$æ–ÔÖB‚w&–v‡BrÂv–FÆRrÃ“°¢ÖVÇ6W°¢æÖFW&–Ã×7&—FTg&ÖW2‡G—R•³Ó°¢Ğ¢&WGW&â°§Ğ ¦ÆWB6ögE6†F÷tÖBÒçVÆÃ°¦gVæ7F–öâvWE6ögE6†F÷tÖFW&–Â‚—°¢–b‡6ögE6†F÷tÖB’&WGW&â6ögE6†F÷tÖC°¢6ögE6†F÷tÖBÒæWr$%”Äôâå7FæF&DÖFW&–Â‚w6ögE÷6†F÷uöÖBrÂ66VæR“°¢ÆWBBÒæWr$%”ÄôâåFW‡GW&R‚v76WG2öÖ2ö6öÖÖöâöw&÷VæG2÷6ögE÷6†F÷rçærrÂ66VæRÂfÇ6RÂG'VR“°¢Bæ†4Ç†ÒG'VS°¢6ögE6†F÷tÖBæF–fgW6UFW‡GW&RÒC°¢6ögE6†F÷tÖBæVÖ—76—fUFW‡GW&RÒC°¢6ögE6†F÷tÖBçW6TÇ†g&öÔF–fgW6UFW‡GW&RÒG'VS°¢6ögE6†F÷tÖBæVÖ—76—fT6öÆ÷"ÒæWr$%”Äôâä6öÆ÷#2ƒãsRÂãsRÂãsR“°¢6ögE6†F÷tÖBç7V7VÆ$6öÆ÷"Ò$%”Äôâä6öÆ÷#2ä&Æ6²‚“°¢6ögE6†F÷tÖBæF—6&ÆTÆ–v‡F–ærÒG'VS°¢6ögE6†F÷tÖBæÇ†Òãc#°¢6ögE6†F÷tÖBç¤öfg6WBÒÓ#°¢6ögE6†F÷tÖBæ&6´f6T7VÆÆ–ærÒfÇ6S°¢6ögE6†F÷tÖBçG&ç7&Væ7”ÖöFRÒ$%”ÄôâäÖFW&–ÂäÔDU$”ÅôÅ„$ÄTäC°¢&WGW&â6ögE6†F÷tÖC°§Ğ ¦gVæ7F–öâvWDÖ&÷ÖFW&–Â‡W&Â—°¢–b†Ö&÷ÖFW&–Ç5·W&ÅÒ—&WGW&âÖ&÷ÖFW&–Ç5·W&ÅÓ°¢ÆWBÓÖæWr$%”Äôâå7FæF&DÖFW&–Â‚w&÷òr·W&ÂÇ66VæR“°¢ÆWBCÖæWr$%”ÄôâåFW‡GW&R‡W&ÂÇ66VæRÆfÇ6RÇG'VRÄ$%”ÄôâåFW‡GW&RåE$”Ä”äT%õ4ÕÄ”ätÔôDR“°¢Bæ†4Ç†×G'VS°¢ÒæF–fgW6UFW‡GW&S×C°¢ÒæVÖ—76—fUFW‡GW&S×C°¢ÒçW6TÇ†g&öÔF–fgW6UFW‡GW&S×G'VS°¢ÒæVÖ—76—fT6öÆ÷#ÖæWr$%”Äôâä6öÆ÷#2ƒãÃãÃã“°¢Òç7V7VÆ$6öÆ÷#Ô$%”Äôâä6öÆ÷#2ä&Æ6²‚“°¢ÒæF—6&ÆTÆ–v‡F–æs×G'VS°¢Òæ&6´f6T7VÆÆ–æsÖfÇ6S°¢ÒçG&ç7&Væ7”ÖöFSÔ$%”ÄôâäÖFW&–ÂäÔDU$”ÅôÅ„$ÄTäC°¢Ö&÷ÖFW&–Ç5·W&ÅÓÖÓ°¢&WGW&âÓ°§Ğ ¦gVæ7F–öâ7väÖ&÷†æÖRÇ&÷FVbÇ‚Ç¢Ç6—¦Uf&–æ6SÓã"—°¢ÆWB66ÆSÓã·&æB‚×6—¦Uf&–æ6RÇ6—¦Uf&–æ6R“°¢ÆWBs×&÷FVbçv–GF‚§66ÆS°¢ÆWBƒ×&÷FVbæ†V–v‡B§66ÆS°¢ÆWBÔ$%”ÄôâäÖW6„'V–ÆFW"ä7&VFUÆæR†æÖRÇ·v–GFƒ§rÆ†V–v‡C¦‡ÒÇ66VæR“°¢òòärVçf—&öæÖVçBÇ\;FâV’F«6ærl:ò6ÖW&v¹ærÆ–W"öVæV×’à¢òòæ¹Ònª×’ª6æ‚&R×&VæFW"¶Œ;Fær.¸²Ü:–òFŒ:¦Ò.¹ö’|;62æŒ:Æâ4B>ºvÆæRà¢æ&–ÆÆ&ö&DÖöFSÔ$%”ÄôâäÖW6‚ä$”ÄÄ$ô$DÔôDUôÄÃ° ¢òò6‡^ª–â6Œ:&â76WC¢L:&ÒF†Vò‚ÂI:’är6ªÒŞ«wBIªWB“Óà¢òò¶Œ;FærL;–ær•&F–ò¶Œ:2æ†Rîºöl:Âì;2Ì:Ò<:'’üI:öæŒ:<;2&6ÖW&"¶Œ:2æ†Rà¢ç÷6—F–öâç6WB‡‚Æ‚£ãRÇ¢“°¢æÖFW&–ÃÖvWDÖ&÷ÖFW&–Â‡&÷FVbæf–ÆR“°¢æ—5–6¶&ÆSÖfÇ6S° ¢–b‚&÷FVbææõ6†F÷rbb‚Ôô$”ÄUõ%TåD”ÔRÇÂÖF‚æ‡—÷B‡‚Ç¢“Ãƒ"ÇÂæÖRæ–æ6ÇVFW2‚wf–ÆÆvRr’ÇÂæÖRæ–æ6ÇVFW2‚vvFRr’’—°¢ÆWB6†F÷u6—¦SÔÖF‚æÖ‚‡r£ãƒ"Âã"“°¢ÆWB6ƒÔ$%”ÄôâäÖW6„'V–ÆFW"ä7&VFUÆæR†æÖR²u÷6‚rÇ·v–GFƒ§6†F÷u6—¦RÆ†V–v‡C§6†F÷u6—¦R£ãc'ÒÇ66VæR“°¢6‚ç&÷FF–öâçƒÔÖF‚å’ó#°¢6‚ç÷6—F–öâç6WB‡‚Ãã"Ç¢²ã“°¢6‚æÖFW&–ÃÖvWE6ögE6†F÷tÖFW&–Â‚“°¢6‚æ—5–6¶&ÆSÖfÇ6S°¢FV6÷"çW6‚‡Ç6‚“°¢ÖVÇ6W°¢FV6÷"çW6‚‡“°¢Ğ¢&WGW&â°§Ğ ¦gVæ7F–öâ7våf–ÆÆvT7W'fVEvÆÂ‚—°¢òò.¹’’ärLk¹ÖærI:I:26‡^ª–âŒ;6<;–ær6çf2²<;–ær&6VÆ–æRÀ¢òò&VæFW">«VâI;¦ær6ÖW&÷'F†öw&†–2VÆWfF–öâS+>ºvtÔRà¢6öç7BvÆÄf–ÆW3Õ°¢v76WG2öÖ2ö6öÖÖöâöfVæ6W5övFW2÷7FöæU÷vÆÅóSFVuóçærrÀ¢v76WG2öÖ2ö6öÖÖöâöfVæ6W5övFW2÷7FöæU÷vÆÅóSFVuóçærrÀ¢v76WG2öÖ2ö6öÖÖöâöfVæ6W5övFW2÷7FöæU÷vÆÅóSFVuó"çærrÀ¢v76WG2öÖ2ö6öÖÖöâöfVæ6W5övFW2÷7FöæU÷vÆÅóSFVuó2çærrÀ¢v76WG2öÖ2ö6öÖÖöâöfVæ6W5övFW2÷7FöæU÷vÆÅóSFVuóBçærrÀ¢v76WG2öÖ2ö6öÖÖöâöfVæ6W5övFW2÷7FöæU÷vÆÅóSFVuóRçærrÀ¢v76WG2öÖ2ö6öÖÖıy÷í¢G§²ÚîÆ­yÖ6‚‡F&vWBç‚ÇF&vWBç¢Âr6fc““CBr“°¢FÖvR‡F&vWBÆvWEÆ–W$FÖvU7FB‚w‡—6–6Âr’£ãCRÆfÇ6RÂw‡—6–6Âr“°¢Ğ¢Ğ¢Ğ§Ğ ¦gVæ7F–öâWFFTVffV7G2†GB—°¢f÷"†ÆWBRöbVffV7G2—°¢RçBÓÖGC°¢–b†Rç6¶–ÆÅfg‚bfRæÖW6‚—°¢ÆWBÓÖ6Æ×†RçBöRæÖ‚ÃÃ“°¢ÆWB³Ò†Ræ&6U66ÆWÇÃ’¢ƒãs"³ã#‚¤ÖF‚ç6–â„ÖF‚æÖ–âƒÇ’¤ÖF‚å’ó"’“°¢RæÖW6‚ç66Æ–ærç6WDÆÂ†²“°¢RæÖW6‚çf—6–&–Æ—G“Ö6Æ×†RçBóãbÃÃ“°¢Ğ¢–b†Rçg‚ÖçVÆÂ—°¢RæÖW6‚ç÷6—F–öâç‚³ÖRçg‚¦GC°¢RæÖW6‚ç÷6—F–öâç¢³ÖRçg¢¦GC°¢RæÖW6‚ç÷6—F–öâç’³ÖRçg’¦GC°¢Rçg’ÓÓ2¦GC°¢RæÖW6‚ç66Æ–ærç66ÆT–åÆ6R‚ã“r“°¢Ğ¢–b†Ræw&÷r—°¢ÆWB³Ó²ƒÖRçBöRæÖ‚’¦Ræw&÷s°¢RæÖW6‚ç66Æ–ærç6WDÆÂ†²“°¢Ğ¢–b†RçCÃÓ—°¢RæÖW6‚æF—7÷6R‚“°¢Ğ¢Ğ¢VffV7G3ÖVffV7G2æf–ÇFW"†SÓæRçCã“°§Ğ ¦gVæ7F–öâWFô6öÖ&B†GB—°¢–b‚2æWFò—&WGW&ã°¢WFõF–ÖW"ÓÖGC°¢–b†WFõF–ÖW#ÃÓ—°¢WFõF–ÖW#ÒãS"ôÖF‚æÖ‚ƒã3RÂ…2æGF6µ7VVGÇÃ’¦vWD†V'DÖWF†öDVffV7G2‚’æGF6²“°¢ÆWBCÖæV&W7BƒrãR“°¢–b‡B—Æ–W$GF6²‡BÃ“°¢òòVæV×’÷VÆF–öâ—2f—†VB'’Ö6ö÷&F–æFW2à¢Ğ¢f÷"†ÆWB“Ó¶“ÃÓC¶’²²—°¢ÆWB6¶–ÆÄ–CÒ…2æWV—VE6¶–ÆÇ2be2æWV—VE6¶–ÆÇ5¶’ÓÒ—ÇÆçVÆÃ°¢–b‚6¶–ÆÄ–GÇÆ6ööÆF÷vå¶•Óã–6öçF–çVS°¢ÆWB6³ÖvWE6¶–ÆÄFVb‡6¶–ÆÄ–B“°¢–b‚6·ÇÅ2æ×Ç6²æ×–6öçF–çVS°¢–b‡6²æöSÓÓÓ—°¢ÆWBFwCÖæV&W7Bƒ’“°¢–b‡FwB—W6U6¶–ÆÂ†’“°¢ÖVÇ6R–b‡6²æöSÃÓrãR—°¢ÆWB6çCÖ7F÷'2æf–ÇFW"†ÓâæFVBbfF—7B†ÇÆ–W"“Ç6²æöR’æÆVæwFƒ°¢–b†6çCãÓ"—W6U6¶–ÆÂ†’“°¢ÖVÇ6W°¢–b†&÷72bfF—7B†&÷72ÇÆ–W"“Ç6²æöR—W6U6¶–ÆÂ†’“°¢VÇ6R–b†7F÷'2æf–ÇFW"†ÓâæFVBbfF—7B†ÇÆ–W"“Ç6²æöR’æÆVæwFƒãÓ2—W6U6¶–ÆÂ†’“°¢Ğ¢Ğ§Ğ ¦gVæ7F–öâF–6²‚—°¢ÆWBæ÷s×W&f÷&Öæ6Rææ÷r‚“°¢6öç7BF&vWDg3×v–æF÷råW&f÷&Öæ6U&öf–ÆS÷v–æF÷råW&f÷&Öæ6U&öf–ÆRæ7W'&VçBçF&vWDg3£c°¢–b†æ÷rÖÆ7CÂƒ÷F&vWDg2’¢ã“"—&WGW&ã°¢ÆWBGCÔÖF‚æÖ–â‚ãRÂ†æ÷rÖÆ7B’ó“°¢Æ7CÖæ÷s°¢6öç7B&öf–ÆS×v–æF÷råW&f÷&Öæ6U&öf–ÆS÷v–æF÷råW&f÷&Öæ6U&öf–ÆRç6×ÆR†GB“¦çVÆÃ°¢–b‡v–æF÷rävÖU66†VGVÆW"—v–æF÷rävÖU66†VGVÆW"çWFFR†æ÷r“°¢–b†vÖU7F'FVBbbW6VB—°¢WFFUÆ–W"†GB“°¢f÷"†ÆWB“Ó¶“Æ7F÷'2æÆVæwFƒ¶’²²—°¢6öç7BÖ7F÷'5¶•Ó¶–b‚ÇÆæFVB–6öçF–çVS°¢6öç7BCÔÖF‚æ‡—÷B†ç‚×Æ–W"ç‚Æç¢×Æ–W"ç¢“°¢–b†CãSbfÓÖ&÷72–6öçF–çVS°¢6öç7B‡£Ò&öf–ÆSóc¢†CÃÓ3÷&öf–ÆRæVæV×”æV$‡£¦CÃÓƒ÷&öf–ÆRæVæV×”Ö–D‡£§&öf–ÆRæVæV×”f$‡¢“°¢å÷WFFT63Ò†å÷WFFT67ÇÃ’¶GC°¢–b†å÷WFFT63ãÓö‡¢—¶6öç7B7F÷$GCÔÖF‚æÖ–â‚ã#RÆå÷WFFT62“¶å÷WFFT63Ó·WFFT7F÷"†Æ7F÷$GB“·Ğ¢–b†æÖW6‚–æÖW6‚ç6WDVæ&ÆVB†CÃsÇÆÓÓÖ&÷72“°¢–b†ç6†F÷r–ç6†F÷rç6WDVæ&ÆVB‚†CÂ‡&öf–ÆS÷&öf–ÆRç6†F÷tF—7Fæ6S£SR’—ÇÆÓÓÖ&÷72“°¢Ğ¢WFFTVffV7G2†GB“°¢f÷"†ÆWB“Ó¶“ÃÓC¶’²²–6ööÆF÷vå¶•ÓÔÖF‚æÖ‚ƒÆ6ööÆF÷vå¶•ÒÖGB“°¢F6„6BçCÔÖF‚æÖ‚ƒÆF6„6BçBÖGB“°¢WFô6öÖ&B†GB“°¢–b‡v–æF÷råGUF–Vå7—7FV×2—v–æF÷råGUF–Vå7—7FV×2çWFFR…2ÆGBÆvWE7—7FVÔ6öçFW‡B‚’“° ¢òò76—fR…ôÕ&VvVà¢&VvVåF–ÖW"ÓÖGC°¢–b‡&VvVåF–ÖW#ÃÓ—°¢&VvVåF–ÖW#Óã#°¢6öç7B†V'DgƒÖvWD†V'DÖWF†öDVffV7G2‚“°¢2æ‡ÔÖF‚æÖ–â…2æÖ„‡Å2æ‡²…2æÖ„‡¤ÖF‚æÖ‚ƒÅ2æ‡&VvVå7GÇÃ’³"’¦†V'Dg‚ç&VvVâ“°¢2æ×ÔÖF‚æÖ–â…2æÖ„×Å2æ×²…2æÖ„×¤ÖF‚æÖ‚ƒÅ2æ×&VvVå7GÇÃ’³2’¦†V'Dg‚ç&VvVâ“°¢WFFT…TB‚“°¢Ğ ¢7våF–ÖW"ÓÖGC°¢–b‡7våF–ÖW#ÃÓ—°¢7våF–ÖW#Ó"ã#°¢7vä&÷72‚“°¢Ğ¢Ö–æ•F–ÖW"ÓÖGC°¢–b†Ö–æ•F–ÖW#ÃÓ—°¢Ö–æ•F–ÖW#Òã#S°¢G&tÖ–æ’‚“°¢WFFT…TB‚“°¢Ğ¢WFFT6ööÆF÷våT’‚“°¢Ğ¢66VæRç&VæFW"‚“°§Ğ ¦gVæ7F–öâWFFT6ööÆF÷våT’‚—°¢f÷"†ÆWB“Ó¶“ÃÓC¶’²²—°¢ÆWBSÒB‚r66Br¶’“°¢–b†R–RçFW‡D6öçFVçCÖ6ööÆF÷vå¶•Óãö6ööÆF÷vå¶•ÒçFôf—†VB†6ööÆF÷vå¶•ÓÃó£“¢rs°¢Ğ¢ÆWBCÒB‚r66DF6‚r“°¢–b†B–BçFW‡D6öçFVçCÖF6„6BçCãöF6„6BçBçFôf—†VB†F6„6BçCÃó£“¢rs°§Ğ ¦gVæ7F–öâWFFT…TB‚—°¢2æ‡Ö6Æ×…2æ‡ÃÅ2æÖ„‡“°¢2æ×Ö6Æ×…2æ×ÃÅ2æÖ„×“°¢B‚r7æÖRr’çFW‡D6öçFVçCÕ2ææÖS°¢B‚r7&VÆÒr’çFW‡D6öçFVçC×&VÆÔæÖR‚’²r+rr·&Vv–öâ‚’ææÖS°¢B‚r6ÆWfVÂr’çFW‡D6öçFVçCÕ2æÆWfVÃ°¢B‚r6‡f–ÆÂr’ç7G–ÆRçv–GFƒÒ…2æ‡õ2æÖ„‡£’²rRs°¢B‚r6‡FW‡Br’çFW‡D6öçFVçCÖG´ÖF‚ç&÷VæB…2æ‡—ÒòGµ2æÖ„‡Ö°¢B‚r6×f–ÆÂr’ç7G–ÆRçv–GFƒÒ…2æ×õ2æÖ„×£’²rRs°¢B‚r7‡f–ÆÂr’ç7G–ÆRçv–GFƒÒ…2ç‡õ2ç‡æVVB£’²rRs°¢B‚r6vöÆBr’çFW‡D6öçFVçCÔÖF‚æfÆö÷"…2ævöÆB’çFôÆö6ÆU7G&–ær‚“°¢B‚r77FöæW2r’çFW‡D6öçFVçCÕ2ç7FöæW2çFôÆö6ÆU7G&–ær‚“°¢ÆWBWD×VÇCÕ2çWCóãƒ£ã°¢ÆWBFVe66÷&SÔ4ôÔ$EôDÔtUõE•U2ç&VGV6R‚‡bÇB“Óçb´ÖF‚æÖ‚ƒÂ…2æFVfVç6Rbe2æFVfVç6U·EÒ—ÇÃ’Ã“°¢ÆWB†V'E÷vW#ÖvWD†V'DÖWF†öDVffV7G2‚’æFVfVç6S°¢B‚r7÷vW"r’çFW‡D6öçFVçCÔÖF‚ç&÷VæB‚…2æÖ„‡£ã"µ2æÖ„×¢ã‚µ2ç7—&—E6Vç6R£B¶vWEF÷FÄFÖvR‚’£CR¶FVe66÷&R£‚’¦vWE&VÆÕ÷vW$×VÇF—Æ–W"‚’§WD×VÇB¦†V'E÷vW"’çFôÆö6ÆU7G&–ær‚“°¢B‚r7VW7EFW‡Br’æ–ææW$…DÔÃÖ´6Œ:Öæ…ÒF¸wBœ:§RFŒ;¢Ç7ãâG´ÖF‚æÖ–âƒ#Å2çVW7D¶–ÆÇ2—Òó#Â÷7ãæ°¢B‚r6WFô'Fâr’æ6Æ74Æ—7BçFövvÆR‚vöârÅ2æWFò“°¢B‚r6Ö–æ”æÖRr’çFW‡D6öçFVçC×&Vv–öâ‚’ææÖS° ¢òò>ª×æª×B<:2ì;§B¾»’ìH6ær6†«öâIªWR„…TB¢f÷"†ÆWB“Ó¶“ÃÓC¶’²²—°¢ÆWB'FãÖFö7VÖVçBçVW'•6VÆV7F÷"†ç6¶–ÆÅ¶FF×6¶–ÆÃÒ"G¶—Ò%Ö“°¢–b†'Fâ—°¢ÆWB6¶–ÆÄ–CÒ…2æWV—VE6¶–ÆÇ2be2æWV—VE6¶–ÆÇ5¶’ÓÒ—ÇÆçVÆÃ°¢ÆWB6³×6¶–ÆÄ–CövWE6¶–ÆÄFVb‡6¶–ÆÄ–B“¦çVÆÃ°¢ÆWB–ÖsÖ'FâçVW'•6VÆV7F÷"‚v–Örç6¶–ÆÂÖ–6öâÖ–Örr“°¢ÆWB%FsÖ'FâçVW'•6VÆV7F÷"‚v"r“°¢ÆWB6E7ãÖ'FâçVW'•6VÆV7F÷"‚w7âr“°¢–b‚6E7â—°¢'Fâæ–ææW$…DÔÂ³ÖÇ7â–CÒ&6BG¶—Ò#ãÂ÷7ãæ°¢Ğ¢–b‡6²—°¢&VÆöE6¶–ÆÅfg‚‡6²“°¢–b‚–Ör—°¢'Fâæ–ææW$…DÔÃÖÆ–Ör7&3Ò"G·6²æ–6öçÒ"6Æ73Ò'6¶–ÆÂÖ–6öâÖ–Ör"ÇCÒ"G·6²ææÖWÒ"öæW'&÷#Ò'F†—2ç7G–ÆRæF—7Æ“ÒvæöæRs·F†—2ææW‡DVÆVÖVçE6–&Æ–ærç7G–ÆRæF—7Æ“Òv–æÆ–æRr#ãÆ"7G–ÆSÒ&F—7Æ“¦æöæR#âG·6²æ&FvWÓÂö#ãÇ7â–CÒ&6BG¶—Ò#ãÂ÷7ãæ°¢ÖVÇ6R–b†–ÖrævWDGG&–'WFR‚w7&2r’Ó×6²æ–6öâ—°¢–Örç7&3×6²æ–6öã°¢–Örç7G–ÆRæF—7Æ“Òv&Æö6²s°¢Ğ¢ÖVÇ6W°¢–b†–ÖwÇÂ%FwÇÆ%FrçFW‡D6öçFVçBÓÒr²r—°¢'Fâæ–ææW$…DÔÃÖÆ#â³Âö#ãÇ7â–CÒ&6BG¶—Ò#ãÂ÷7ãæ°¢Ğ¢Ğ¢'FâçF—FÆS×6³ö²G·6²çF–W$æÖWÒ+rG·6²ç&æ´æÖWÕÒG·6²ææÖWÒ‚G·6²æ×ÒÕ’ÒŒ:ÖÒG¶—Ö¦9BG¶—Ò´6ŒkG&ær.¸µÒÒŒ:ÖÒG¶—Ö°¢'Fâç7G–ÆRæ÷6—G“Ò‡6²be2æ×Ç6²æ×“òsãCRs¢ss°¢Ğ¢Ğ¢ÆWBF6„'FãÒB‚r6F6„'Fâr“°¢–b†F6„'FâbbF6„'FâçVW'•6VÆV7F÷"‚v–Örr’—°¢F6„'Fâæ–ææW$…DÔÃÖÆ–Ör7&3Ò&76WG2÷6¶–ÆÇ2ö6öÖÖöâöF6‚çær"6Æ73Ò'6¶–ÆÂÖ–6öâÖ–Ör"ÇCÒ$Ìk¹·B"öæW'&÷#Ò'F†—2ç7G–ÆRæF—7Æ“ÒvæöæRs·F†—2ææW‡DVÆVÖVçE6–&Æ–ærç7G–ÆRæF—7Æ“Òv–æÆ–æRr#ãÆ"7G–ÆSÒ&F—7Æ“¦æöæR#ï	ù*ƒÂö#ãÇ7â–CÒ&6DF6‚#ãÂ÷7ãæ°¢Ğ§Ğ ¦gVæ7F–öâG&tÖ–æ’‚—°¢–b‚Æ–W"—&WGW&ã°¢ÆWB3ÒB‚r6Ö–æ’r“°¢–b‚2—&WGW&ã°¢ÆWBƒÖ2ævWD6öçFW‡B‚s&Br“°¢‚æ6ÆV%&V7BƒÃÆ2çv–GF‚Æ2æ†V–v‡B“° ¢ÆWB7ƒÖ2çv–GF‚ó"Â7“Ö2æ†V–v‡Bó#°¢ÆWB'ƒÖ2çv–GF‚£ãCBÂ'“Ö2æ†V–v‡B£ãCC° ¢òòî¸â&F"Fœ:¦âv¹¶¢ÆWB&tw&C×‚æ7&VFU&F–Äw&F–VçB†7‚Æ7’ÃRÆ7‚Æ7’Ç'‚“°¢&tw&BæFD6öÆ÷%7F÷ƒÂr3#s3“3Br“°¢&tw&BæFD6öÆ÷%7F÷ƒãƒRÂr3ƒ#c#"r“°¢&tw&BæFD6öÆ÷%7F÷ƒÂr3#‚r“°¢‚æf–ÆÅ7G–ÆSÖ&tw&C°¢‚æ&Vv–åF‚‚“°¢‚æVÆÆ—6R†7‚Æ7’Ç'‚Ç'’ÃÃÄÖF‚å’£"“°¢‚æf–ÆÂ‚“° ¢òòl;&ær\:—B&F ¢‚ç7G&ö¶U7G–ÆSÒw&v&ƒrÂ#32Â#SRÂã‚’s°¢‚æÆ–æUv–GFƒÓ°¢‚æ&Vv–åF‚‚“°¢‚æVÆÆ—6R†7‚Æ7’Ç'‚£ãRÇ'’£ãRÃÃÄÖF‚å’£"“°¢‚æVÆÆ—6R†7‚Æ7’Ç'‚Ç'’ÃÃÄÖF‚å’£"“°¢‚ç7G&ö¶R‚“° ¢òò\:’nª×Bb&÷70¢f÷"†ÆWBöb7F÷'2—°¢–b†æFVB–6öçF–çVS°¢ÆWBGƒÖç‚×Æ–W"ç‚ÂG£Öç¢×Æ–W"ç£°¢ÆWBCÔÖF‚æ‡—÷B†G‚ÆG¢“°¢–b†CÃÕ$D%õ$ätR—°¢ÆWBƒÖ7‚²†G‚õ$D%õ$ätR’§'ƒ°¢ÆWB“Ö7’²†G¢õ$D%õ$ätR’§'“°¢–b†ÓÓÖ&÷72—°¢‚æf–ÆÅ7G–ÆSÒr6ffCss°¢‚ç6†F÷t6öÆ÷#Òr6ffCss°¢‚ç6†F÷t&ÇW#Óƒ°¢‚æ&Vv–åF‚‚“°¢‚æ&2‡‚Ç’ÃBãRÃÄÖF‚å’£"“°¢‚æf–ÆÂ‚“°¢‚ç6†F÷t&ÇW#Ó°¢ÖVÇ6W°¢‚æf–ÆÅ7G–ÆSÒr6SS6S6Rs°¢‚æ&Vv–åF‚‚“°¢‚æ&2‡‚Ç’Ã"ã"ÃÄÖF‚å’£"“°¢‚æf–ÆÂ‚“°¢Ğ¢ÖVÇ6R–b†ÓÓÖ&÷72—°¢òò6öâG.¸òŒk¹¶ær&÷72¶†’¹ò†¢ÆWBævÆSÔÖF‚æFã"†G¢ÆG‚“°¢ÆWBVFvUƒÖ7‚´ÖF‚æ6÷2†ævÆR’¢‡'‚ÓB“°¢ÆWBVFvU“Ö7’´ÖF‚ç6–â†ævÆR’¢‡'’ÓB“°¢‚æf–ÆÅ7G–ÆSÒr6fc“ƒs°¢‚æ&Vv–åF‚‚“°¢‚æ&2†VFvU‚ÆVFvU’Ã2ãRÃÄÖF‚å’£"“°¢‚æf–ÆÂ‚“°¢Ğ¢Ğ ¢òòæŒ:&ânª×B6Œ:Öæ‚¹òL:&Ò&F ¢‚æf–ÆÅ7G–ÆSÒr3fffbs°¢‚ç6†F÷t6öÆ÷#Òr3fffbs°¢‚ç6†F÷t&ÇW#Óc°¢‚æ&Vv–åF‚‚“°¢‚æ&2†7‚Æ7’Ã2ãRÃÄÖF‚å’£"“°¢‚æf–ÆÂ‚“°¢‚ç6†F÷t&ÇW#Ó° ¢òòŒk¹¶æræŒ:Æâ>ºvæŒ:&ânª×@¢ÆWBF—%ƒ×Æ–W"æf6–æsÓÓÒvÆVgBsòÓ£°¢‚ç7G&ö¶U7G–ÆSÒr3fffbs°¢‚æÆ–æUv–GFƒÓãS°¢‚æ&Vv–åF‚‚“°¢‚æÖ÷fUFò†7‚Æ7’“°¢‚æÆ–æUFò†7‚¶F—%‚£bÆ7’“°¢‚ç7G&ö¶R‚“° ¢òòN¸ÖI¹’æ|k¹Ö’6Œj’b¼:Ö6‚FŒk¹¶2.ª6âI¹0¢‚æf–ÆÅ7G–ÆSÒw&v&ƒ#SRÃ#SRÃ#SRÃãsR’s°¢‚æföçCÒs—‚6ç2×6W&–bs°¢‚çFW‡DÆ–vãÒv6VçFW"s°¢‚æf–ÆÅFW‡B†ƒ¢G´ÖF‚ç&÷VæB‡Æ–W"ç‚—Ò£¢G´ÖF‚ç&÷VæB‡Æ–W"ç¢—ÒƒÒ–Æ7‚Æ2æ†V–v‡BÓ2“°§Ğ ¦gVæ7F–öâ6WGW–çWB‚—°¢v–æF÷ræFDWfVçDÆ—7FVæW"‚v¶W–F÷vârÆSÓç°¢ÆWB³ÖRæ¶W’çFôÆ÷vW$66R‚“°¢¶W—5¶µÓ×G'VS°¢–b…²srÂs"rÂs2rÂsBuÒæ–æ6ÇVFW2†²’—W6U6¶–ÆÂ‚¶²“°¢–b†³ÓÓÒrwÇÆ³ÓÓÒw76V&"r—¶Rç&WfVçDFVfVÇB‚“·W6TF6‚‚“·Ğ¢–b†³ÓÓÒwr—²B‚r6WFô'Fâr’æ6Æ–6²‚“·Ğ¢Ò“°¢v–æF÷ræFDWfVçDÆ—7FVæW"‚v¶W—WrÆSÓæ¶W—5¶Ræ¶W’çFôÆ÷vW$66R‚•ÓÖfÇ6R“° ¢ÆWB£ÒB‚r6¦÷’r’Æ³ÒB‚r6¦÷”¶æö"r“°¢gVæ7F–öâÖ÷fR†R—°¢–b‚¦÷’æ7F—fWÇÆRçö–çFW$–BÓÖ¦÷’ç–B—&WGW&ã°¢ÆWB#Ö¢ævWD&÷VæF–æt6Æ–VçE&V7B‚’Æ7ƒ×"æÆVgB·"çv–GF‚ó"Æ7“×"çF÷·"æ†V–v‡Bó"ÆGƒÖRæ6Æ–VçE‚Ö7‚ÆG“ÖRæ6Æ–VçE’Ö7’ÆÓÔÖF‚æ‡—÷B†G‚ÆG’’ÆÖƒ×"çv–GF‚¢ã3#°¢–b†ÓæÖ‚—¶GƒÖG‚öÒ¦Öƒ¶G“ÖG’öÒ¦Ö‡Ğ ¢òòÖö&–ÆRFVB×¦öæS¢Æşª’.¸ò'Væröæö—6R.ªWBæ¸ò>ºvæ|;6âF’Væ‚L:&Ò¦÷—7F–6²à¢ÆWBçƒÖG‚öÖ‚Âç“ÒÖG’öÖƒ°¢ÆWBæÓÔÖF‚æ‡—÷B†ç‚Æç’“°¢6öç7B¤õ•ôDTE¤ôäSÓã#°¢–b†æÓÄ¤õ•ôDTE¤ôäR—°¢¦÷’çƒÓ²¦÷’ç“Ó°¢GƒÓ²G“Ó°¢ÖVÇ6W°¢òò&VÖªvâ<;&âÎª’n¸âãI¸2¶Œ;FærNªò&,k¹¶2æª7’"6RFVB×¦öæRà¢ÆWB66ÆVCÒ†æÒÔ¤õ•ôDTE¤ôäR’òƒÔ¤õ•ôDTE¤ôäR“°¢¦÷’çƒÒ†ç‚öæÒ’§66ÆVC°¢¦÷’ç“Ò†ç’öæÒ’§66ÆVC°¢Ğ¢²ç7G–ÆRçG&ç6f÷&ÓÖG&ç6ÆFR‚G¶G‡×‚ÂG¶G—×‚–°¢Ğ¢¢æFDWfVçDÆ—7FVæW"‚wö–çFW&F÷vârÆSÓç¶¦÷’æ7F—fS×G'VS¶¦÷’ç–CÖRçö–çFW$–C¶¢ç6WEö–çFW$6GW&R†Rçö–çFW$–B“¶Ö÷fR†R—Ò“°¢¢æFDWfVçDÆ—7FVæW"‚wö–çFW&Ö÷fRrÆÖ÷fR“°¢ÆWBVæCÖSÓç°¢–b†Rçö–çFW$–BÓÖ¦÷’ç–B—&WGW&ã°¢¦÷’æ7F—fSÖfÇ6S¶¦÷’çƒÖ¦÷’ç“Ó°¢²ç7G–ÆRçG&ç6f÷&ÓÒrs°¢Ó°¢¢æFDWfVçDÆ—7FVæW"‚wö–çFW'WrÆVæB“°¢¢æFDWfVçDÆ—7FVæW"‚wö–çFW&6æ6VÂrÆVæB“° ¢BB‚rç6¶–ÆÂr’æf÷$V6‚†#Óç°¢–b†"æFF6WBç6¶–ÆÂ—°¢"æFDWfVçDÆ—7FVæW"‚wö–çFW&F÷vârÆSÓç¶Rç&WfVçDFVfVÇB‚“·W6U6¶–ÆÂ‚¶"æFF6WBç6¶–ÆÂ—Ò“°¢Ğ¢Ò“°¢B‚r6F6„'Fâr’æöæ6Æ–6³×W6TF6ƒ° ¢B‚r6WFô'Fâr’æöæ6Æ–6³Ò‚“Óç°¢2æWFóÒ2æWFó°¢6fR‚“°¢WFFT…TB‚“°¢Fö7B…2æWFóò~)©BN»I¹–ær6†«öâIªWS¢.ªÅBs¢uN»I¹–ær6†«öâIªWS¢NªåBr“°¢Ó° ¢B‚r6ÖVçT'Fâr’æöæ6Æ–6³Ò‚“ÓâB‚r6ÖVçTw&–Br’æ†–FFVãÒB‚r6ÖVçTw&–Br’æ†–FFVã°¢BB‚u¶FF×æVÅÒr’æf÷$V6‚†#Óæ"æFDWfVçDÆ—7FVæW"‚v6Æ–6²rÂ‚“Óæ÷VåæVÂ†"æFF6WBçæVÂ’’“° ¢òò&VÆ–&ÆRæVÂ6Æ÷6R†æFÆW'0¢B‚r66Æ÷6UæVÂr’æöæ6Æ–6³Ö6Æ÷6UæVÃ°¢B‚r7æVÂr’æFDWfVçDÆ—7FVæW"‚v6Æ–6²rÆSÓç°¢–b†RçF&vWCÓÓÒB‚r7æVÂr’–6Æ÷6UæVÂ‚“°¢Ò“° ¢òòÆ–fV7–6ÆR÷&W6—¦R6¸’Ikº62IH6ær¼;ÒŞ¹—BÎªvâ¹òvÖTÆ–fV7–6ÆRà¢–b‚v–æF÷rävÖTÆ–fV7–6ÆR—°¢ÆWB&W6—¦UF–ÖW#Ó°¢v–æF÷ræFDWfVçDÆ—7FVæW"‚w&W6—¦RrÂ‚“Óç¶6ÆV%F–ÖV÷WB‡&W6—¦UF–ÖW"“·&W6—¦UF–ÖW#×6WEF–ÖV÷WB‚‚“Óç¶Væv–æRç&W6—¦R‚“·WFFT÷'F†ô6ÖW&&÷VæG2‚“·ÒÃc“·Ò“°¢Fö7VÖVçBæFDWfVçDÆ—7FVæW"‚wf—6–&–Æ—G–6†ævRrÂ‚“Óç·W6VCÖFö7VÖVçBæ†–FFVçÒ“°¢Ğ§Ğ ¦gVæ7F–öâW6T–çfVçF÷'”—FVÒ†æÖR—°¢–b‚2æ—FV×7ÇÂ2æ—FV×5¶æÖU×ÇÅ2æ—FV×5¶æÖUÓÃÓ—&WGW&âFö7B‚|I:2«÷Bnª×Bª–Òr“°¢2æ—FV×5¶æÖUÒÒÓ°¢–b…2æ—FV×5¶æÖUÓÃÓ–FVÆWFR2æ—FV×5¶æÖUÓ° ¢–b†æÖRæ–æ6ÇVFW2‚t¹6’¶Œ:ÒIâr’—°¢2æ‡Õ2æÖ„‡°¢2æ×Õ2æÖ„×°¢Fö7B‚	ùKBI:2L;–ær¹6’¶Œ:ÒIã¢ºV2¹6’R¶Œ:Ò‡W«÷BbÆ–æ‚Î»2r“°¢6g‚‚v—FVÒr“°¢ÖVÇ6R–b†æÖRæ–æ6ÇVFW2‚tÆ–æ‚Fª6‚r’—°¢6öç7B7VÇF—fFTv–ãÔÖF‚ç&÷VæBƒS¦vWEFV6†æ—VT7VÇF—fF–öä×VÇF—Æ–W"‚’¦vWD†V'DÖWF†öDVffV7G2‚’æ7VÇF—fF–öâ“°¢2æ7VÇF—fF–öâ³Ö7VÇF—fFTv–ã°¢2ævöÆB³Ó3°¢Fö7B‚	ù(âªWFºRÆ–æ‚Fª6ƒ¢²r¶7VÇF—fFTv–â²rGRf’Â³3l:ærr“°¢6g‚‚v—FVÒr“°¢ÖVÇ6R–b†æÖRæ–æ6ÇVFW2‚t&÷72¹6âF–æ‚r’—°¢f÷"†6öç7BBöb4ôÔ$EôDÔtUõE•U2•2æFÖvU·EÓÒ…2æFÖvU·E×ÇÃ’³3°¢2æÖ„‡³Ó°¢2æ‡Õ2æÖ„‡°¢Fö7B‚	ùJRGVærº7¹6âF–æƒ¢³2Ş¹v’Æşª’FÖvRÂ³6–æ‚Î»2r“°¢6g‚‚v'&V·F‡&÷Vv‚r“°¢ÖVÇ6W°¢Fö7B‚|I:2>ºÒNºVærr¶æÖR“°¢Ğ¢6fR‚“°¢WFFT…TB‚“°¢÷VåæVÂ‚v–çfVçF÷'’r“°§Ğ ¦gVæ7F–öâ÷VåæVÂ†¶–æB—°¢W6VC×G'VS°¢B‚r7æVÂr’æ†–FFVãÖfÇ6S°¢B‚r7æVÂr’ç7G–ÆRæF—7Æ“Òvw&–Bs°¢B‚r6ÖVçTw&–Br’æ†–FFVã×G'VS°¢ÆWBF—FÆSÒuL;¦’I¹2rÆ‡FÖÃÒrs° ¢G'’°¢–b†¶–æCÓÓÒv–çfVçF÷'’r—°¢F—FÆSÒuL;¦’I¹2+rIâLkº62+rŒ;’ÎºV2+rŒ:.ª6òs°¢ÆWBw&FSÖw&FTf÷$ÆWfVÂ‚“°¢ÆWBVçG&–W3Ôö&¦V7BæVçG&–W2…2æ—FV×7ÇÇ·Ò“°¢‡FÖÃÒsÆF—b6Æ73Ò&6&G2#âr²†VçG&–W2æÆVæwFƒöVçG&–W2æÖ‚…¶âÇÒ“Óç°¢ÆWB6åW6SÖâæ–æ6ÇVFW2‚|Iâr—ÇÆâæ–æ6ÇVFW2‚tÆ–æ‚Fª6‚r—ÇÆâæ–æ6ÇVFW2‚t¹6âF–æ‚r“°¢&WGW&âÆF—b6Æ73Ò&6&B#ãÆF—b6Æ73Ò'6Æ÷B#ãÆF—b6Æ73Ò&–6öâ#âG¶âæ–æ6ÇVFW2‚t¶«öÒr“ò~)©Bs¦âæ–æ6ÇVFW2‚tvœ:r“ò	ùºs¦âæ–æ6ÇVFW2‚|Iâr“ò	ùKBs¦âæ–æ6ÇVFW2‚t¹6âr“ò	ùJRs¢	ù(âwÓÂöF—cãÆF—cãÆ#âG¶çÓÂö#ãÆ'#ãÇ6ÖÆÃå>¹Ìkº6æs¢G·ÓÂ÷6ÖÆÃãÂöF—cãÂöF—câG¶6åW6SöÆ'WGFöâ6Æ73Ò&'Fâ×W6R"FF×W6SÒ"G¶çÒ#å>ºÒNºVæsÂö'WGFöãæ¢rwÓÂöF—cæ°¢Ò’æ¦ö–â‚rr“¢sÆF—b6Æ73Ò&6&B#ãÇåL;¦’I¹2†¸vâIærG.¹æsÂ÷ãÂöF—câr’²sÂöF—câr¶ÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–â×F÷£'‚#ãÆ#åª–Ò>ªWG&ær.¸²†¸vâNª“¢G¶w&FWÒª–ÓÂö#ãÇäæªWB(i"æ|Z’ª–ÒŞ¹òNªvâF†Vò>ª6æ‚v¹¶’l:>ªWI¹’æŒ:&ânª×BãÂ÷ãÂöF—cæ°¢6WEF–ÖV÷WB‚‚“ÓâB‚u¶FF×W6UÒr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ò‚“ÓçW6T–çfVçF÷'”—FVÒ†"æFF6WBçW6R’’Ã“°¢–b‡v–æF÷råGUF–Vå7—7FV×2—°¢6öç7BW‡D–çc×v–æF÷råGUF–Vå7—7FV×2ç&VæFW$–çfVçF÷'’…2ÆvWE7—7FVÔ6öçFW‡B‚’“°¢–b†W‡D–çb—¶‡FÖÂ³ÖW‡D–çbæ‡FÖÃ·6WEF–ÖV÷WB‚‚“ÓæW‡D–çbæ&–æBbfW‡D–çbæ&–æB‚’Ã“·Ğ¢Ğ¢–b‡v–æF÷råGUF–Vä7&gF–ætvÖWÆ’—°¢6öç7B7&gD–çc×v–æF÷råGUF–Vä7&gF–ætvÖWÆ’ç&VæFW$–çfVçF÷'’…2ÆvWE7—7FVÔ6öçFW‡B‚’“°¢–b†7&gD–çb—¶‡FÖÂ³Ö7&gD–çbæ‡FÖÃ·6WEF–ÖV÷WB‚‚“Óæ7&gD–çbæ&–æBbf7&gD–çbæ&–æB‚’Ã“·Ğ¢Ğ ¢ÖVÇ6R–b†¶–æCÓÓÒv6†&7FW"r—°¢F—FÆSÒuFŒ;FærF–âæŒ:&ânª×Bs°¢ÆWBFÖu&÷w3Ô4ôÔ$EôDÔtUõE•U2æÖ‡CÓæÆF—b6Æ73Ò'7FB#ãÇ7ãäFÖvRG´DÔtUôÄ$TÅ5·E×ÓÂ÷7ããÆ#âG´ÖF‚ç&÷VæB†vWDFÖvT6ö×öæVçB‡B’—Ò+r6¶–ÆÂG´DÔtUôÄ$TÅ5·E×Ó¢G´ÖF‚ç&÷VæB†vWEÆ–W$FÖvU7FB‡B’—ÓÂö#ãÂöF—cæ’æ¦ö–â‚rr“°¢ÆWBFVe&÷w3Ô4ôÔ$EôDÔtUõE•U2æÖ‡CÓæÆF—b6Æ73Ò'7FB#ãÇ7ãåŒ;&ærFºrG´DÔtUôÄ$TÅ5·E×ÓÂ÷7ããÆ#âG´ÖF‚ç&÷VæB†vWEÆ–W$FVfVç6U7FB‡B’—ÓÂö#ãÂöF—cæ’æ¦ö–â‚rr“°¢‡FÖÃÖ ¢ÆF—b6Æ73Ò&6&B#ãÆ#ï	ùB<j.ª6ãÂö#à¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåL:¦âæŒ:&ânª×CÂ÷7ããÆ#âGµ2ææÖWÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãä>ª6æ‚v¹¶“Â÷7ããÆ#âG·&VÆÔæÖR‚—ÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãä¶‡Rn»3Â÷7ããÆ#âG·&Vv–öâ‚’ææÖWÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãä¸r¾»’ìH6æsÂ÷7ããÆ#âGµ2ç6¶–ÆÄVÆVÖVçGÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãå6–æ‚Î»2„…“Â÷7ããÆ#âG´ÖF‚ç&÷VæB…2æ‡—ÒòGµ2æÖ„‡ÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåŒ:Î»2„Õ“Â÷7ããÆ#âG´ÖF‚ç&÷VæB…2æ×—ÒòGµ2æÖ„×ÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåFªvâFº–3Â÷7ããÆ#âG´ÖF‚ç&÷VæB…2ç7—&—E6Vç6R—ÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãä¸r>¹7FB>ª6æ‚v¹¶“Â÷7ããÆ#âG¶vWE&VÆÕ÷vW%FW‡B‚—ÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãä<;FærŒ:GRÇW¸vãÂ÷7ããÆ#âG¶vWD7F—fUFV6†æ—VR‚’æw&FRææÖWÒ+rG¶vWD7F—fUFV6†æ—VR‚’ç&æ²ææÖWÒ+rG¶vWD7F—fUFV6†æ—VR‚’ææÖWÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãä¸r>¹F‡^¹–2L:Öæ‚<;FærŒ:Â÷7ããÆ#âG´5TÅD•dD”ôåõDT4…ôÄ$TÅ5¶vWD7F—fUFV6†æ—VUG—R‚•×ÒG¶vWEFV6†æ—VU7FEFW‡B‚—ÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåL:&ÒŒ:Â÷7ããÆ#âG¶vWD†V'DÖWF†öDFVb‚’ææÖWÒ+rÇbâG¶vWD†V'DÖWF†öDÆWfVÂ‚—ÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãì86«ò>ª6æ‚v¹¶“Â÷7ããÆ#â³3RRòF¸7R>ª6æ‚+r³sRRòIª’>ª6æƒÂö#ãÂöF—cà¢ÂöF—cà¢ÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–â×F÷£‡‚#ãÆ#î)©B<:BFŒkjæsÂö#à¢ÆF—b6Æ73Ò'7FB#ãÇ7ãäFÖvRN¹VæsÂ÷7ããÆ#âG´ÖF‚ç&÷VæB†vWEF÷FÄFÖvR‚’—ÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãìj÷RFœ:¦âI;¦ær¸sÂ÷7ããÆ#ç‚G´ÔD4„”äuôDÔtUôÕTÅBçFôf—†VBƒ—ÒªvâFÖvRI;¦ær¸sÂö#ãÂöF—cà¢G¶FÖu&÷w7Ğ¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåN»rÎ¸r.ªò¼:Ö6ƒÂ÷7ããÆ#âG´ÖF‚ç&÷VæB‚…2æ7&—D6†æ6WÇÃ’£—ÒSÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãå<:BFŒkjær.ªò¼:Ö6ƒÂ÷7ããÆ#âG´ÖF‚ç&÷VæB‚…2æ7&—DFÖvWÇÃã‚’£—ÒSÂö#ãÂöF—cà¢ÂöF—cà¢ÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–â×F÷£‡‚#ãÆ#ï	ùºŒ;&ærFºsÂö#âG¶FVe&÷w7ÓÂöF—cà¢ÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–â×F÷£‡‚#ãÆ#î)ŠòN¹2I¹’b¹6’ºV3Âö#à¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåN¹2I¹’F’6‡W¸6ãÂ÷7ããÆ#âG²…2æÖ÷fU7VVGÇÃbã"’çFôf—†VBƒ"—ÒÒ÷3Âö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåN¹2I¹’I:æƒÂ÷7ããÆ#âG´ÖF‚ç&÷VæB‚…2æGF6µ7VVGÇÃ’£—ÒSÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåN¹2I¹’F†’G&¸6ãÂ÷7ããÆ#âG´ÖF‚ç&÷VæB‚…2æ67E7VVGÇÃ’£—ÒSÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãä¹6’6–æ‚Î»3Â÷7ããÆ#âG²‚…2æ‡&VvVå7GÇÃ’£’çFôf—†VBƒ—ÒRòæ¸·Âö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãä¹6’Œ:Î»3Â÷7ããÆ#âG²‚…2æ×&VvVå7GÇÃ’£’çFôf—†VBƒ—ÒRòæ¸·Âö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãäÆ–æ‚FŒ;¢¹rG.º3Â÷7ããÆ#âGµ2çWCòt>º×RlJ’Æ–æ‚¹2‚³‚R<:BFŒkjær’s¢t¶Œ;FærwÓÂö#ãÂöF—cà¢ÆF—b6Æ73Ò'7FB#ãÇ7ãåœ:§RFŒ;¢I:2F¸wCÂ÷7ããÆ#âGµ2æ¶–ÆÇ7ÓÂö#ãÂöF—cà¢ÂöF—cæ° ¢–b‡v–æF÷råGUF–Vå7—7FV×2–‡FÖÂ³×v–æF÷råGUF–Vå7—7FV×2ç&öfW76–öå7VÖÖ'’…2“° ¢ÖVÇ6R–b†¶–æCÓÓÒw6¶–ÆÇ2r—°¢F—FÆSÒuL:ær¶–æ‚<:2+r¾»’ìH6ær>º×R¸rs°¢ÆWB7W'&VçDVÆVÒÒ2ç6¶–ÆÄVÆVÖVçBÇÂt¶«öÒs°¢ÆWB7W'&VçEF–W"ÒG—Vöb2ç6¶–ÆÅF–W%F"ÓÓÒvçVÖ&W"rò2ç6¶–ÆÅF–W%F"¢°¢ÆWBF–W$FVbÒ4´”ÄÅõD”U%5¶7W'&VçEF–W%ÒÇÂ4´”ÄÅõD”U%5³Ó° ¢òòâWV—VB& ¢ÆWBWV—VD‡FÖÂÒÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–âÖ&÷GFöÓ£‡‚#à¢Æ#î)©B9B¾»’ìH6ærIærL;–ær„6†«öâIªWS¢Œ:ÖÒÂ"Â2ÂB“Âö#à¢ÆF—b6Æ73Ò&WV—VBÖ&"#à¢Gµ³ÃÃ"Ã5ÒæÖ‡6Æ÷D–G‚Óâ°¢ÆWB6´–BÒ2æWV—VE6¶–ÆÇ2ò2æWV—VE6¶–ÆÇ5·6Æ÷D–G…Ò¢çVÆÃ°¢ÆWB6²Ò6´–BòvWE6¶–ÆÄFVb‡6´–B’¢çVÆÃ°¢ÆWBÇbÒ6´–Bò…2æÆV&æVE6¶–ÆÇ5·6´–EÒÇÂ’¢°¢–b‡6²—°¢&WGW&âÆF—b6Æ73Ò&WV—VB×6Æ÷Bf–ÆÆVB#à¢Æ–Ör7&3Ò"G·6²æ–6öçÒ"6Æ73Ò'6¶–ÆÂ×6Æ÷BÖ–ÖrF–W"Ö&÷&FW"ÒG·6²çF–W$–GÒ"ÇCÒ"G·6²ææÖWÒ"öæW'&÷#Ò'F†—2ç7G–ÆRæF—7Æ“ÒvæöæRr#à¢Ç7â6Æ73Ò&&FvR×F–W"F–W"ÒG·6²çF–W$–GÒ#âG·6²æ&FvWÓÂ÷7ãà¢Æ#âG·6²ææÖWÓÂö#à¢Ç6ÖÆÃì9BG·6Æ÷D–G‚²Ò+rÇbâG¶ÇgÒ+rG·6²æ×ÔÕÂ÷6ÖÆÃà¢Æ'WGFöâFF×VæWV—×6Æ÷CÒ"G·6Æ÷D–G‡Ò#åFŒ:óÂö'WGFöãà¢ÂöF—cæ°¢ÒVÇ6R°¢&WGW&âÆF—b6Æ73Ò&WV—VB×6Æ÷B#à¢ÆF—b7G–ÆSÒ'v–GFƒ£3gƒ¶†V–v‡C£3gƒ¶&÷&FW"×&F—W3£SS¶&÷&FW#£‚F6†VB&v&ƒ#SRÃ#SRÃ#SRÂã2“¶F—7Æ“¦w&–C·Æ6RÖ—FV×3¦6VçFW#¶Ö&v–âÖ&÷GFöÓ£Gƒ¶föçB×6—¦S£‡ƒ¶6öÆ÷#¢3ƒƒ‚#â³ÂöF—cà¢Æ#å¼9BG·6Æ÷D–G‚²ÒG.¹æuÓÂö#à¢Ç6ÖÆÃä6Œk|:â,:ÒN¸¶6ƒÂ÷6ÖÆÃà¢ÂöF—cæ°¢Ğ¢Ò’æ¦ö–â‚rr—Ğ¢ÂöF—cà¢ÂöF—cæ° ¢òò"âVÆVÖVçB7v—F6†W"F'0¢ÆWBVÆVÕF'4‡FÖÂÒÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–âÖ&÷GFöÓ£‡‚#à¢Æ#ï	ùJâ6¸Öâ¸rÆ–æ‚<H6âGRFœ:¦ã£Âö#à¢ÆF—b6Æ73Ò'6¶–ÆÂ×F'2#à¢G¶VÆVÖVçG2æÖ‚…¶âÂ–5Ò’Óâ ¢Æ'WGFöâFF×6¶–ÆÂÖVÆVÓÒ"G¶çÒ"6Æ73Ò"G¶7W'&VçDVÆVÒÓÓÒâòv7F—fRr¢rwÒ#âG¶–7ÒG¶çÓÂö'WGFöãà¢’æ¦ö–â‚rr—Ğ¢ÂöF—cà¢ÂöF—cæ° ¢òò2âF–W"F'2„†ü:ærÂ‡W¸âÂI¸¶ÂF†œ:¦â¢ÆWBF–W%F'4‡FÖÂÒÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–âÖ&÷GFöÓ£‡‚#à¢Æ#ï	ù9ÂI«6ær>ªW¾»’ìH6æs£Âö#à¢ÆF—b6Æ73Ò'6¶–ÆÂ×F'2#à¢Gµ4´”ÄÅõD”U%2æÖ‚‡BÂ–G‚’Óâ ¢Æ'WGFöâFF×6¶–ÆÂ×F–W#Ò"G¶–G‡Ò"6Æ73Ò"G¶7W'&VçEF–W"ÓÓÒ–G‚òv7F—fRr¢rwÒ#à¢G·BææÖWÒ…’ö3¢G·&VÆ×5·BæÖ–å&VÆÕ×Ò¢Âö'WGFöãà¢’æ¦ö–â‚rr—Ğ¢ÂöF—cà¢ÂöF—cæ° ¢òòBâB6¶–ÆÂ6&G2f÷"F†R6VÆV7FVBF–W"bVÆVÖVçB„ªª–ÒÂG'Værª–ÒÂFŒkº6ærª–ÒÂ>»2ª–Ò¢ÆWB6&G4‡FÖÂÒsÆF—b6Æ73Ò&6&G2"7G–ÆSÒ&w&–B×FV×ÆFRÖ6öÇVÖç3§&WVB†WFòÖf—BÆÖ–æÖ‚ƒ#ƒ‚Ãg"’’#âs°¢f÷"†ÆWB&æ´–G‚Ò²&æ´–G‚ÂC²&æ´–G‚²²—°¢ÆWB6¶–ÆÄ–BÒvWE6¶–ÆÄ–B†7W'&VçDVÆVÒÂ7W'&VçEF–W"Â&æ´–G‚“°¢ÆWB6²ÒvWE6¶–ÆÄFVb‡6¶–ÆÄ–B“°¢ÆWB—4ÆV&æVBÒ2æÆV&æVE6¶–ÆÇ2bb2æÆV&æVE6¶–ÆÇ5·6¶–ÆÄ–EÓ°¢ÆWBÇbÒ—4ÆV&æVBò2æÆV&æVE6¶–ÆÇ5·6¶–ÆÄ–EÒ¢°¢ÆWB6äÆV&âÒ2ç&VÆÒãÒ6²æÖ–å&VÆÒbb2æÆWfVÂãÒ6²æÖ–äÆWfVÃ°¢ÆWBW6÷7BÒvWE6¶–ÆÅWw&FT6÷7B‡6²ÄÖF‚æÖ‚ƒÆÇb’“°¢ÆWBW6÷7E7FöæW2ÒW6÷7BòW6÷7Bç7FöæW2¢°¢ÆWBW6÷7D7VÇBÒW6÷7BòW6÷7Bæ7VÇB¢°¢ÆWBFÖuW&6VçBÒÖF‚ç&÷VæB‡6²æ×VÇB¢¢ƒ²ÖF‚æÖ‚ƒÂÇbÒ’¢ãR’“° ¢6&G4‡FÖÂ³ÒÆF—b6Æ73Ò&6&B6¶–ÆÂÖ6&BG¶—4ÆV&æVBòvÆV&æVBr¢rwÒ#à¢ÆF—cà¢ÆF—b6Æ73Ò'6Æ÷B"7G–ÆSÒ&Ö&v–âÖ&÷GFöÓ£‡‚#à¢Æ–Ör7&3Ò"G·6²æ–6öçÒ"6Æ73Ò'6¶–ÆÂ×F‡VÖ"Ö–ÖrF–W"Ö&÷&FW"ÒG·6²çF–W$–GÒ"ÇCÒ"G·6²ææÖWÒ#à¢ÆF—cà¢Ç7â6Æ73Ò&&FvR×F–W"F–W"ÒG·F–W$FVbæ–GÒ#âG·6²çF–W$æÖWÒ+rG·6²ç&æ´æÖWÓÂ÷7ãà¢Æ"7G–ÆSÒ&6öÆ÷#¢G·F–W$FVbæ6öÆ÷'Ó¶F—7Æ“¦&Æö6³¶föçB×6—¦S£G‚#âG·6²ææÖWÓÂö#à¢ÂöF—cà¢ÂöF—cà¢Ç7G–ÆSÒ&Ö&v–â×F÷£g‚#à¢)©B<:BFŒkjæs¢Æ"7G–ÆSÒ&6öÆ÷#¢6ffSv#âG¶FÖuW&6VçGÒR<;Fær¼:Ö6ƒÂö#ãÆ'#à¢	ù*rÆ–æ‚Î»3¢Æ#âG·6²æ×ÒÕÂö#â+r(û¹6’6†œ:§S¢Æ#âG·6²æ6G×3Âö#ãÆ'#à¢	øêòªÒf“¢Æ#âG·6²æöRÓÓÒò|IjâŞºV2Fœ:§Rƒ2Æœ:¦âG.ª6Ò’r¢6²æöR²vÒ„ôRF¸vâ.¹–ær’wÓÂö#ãÆ'#à¢)Šòœ:§R>ªwS¢Æ#âG·&VÆ×5·6²æÖ–å&VÆÕ×Ò„ÇbâG·6²æÖ–äÆWfVÇÒ²“Âö#ãÆ'#ï	úz’f’G,;#¢Æ#âG·6²ç&öÆWÇÂt¾»’ìH6ær6†«öâIªWRwÓÂö#ãÆ'#î)Ê‚†¸wRº–æs¢Æ#âG·6²ç7FGW5FW‡GÇÂt¶Œ;FærwÓÂö#à¢Â÷à¢ÂöF—cà¢ÆF—cà¢ÆF—b7G–ÆSÒ&föçB×6—¦S£ƒ¶Ö&v–ã£g‚#à¢G¶—4ÆV&æVBòÇ7â6Æ73Ò&vööB#î)É2I:2ÌJ–æ‚æ~¹’„>ªWG¶ÇgÒóR“Â÷7ãæ¢Ç7â7G–ÆSÒ&6öÆ÷#¢6†#F&R#ä6ŒkÌJ–æ‚æ~¹“Â÷7ãæĞ¢ÂöF—cà¢G²—4ÆV&æVBò ¢Æ'WGFöâ6Æ73Ò&'Fâ×W6R"FFÖÆV&â×6¶–ÆÃÒ"G·6²æ–GÒ"G²‚6äÆV&âÇÂ2ç7FöæW2Â6²æ6÷7E7FöæW2ÇÂ2æ7VÇF—fF–öâÂ6²æ6÷7D7VÇB’òvF—6&ÆVBr¢rwÓà¢ÌJ–æ‚æ~¹’	ù(âG·6²æ6÷7E7FöæW7Ò+r)ŠòG·6²æ6÷7D7VÇGÒ¢Âö'WGFöãà¢¢ ¢G¶ÇbÂRò ¢Æ'WGFöâFF×Ww&FR×6¶–ÆÃÒ"G·6²æ–GÒ"G²…2ç7FöæW2ÂW6÷7E7FöæW2ÇÂ2æ7VÇF—fF–öâÂW6÷7D7VÇB’òvF—6&ÆVBr¢rwÓà¢<k¹ÖærŒ;6	ù(âG·W6÷7E7FöæW7Ò+r)ŠòG·W6÷7D7VÇGÒ¢Âö'WGFöãà¢¢Æ'WGFöâF—6&ÆVCìI:2IªB>»2ªâ„ÇbãR“Âö'WGFöãæĞ¢ÆF—b6Æ73Ò'6¶–ÆÂÖ6&BÖ7F–öç2#à¢Gµ³Â"Â2ÂEÒæÖ‡2Óâ°¢ÆWB—47W'&VçD–å6Æ÷BÒ2æWV—VE6¶–ÆÇ2bb2æWV—VE6¶–ÆÇ5·2ÒÒÓÓÒ6²æ–C°¢&WGW&âÆ'WGFöâFFÖWV—×6Æ÷CÒ"G·7Ò"FFÖWV—×6¶–ÆÃÒ"G·6²æ–GÒ"G¶—47W'&VçD–å6Æ÷BòvF—6&ÆVBr¢rwÓà¢G¶—47W'&VçD–å6Æ÷Bò|Iær9Br²2¢t|:â9Br²7Ğ¢Âö'WGFöãæ°¢Ò’æ¦ö–â‚rr—Ğ¢ÂöF—cà¢Ğ¢ÂöF—cà¢ÂöF—cæ°¢Ğ¢6&G4‡FÖÂ³ÒsÂöF—câs° ¢‡FÖÂÒWV—VD‡FÖÂ²VÆVÕF'4‡FÖÂ²F–W%F'4‡FÖÂ²6&G4‡FÖÃ° ¢6WEF–ÖV÷WB‚‚’Óâ°¢BB‚u¶FF×6¶–ÆÂÖVÆVÕÒr’æf÷$V6‚†"Óâ"æöæ6Æ–6²Ò‚’Óâ°¢2ç6¶–ÆÄVÆVÖVçBÒ"æFF6WBç6¶–ÆÄVÆVÓ°¢6fR‚“°¢÷VåæVÂ‚w6¶–ÆÇ2r“°¢WFFT…TB‚“°¢Fö7B‚	ùJâI:26‡W¸6â6ærŒ:’r²2ç6¶–ÆÄVÆVÖVçB“°¢Ò“° ¢BB‚u¶FF×6¶–ÆÂ×F–W%Òr’æf÷$V6‚†"Óâ"æöæ6Æ–6²Ò‚’Óâ°¢2ç6¶–ÆÅF–W%F"Ò'6T–çB†"æFF6WBç6¶–ÆÅF–W"Â“°¢6fR‚“°¢÷VåæVÂ‚w6¶–ÆÇ2r“°¢Ò“° ¢BB‚u¶FFÖÆV&â×6¶–ÆÅÒr’æf÷$V6‚†"Óâ"æöæ6Æ–6²Ò‚’Óâ°¢ÆWB6´–BÒ"æFF6WBæÆV&å6¶–ÆÃ°¢ÆWB6²ÒvWE6¶–ÆÄFVb‡6´–B“°¢–b‚6²’&WGW&ã°¢–b…2ç&VÆÒÂ6²æÖ–å&VÆÒÇÂ2æÆWfVÂÂ6²æÖ–äÆWfVÂ’&WGW&âFö7B‚t6ŒkIªBIºr>ª6æ‚v¹¶’†ş«v2>ªWI¹’I¸2ÌJ–æ‚æ~¹’r“°¢–b…2ç7FöæW2Â6²æ6÷7E7FöæW2’&WGW&âFö7B‚t¶Œ;FærIºrÆ–æ‚Fª6‚r“°¢–b…2æ7VÇF—fF–öâÂ6²æ6÷7D7VÇB’&WGW&âFö7B‚t¶Œ;FærIºrGRf’r“°¢2ç7FöæW2ÓÒ6²æ6÷7E7FöæW3°¢2æ7VÇF—fF–öâÓÒ6²æ6÷7D7VÇC°¢–b‚2æÆV&æVE6¶–ÆÇ2’2æÆV&æVE6¶–ÆÇ2Ò·Ó°¢2æÆV&æVE6¶–ÆÇ5·6´–EÒÒ° ¢–b„'&’æ—4'&’…2æWV—VE6¶–ÆÇ2’—°¢ÆWBV×G”–G‚Ò2æWV—VE6¶–ÆÇ2æ–æFW„öb†çVÆÂ“°¢–b†V×G”–G‚ÓÒÓ—°¢2æWV—VE6¶–ÆÇ5¶V×G”–G…ÒÒ6´–C°¢Ğ¢Ğ ¢6fR‚“°¢÷VåæVÂ‚w6¶–ÆÇ2r“°¢WFFT…TB‚“°¢Fö7B‚~)Ê‚ÌJ–æ‚æ~¹’FŒ:æ‚<;Færr²6²ææÖR²r‚r²6²çF–W$æÖR²r+rr²6²ç&æ´æÖR²r’r“°¢6g‚‚v'&V·F‡&÷Vv‚r“°¢Ò“° ¢BB‚u¶FF×Ww&FR×6¶–ÆÅÒr’æf÷$V6‚†"Óâ"æöæ6Æ–6²Ò‚’Óâ°¢ÆWB6´–BÒ"æFF6WBçWw&FU6¶–ÆÃ°¢ÆWB6²ÒvWE6¶–ÆÄFVb‡6´–B“°¢–b‚6²’&WGW&ã°¢ÆWB7W$ÇbÒ…2æÆV&æVE6¶–ÆÇ2bb2æÆV&æVE6¶–ÆÇ5·6´–EÒ’ÇÂ°¢–b†7W$ÇbãÒR’&WGW&âFö7B‚t,:ÒN¸¶6‚I:2IªB>ª6æ‚v¹¶’Iª’fœ:¦âÜ:6âr“°¢ÆWBW6÷7BÒvWE6¶–ÆÅWw&FT6÷7B‡6²Æ7W$Çb“°¢–b‚W6÷7B’&WGW&âFö7B‚t¶Œ;Fær<;2NºòÆ¸wRì:&ær>ªW6†ò¾»’ìH6ærì:’r“°¢ÆWBW6÷7E7FöæW2ÒW6÷7Bç7FöæW3°¢ÆWBW6÷7D7VÇBÒW6÷7Bæ7VÇC°¢–b…2ç7FöæW2ÂW6÷7E7FöæW2’&WGW&âFö7B‚t¶Œ;FærIºrÆ–æ‚Fª6‚r“°¢–b…2æ7VÇF—fF–öâÂW6÷7D7VÇB’&WGW&âFö7B‚t¶Œ;FærIºrGRf’r“°¢2ç7FöæW2ÓÒW6÷7E7FöæW3°¢2æ7VÇF—fF–öâÓÒW6÷7D7VÇC°¢2æÆV&æVE6¶–ÆÇ5·6´–EÒÒ7W$Çb²°¢6fR‚“°¢÷VåæVÂ‚w6¶–ÆÇ2r“°¢WFFT…TB‚“°¢Fö7B‚~)©B<k¹ÖærŒ;6FŒ:æ‚<;Færr²6²ææÖR²rÌ:¦â>ªWr²†7W$Çb²’²r‚³RRW’Î»2’r“°¢6g‚‚vÆWfVÅWr“°¢Ò“° ¢BB‚u¶FFÖWV—×6Æ÷EÒr’æf÷$V6‚†"Óâ"æöæ6Æ–6²Ò‚’Óâ°¢ÆWB6Æ÷BÒ'6T–çB†"æFF6WBæWV—6Æ÷BÂ“°¢ÆWB6´–BÒ"æFF6WBæWV—6¶–ÆÃ°¢ÆWB6²ÒvWE6¶–ÆÄFVb‡6´–B“°¢–b‚6²’&WGW&ã°¢–b‚'&’æ—4'&’…2æWV—VE6¶–ÆÇ2’’2æWV—VE6¶–ÆÇ2Ò¶çVÆÂÂçVÆÂÂçVÆÂÂçVÆÅÓ°¢ÆWBöÆE6Æ÷BÒ2æWV—VE6¶–ÆÇ2æ–æFW„öb‡6´–B“°¢–b†öÆE6Æ÷BÓÒÓbböÆE6Æ÷BÓÒ6Æ÷BÒ—°¢2æWV—VE6¶–ÆÇ5¶öÆE6Æ÷EÒÒçVÆÃ°¢Ğ¢2æWV—VE6¶–ÆÇ5·6Æ÷BÒÒÒ6´–C°¢6fR‚“°¢÷VåæVÂ‚w6¶–ÆÇ2r“°¢WFFT…TB‚“°¢Fö7B‚	ùzI:2G&ær.¸²r²6²ææÖR²rl:ò9Br²6Æ÷B²rr“°¢6g‚‚v—FVÒr“°¢Ò“° ¢BB‚u¶FF×VæWV—×6Æ÷EÒr’æf÷$V6‚†"Óâ"æöæ6Æ–6²Ò‚’Óâ°¢ÆWB6Æ÷D–G‚Ò'6T–çB†"æFF6WBçVæWV—6Æ÷BÂ“°¢–b„'&’æ—4'&’…2æWV—VE6¶–ÆÇ2’—°¢2æWV—VE6¶–ÆÇ5·6Æ÷D–G…ÒÒçVÆÃ°¢6fR‚“°¢÷VåæVÂ‚w6¶–ÆÇ2r“°¢WFFT…TB‚“°¢Fö7B‚|I:2FŒ:ò¾»’ìH6ær¶¸ö’9Br²‡6Æ÷D–G‚²’“°¢6g‚‚v—FVÒr“°¢Ğ¢Ò“°¢ÒÂ“° ¢ÖVÇ6R–b†¶–æCÓÓÒv7VÇF—fFRr—°¢F—FÆSÒuGRf’+r>ª6æ‚v¹¶’+r<;FærŒ:+rL:&ÒŒ:s°¢ÆWB&tæVVCÕ2ç&VÆÓÓÓÓ ¢ôÖF‚ç&÷VæBƒ3S¤ÖF‚ç÷rƒãSRÄÖF‚æÖ‚ƒÂ…2ç&VÆÕ7FvWÇÃ’Ó’’¢¤ÖF‚ç&÷VæBƒ“¤ÖF‚ç÷rƒBÅ2ç&VÆÒÓ’¤ÖF‚ç÷rƒ"ãBÅ2çW&–öGÇÃ’“°¢ÆWBæVVC×v–æF÷råGUF–Vå7—7FV×3÷v–æF÷råGUF–Vå7—7FV×2ævWD'&V·F‡&÷Vv„æVVB…2Ç&tæVVB“§&tæVVC°¢6öç7B7F—fUFV6ƒÖvWD7F—fUFV6†æ—VR‚“°¢6öç7B†V'CÖvWD†V'DÖWF†öDFVb‚’Æ†V'DÇcÖvWD†V'DÖWF†öDÆWfVÂ‚’Æ†V'DgƒÖvWD†V'DÖWF†öDVffV7G2‚“° ¢ÆWBFV6†æ—VT6&G3Ô5TÅD•dD”ôåõDT4…õE•U2æÖ‡G—SÓç°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R’Æ6÷7C×FV6†æ—VU&æµWw&FT6÷7B‡G—R’Æ'&V´6÷7C×FV6†æ—VT'&V·F‡&÷Vv„6÷7B‡G—R“°¢6öç7BæW‡C×Bæw&FT–æFWƒÅDT4„ä•TUôu$DU2æÆVæwF‚ÓõDT4„ä•TUôu$DU5·Bæw&FT–æFW‚³Ó¦çVÆÃ°¢6öç7B6ä'&V³Ö6ä'&VµFV6†æ—VTw&FR‡G—R“°¢6öç7BÖ†VC×Bç&æ´–æFWƒãÕDT4„ä•TUõ$äµ2æÆVæwF‚Ó°¢6öç7BæW‡E&æ³ÕDT4„ä•TUõ$äµ5´ÖF‚æÖ–â‡Bç&æ´–æFW‚³ÅDT4„ä•TUõ$äµ2æÆVæwF‚Ó•Ó°¢&WGW&âÆF—b6Æ73Ò&6&B#à¢Æ#ï	ù9ÂG´5TÅD•dD”ôåõDT4…ôÄ$TÅ5·G—U×Ò+rG·Bæw&FRææÖWÒ+rG·Bç&æ²ææÖWÓÂö#à¢ÇãÆ#âG·BææÖWÓÂö#ãÂ÷à¢Çä†¸wR7^ªWBæªÖâGRf“¢9rG¶vWEFV6†æ—VT7VÇF—fF–öä×VÇF—Æ–W"‡G—R’çFôf—†VBƒ"—ÓÂ÷à¢ÇåF‡^¹–2L:Öæ‚G´5TÅD•dD”ôåõDT4…ôÄ$TÅ5·G—U×Ò¶†’nªÖâŒ:æƒ¢9rG²‡Bæw&FRç7FB§Bç&æ²ç7FB’çFôf—†VBƒ"—ÓÂ÷à¢Çåœ:§R>ªwR>ª6æ‚v¹¶“¢G·&VÆ×5·Bæw&FRæÖ–å&VÆÕ×ÒG.¹òÌ:¦âãÂ÷à¢Æ'WGFöâFF×FV6‚×6VÆV7CÒ"G·G—WÒ"G¶—5FV6†æ—VU&VÆÔÆÆ÷vVB‡G—R“òrs¢vF—6&ÆVBwÓâG¶vWD7F—fUFV6†æ—VUG—R‚“ÓÓ×G—Sò|IærnªÖâŒ:æ‚s¢unªÖâŒ:æ‚GRÇW¸vâwÓÂö'WGFöãà¢Æ'WGFöâFF×FV6‚×WÒ"G·G—WÒ"G¶Ö†VCòvF—6&ÆVBs¢rwÓåGRÇW¸vâ(i"G¶æW‡E&æ²ææÖWÒ+rG¶6÷7Bæ7VÇGÒGRf’²G¶6÷7Bç7FöæW7ÒÆ–æ‚Fª6ƒÂö'WGFöãà¢G¶æW‡CöÆ'WGFöâFF×FV6‚Ö'&V³Ò"G·G—WÒ"G¶6ä'&V³òrs¢vF—6&ÆVBwÓìI¹—BŒ:(i"G¶æW‡BææÖWÒ+rªª–Ò+rG¶'&V´6÷7Bæ7VÇGÒGRf’²G¶'&V´6÷7Bç7FöæW7ÒÆ–æ‚Fª6ƒÂö'WGFöãæ¢sÇìI:2IªBF†œ:¦â+r>»2ª–ÓÂ÷âwĞ¢ÂöF—cæ°¢Ò’æ¦ö–â‚rr“° ¢ÆWB†V'D6&G3Ö†V'DÖWF†öG2æÖ‚†‚Æ’“Óç°¢ÆWBÇcÖvWD†V'DÖWF†öDÆWfVÂ†’’ÆÆö6¶VCÒ…2ç&VÆ×ÇÃ“Æ‚æÖ–å&VÆÒÆ6÷7CÖ†V'EWw&FT6÷7B†’“°¢&WGW&âÆF—b6Æ73Ò&6&B#à¢Æ#ï	úy‚G¶‚æw&FWÒª–Ò+rG¶‚ææÖWÓÂö#à¢ÇâG¶‚æFW67ÓÂ÷à¢ÇäÇbâG¶ÇgÒó+r¹6’ºV29rG¶‚ç&VvVâçFôf—†VBƒ"—Ò+rFªvâFº–29rG¶‚ç7—&—BçFôf—†VBƒ"—Ò+rŒ;&ærFºr9rG¶‚æFVfVç6RçFôf—†VBƒ"—ÓÂ÷à¢ÇåGRf’9rG¶‚æ7VÇF—fF–öâçFôf—†VBƒ"—Ò+rN¹2I:æ‚÷F†’G&¸6âöF’6‡W¸6âIkº62LH6ærF†Vò>ªWãÂ÷à¢Æ'WGFöâFFÖ†V'B×6VÆV7CÒ"G¶—Ò"G¶Æö6¶VCòvF—6&ÆVBs¢rwÓâG¶“ÓÓÕ2æ†V'DÖWF†öCò|IærnªÖâŒ:æ‚s¢unªÖâŒ:æ‚L:&ÒŒ:wÓÂö'WGFöãà¢Æ'WGFöâFFÖ†V'B×WÒ"G¶—Ò"G¶Æö6¶VGÇÆÇcãÓòvF—6&ÆVBs¢rwÓäì:&ær>ªW+rG¶6÷7Bæ7VÇGÒGRf’²G¶6÷7Bç7FöæW7ÒÆ–æ‚Fª6ƒÂö'WGFöãà¢ÂöF—cæ°¢Ò’æ¦ö–â‚rr“° ¢‡FÖÃÖ ¢ÆF—b6Æ73Ò&6&B#à¢Æ#î)Šò>ª6æ‚v¹¶“¢G·&VÆÔæÖR‚—ÓÂö#à¢ÇåGRf“¢Gµ2æ7VÇF—fF–öçÒòG¶æVVGÓÂ÷à¢Çä¸r>¹7FB>ª6æ‚v¹¶“¢Æ#âG¶vWE&VÆÕ÷vW%FW‡B‚—ÓÂö#ãÂ÷à¢Çì86«ó¢Æ#â³3RRŞ¹v’F¸7R>ª6æ‚+r³sRRŞ¹v’Iª’>ª6æ‚6Œ:¦æ‚Î¸v6ƒÂö#ãÂ÷à¢Çä<;FærŒ:IærnªÖâŒ:æƒ¢Æ#âG¶7F—fUFV6‚æw&FRææÖWÒ+rG¶7F—fUFV6‚ç&æ²ææÖWÒ+rG¶7F—fUFV6‚ææÖWÓÂö#ãÂ÷à¢Çä†¸wR7^ªWB<;FærŒ:¢Æ#ì9rG¶vWEFV6†æ—VT7VÇF—fF–öä×VÇF—Æ–W"‚’çFôf—†VBƒ"—ÒGRf“Âö#ãÂ÷à¢ÇåF‡^¹–2L:Öæ‚G´5TÅD•dD”ôåõDT4…ôÄ$TÅ5¶vWD7F—fUFV6†æ—VUG—R‚•×Ó¢Æ#âG¶vWEFV6†æ—VU7FEFW‡B‚—ÓÂö#ãÂ÷à¢Æ'WGFöâ6Æ73Ò&7F–öâ"–CÒ&'&V´'Fâ#ìI¹—BŒ:>ª6æ‚v¹¶“Âö'WGFöãà¢ÂöF—cà¢ÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–â×F÷£‡‚#à¢Æ#ï	ù9¢<;FærŒ:GRÇW¸vãÂö#à¢ÇìIª’ª–Ó¢†ü:ær(i"‡W¸â(i"I¸¶(i"F†œ:¦âãÂ÷à¢ÇäŞ¹v’Iª’ª–Ó¢ªª–Ò(i"G'Værª–Ò(i"FŒkº6ærª–Ò(i">»2ª–ÒãÂ÷à¢Çä<;FærŒ:LH6ær†¸wR7^ªWBGRf’l:æŒ:&â&œ:¦ærF‡^¹–2L:Öæ‚I;¦ær¸rIærGS²ª–Ò<:ær6ò¸r>¹<:ærÎ¹¶âãÂ÷à¢Çä<;FærŒ:ª–Ò6ò.¸²¶Œ;6î«÷R>ª6æ‚v¹¶’†¸vâNª’6ŒkIªBœ:§R>ªwRãÂ÷à¢ÂöF—cà¢ÆF—b6Æ73Ò&6&G2#âG·FV6†æ—VT6&G7ÓÂöF—cà¢ÆF—b6Æ73Ò&6&B"7G–ÆSÒ&Ö&v–â×F÷£‚#à¢Æ#ï	úy‚L:&ÒŒ:IærnªÖâŒ:æƒ¢G¶†V'Bæw&FWÒª–Ò+rG¶†V'BææÖWÒ+rÇbâG¶†V'DÇgÓÂö#à¢Çä¹6’ºV29rG¶†V'Dg‚ç&VvVâçFôf—†VBƒ"—Ò+rFªvâFº–29rG¶†V'Dg‚ç7—&—BçFôf—†VBƒ"—Ò+rGRf’9rG¶†V'Dg‚æ7VÇF—fF–öâçFôf—†VBƒ"—Ò+rŒ;&ærFºr9rG¶†V'Dg‚æFVfVç6RçFôf—†VBƒ"—ÓÂ÷à¢ÂöF—cà¢ÆF—b6Æ73Ò&6&G2#âG¶†V'D6&G7ÓÂöF—cæ° ¢6WEF–ÖV÷WB‚‚“Óç°¢ÆWB&#ÒB‚r6'&V´'Fâr“°¢–b†&"–&"æöæ6Æ–6³Ò‚“Óç°¢–b…2ç&VÆÓã×&VÆ×2æÆVæwF‚Óbb…2çW&–öGÇÃ“ãÓ2—&WGW&âFö7B‚|I:2IªBŒ;6Fªvâ+rI¸–æ‚†öærr“°¢–b…2æ7VÇF—fF–öãÆæVVB—&WGW&âFö7B‚t6ŒkIºrGRf’I¸2I¹—BŒ:r“°¢2æ7VÇF—fF–öâÓÖæVVC°¢–b‡v–æF÷råGUF–Vå7—7FV×2—v–æF÷råGUF–Vå7—7FV×2æ6öç7VÖT'&V·F‡&÷Vv„–B…2“°¢–b…2ç&VÆÓÓÓÓ—°¢2ç&VÆÕ7FvR²³°¢–b…2ç&VÆÕ7FvSã"—µ2ç&VÆÓÓµ2ç&VÆÕ7FvSÓµ2çW&–öCÓĞ¢ÖVÇ6W°¢2çW&–öCÒ…2çW&–öGÇÃ’³°¢–b…2çW&–öCã2—µ2çW&–öCÓµ2ç&VÆÓÔÖF‚æÖ–âƒBÅ2ç&VÆÒ³—Ğ¢Ğ¢2æÖ„‡ÔÖF‚ç&÷VæB…2æÖ„‡£ã#"³#“°¢2æÖ„×ÔÖF‚ç&÷VæB…2æÖ„×£ã‚³3R“°¢2æ‡Õ2æÖ„‡²2æ×Õ2æÖ„×°¢2æFÖvRç‡—6–6ÃÔÖF‚ç&÷VæB‚…2æFÖvRç‡—6–6ÇÇÃ’£ãR³"“°¢2æFVfVç6Rç‡—6–6ÃÔÖF‚ç&÷VæB‚…2æFVfVç6Rç‡—6–6ÇÇÃ’£ã‚³B“°¢2ç7—&—E6Vç6SÔÖF‚ç&÷VæB‚…2ç7—&—E6Vç6WÇÃ’£ã"³‚“°¢6fR‚“²6Æ÷6UæVÂ‚“°¢'W'7B‡Æ–W"ç‚ÇÆ–W"ç¢Âr6cfFCv2rÃSÃ‚“°¢Fö7B‚~)ŠòI¹—BŒ:FŒ:æ‚<;Fæs¢r·&VÆÔæÖR‚’²rr“°¢6g‚‚v'&V·F‡&÷Vv‚r“²WFFT…TB‚“°¢Ó° ¢BB‚u¶FF×FV6‚×6VÆV7EÒr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ò‚“Óç°¢6öç7BG—SÖæ÷&ÖÆ—¦UFV6†æ—VUG—R†"æFF6WBçFV6…6VÆV7B“°¢–b‚—5FV6†æ—VU&VÆÔÆÆ÷vVB‡G—R’—&WGW&âFö7B‚t>ª6æ‚v¹¶’†¸vâNª’6ŒkIºrI¸2nªÖâŒ:æ‚<;FærŒ:ì:’r“°¢2æ7F—fT7VÇF—fF–öåFV6†æ—VS×G—S°¢6fR‚“²÷VåæVÂ‚v7VÇF—fFRr“²WFFT…TB‚“°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R“°¢Fö7B‚	ù9¢IærnªÖâŒ:æ‚r·BææÖR²r+rr·Bæw&FRææÖR²r+rr·Bç&æ²ææÖR“°¢6g‚‚v—FVÒr“°¢Ò“° ¢BB‚u¶FF×FV6‚×WÒr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ò‚“Óç°¢6öç7BG—SÖæ÷&ÖÆ—¦UFV6†æ—VUG—R†"æFF6WBçFV6…W“°¢6öç7BCÖvWEFV6†æ—VTFVb‡G—R’Æ6÷7C×FV6†æ—VU&æµWw&FT6÷7B‡G—R“°¢–b‚…2ç&VÆ×ÇÃ“ÇBæw&FRæÖ–å&VÆÒ—&WGW&âFö7B‚t>ª6æ‚v¹¶’†¸vâNª’6ŒkIºrI¸2GRÇW¸vâ<;FærŒ:ª–Òì:’r“°¢–b‡Bç&æ´–æFWƒãÕDT4„ä•TUõ$äµ2æÆVæwF‚Ó—&WGW&âFö7B‚|I:2IªB>»2ª–Ò>ºvIª’ª–Ò†¸vâNª’r“°¢–b…2æ7VÇF—fF–öãÆ6÷7Bæ7VÇGÇÅ2ç7FöæW3Æ6÷7Bç7FöæW2—&WGW&âFö7B‚t¶Œ;FærIºrGRf’†ş«v2Æ–æ‚Fª6‚r“°¢2æ7VÇF—fF–öâÓÖ6÷7Bæ7VÇC²2ç7FöæW2ÓÖ6÷7Bç7FöæW3°¢vWEFV6†æ—VU7FFR‡G—R’ç&æ²²³°¢6öç7BçCÖvWEFV6†æ—VTFVb‡G—R“°¢6fR‚“²÷VåæVÂ‚v7VÇF—fFRr“²WFFT…TB‚“°¢Fö7B‚	ù9Âr¶çBææÖR²rIªBr¶çBç&æ²ææÖR“²6g‚‚vÆWfVÅWr“°¢Ò“° ¢BB‚u¶FF×FV6‚Ö'&VµÒr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ò‚“Óç°¢6öç7BG—SÖæ÷&ÖÆ—¦UFV6†æ—VUG—R†"æFF6WBçFV6„'&V²“°¢6öç7B6÷7C×FV6†æ—VT'&V·F‡&÷Vv„6÷7B‡G—R“°¢–b‚6ä'&VµFV6†æ—VTw&FR‡G—R’—&WGW&âFö7B‚t>ªvâIªB>»2ª–Òl:Iºr>ª6æ‚v¹¶’I¸2I¹—BŒ:Iª’ª–Òr“°¢–b‚6÷7GÇÅ2æ7VÇF—fF–öãÆ6÷7Bæ7VÇGÇÅ2ç7FöæW3Æ6÷7Bç7FöæW2—&WGW&âFö7B‚t¶Œ;FærIºrGRf’†ş«v2Æ–æ‚Fª6‚r“°¢2æ7VÇF—fF–öâÓÖ6÷7Bæ7VÇC²2ç7FöæW2ÓÖ6÷7Bç7FöæW3°¢6öç7B7CÖvWEFV6†æ—VU7FFR‡G—R“²7Bæw&FR²³²7Bç&æ³Ó°¢6öç7BçCÖvWEFV6†æ—VTFVb‡G—R“°¢6fR‚“²÷VåæVÂ‚v7VÇF—fFRr“²WFFT…TB‚“°¢Fö7B‚~)Ê‚r¶çBææÖR²rI¹—BŒ:r¶çBæw&FRææÖR²r+rªª–Òr“°¢6g‚‚v'&V·F‡&÷Vv‚r“°¢Ò“° ¢BB‚u¶FFÖ†V'B×6VÆV7EÒr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ò‚“Óç°¢ÆWB“Ò¶"æFF6WBæ†V'E6VÆV7BÆƒÖ†V'DÖWF†öG5¶•Ó°¢–b‚‡ÇÂ…2ç&VÆ×ÇÃ“Æ‚æÖ–å&VÆÒ—&WGW&âFö7B‚t>ª6æ‚v¹¶’6ŒkIºrI¸2nªÖâŒ:æ‚L:&ÒŒ:ì:’r“°¢2æ†V'DÖWF†öCÖ“°¢–b‚2æ†V'DÖWF†öDÆWfVÇ5¶•Ò•2æ†V'DÖWF†öDÆWfVÇ5¶•ÓÓ°¢6fR‚“²÷VåæVÂ‚v7VÇF—fFRr“²WFFT…TB‚“°¢Fö7B‚	úy‚I:2nªÖâŒ:æ‚r¶‚ææÖR“²6g‚‚v—FVÒr“°¢Ò“° ¢BB‚u¶FFÖ†V'B×WÒr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ò‚“Óç°¢ÆWB“Ò¶"æFF6WBæ†V'EWÆƒÖ†V'DÖWF†öG5¶•ÒÆÇcÖvWD†V'DÖWF†öDÆWfVÂ†’’Æ6÷7CÖ†V'EWw&FT6÷7B†’“°¢–b‚‡ÇÂ…2ç&VÆ×ÇÃ“Æ‚æÖ–å&VÆÒ—&WGW&âFö7B‚t>ª6æ‚v¹¶’6ŒkIºrr“°¢–b†ÇcãÓ—&WGW&âFö7B‚uL:&ÒŒ:I:2IªBÇbãr“°¢–b…2æ7VÇF—fF–öãÆ6÷7Bæ7VÇGÇÅ2ç7FöæW3Æ6÷7Bç7FöæW2—&WGW&âFö7B‚t¶Œ;FærIºrGRf’†ş«v2Æ–æ‚Fª6‚r“°¢2æ7VÇF—fF–öâÓÖ6÷7Bæ7VÇC²2ç7FöæW2ÓÖ6÷7Bç7FöæW3°¢2æ†V'DÖWF†öDÆWfVÇ5¶•ÓÖÇb³°¢6fR‚“²÷VåæVÂ‚v7VÇF—fFRr“²WFFT…TB‚“°¢Fö7B‚	úy‚r¶‚ææÖR²rLH6ærÌ:¦âÇbâr²†Çb³’“²6g‚‚vÆWfVÅWr“°¢Ò“°¢ÒÃ“° ¢ÖVÇ6R–b‚†¶–æCÓÓÒv7&gF–ærwÇÆ¶–æCÓÓÒvf÷&ÖF–öç2r’bb‡v–æF÷råGUF–Vå7—7FV×7ÇÇv–æF÷råGUF–Vä7&gF–ætvÖWÆ’’—°¢6öç7BW‡EæVÃÒ‡v–æF÷råGUF–Vä7&gF–ætvÖWÆ’bgv–æF÷råGUF–Vä7&gF–ætvÖWÆ’ç&VæFW%æVÂ†¶–æBÅ2ÆvWE7—7FVÔ6öçFW‡B‚’’—ÇÀ¢‡v–æF÷råGUF–Vå7—7FV×2bgv–æF÷råGUF–Vå7—7FV×2ç&VæFW%æVÂ†¶–æBÅ2ÆvWE7—7FVÔ6öçFW‡B‚’’“°¢–b†W‡EæVÂ—°¢F—FÆSÖW‡EæVÂçF—FÆS°¢‡FÖÃÖW‡EæVÂæ‡FÖÃ°¢6WEF–ÖV÷WB‚‚“ÓæW‡EæVÂæ&–æBbfW‡EæVÂæ&–æB‚’Ã“°¢Ğ ¢ÖVÇ6R–b†¶–æCÓÓÒw6†÷r—°¢F—FÆSÒuFœ:¦âŒk¹Öærs°¢‡FÖÃÒsÆF—b6Æ73Ò&6&G2#ârµµ²t¹6’¶Œ:ÒIârÃÂ	ùKBuÒÅ²tÆ–æ‚Fª6‚rÃ#SÂ	ù(âuÒÅ²uF†æ‚l:&â¶«öÒrÃƒÂ~)©BuÒÅ²t‡W¸âF†«÷Bvœ:rÃ“Â	ùºuÕÒæÖ‚…¶âÇÆ–5Ò“ÓæÆF—b6Æ73Ò&6&B#ãÆF—b6Æ73Ò&–6öâ#âG¶–7ÓÂöF—cãÆ#âG¶çÓÂö#ãÇï	ú©’G·Òl:æsÂ÷ãÆ'WGFöâFFÖ'W“Ò"G¶çÒ"FF×&–6SÒ"G·Ò#ä×VÂö'WGFöããÂöF—cæ’æ¦ö–â‚rr’²sÂöF—câs°¢6WEF–ÖV÷WB‚‚“ÓâBB‚u¶FFÖ'W•Òr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ò‚“Óç°¢ÆWBÒ¶"æFF6WBç&–6S°¢–b…2ævöÆCÇ—&WGW&âFö7B‚t¶Œ;FærIºrl:ærr“°¢2ævöÆBÓ×°¢FD—FVÒ†"æFF6WBæ'W’Ã“°¢6fR‚“°¢WFFT…TB‚“°¢Fö7B‚|I:2×VFŒ:æ‚<;Færr¶"æFF6WBæ'W’“°¢6g‚‚v—FVÒr“°¢Ò’Ã“° ¢ÖVÇ6R–b†¶–æCÓÓÒvF–Ç’r—°¢F—FÆSÒuŒ;¦2Îº6’GRFœ:¦âs°¢‡FÖÃÖÆF—b6Æ73Ò&6&B#ãÆ#å\:IH6æræª×GRFœ:¦âŞ¹v’æ|:“Âö#ãÇï	ù(â#RÆ–æ‚Fª6‚+r	ú©’cl:æsÂ÷ãÆ'WGFöâ–CÒ&F–Ç”'Fâ"Gµ2æF–Ç“òvF—6&ÆVBs¢rwÓâGµ2æF–Ç“ò|I:2æªÖâŒ;FÒæ’s¢tæªÖâŒ;¦2Îº6’wÓÂö'WGFöããÂöF—cæ°¢6WEF–ÖV÷WB‚‚“Óç²B‚r6F–Ç”'Fâr’æöæ6Æ–6³Ò‚“Óç°¢–b…2æF–Ç’—&WGW&ã°¢2æF–Ç“×G'VS°¢2ç7FöæW2³Ó#S°¢2ævöÆB³Óc°¢6fR‚“°¢WFFT…TB‚“°¢÷VåæVÂ‚vF–Ç’r“°¢Fö7B‚	øèI:2æªÖâŒ;¦2Îº6’GRFœ:¦âr“°¢6g‚‚v—FVÒr“°¢×ÒÃ“° ¢ÖVÇ6R–b†¶–æCÓÓÒvWV—ÖVçBr—°¢F—FÆSÒuG&ær.¸²æŒ:&ânª×Bs°¢‡FÖÃÒsÆF—b6Æ73Ò&6&G2#ârµ²wvVöârÂv&Ö÷"rÂw&–æruÒæÖ‚‡2Æ’“ÓæÆF—b6Æ73Ò&6&B#ãÆ#âGµ²ulZ’¶Œ:ÒrÂ|8òvœ:rÂtæª¶âuÕ¶•×ÓÂö#ãÇâG²…2æWV—ÖVçBbe2æWV—ÖVçE·5Ò—ÇÂt6ŒkG&ær.¸²wÓÂ÷ãÆ'WGFöâFFÖWV—Ò"G·7Ò#åG&ær.¸²Ü;6âN¹BæªWCÂö'WGFöããÂöF—cæ’æ¦ö–â‚rr’²sÂöF—câs°¢6WEF–ÖV÷WB‚‚“ÓâBB‚u¶FFÖWV—Òr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ò‚“ÓæWV—&W7B†"æFF6WBæWV—’’Ã“° ¢ÖVÇ6R–b†¶–æCÓÓÒwWBr—°¢F—FÆSÒtÆ–æ‚FŒ;¢I¹6ærŒ:æ‚s°¢‡FÖÃÖÆF—b6Æ73Ò&6&B#ãÆF—b6Æ73Ò&–6öâ#ï	úh£ÂöF—cãÆ#ä>º×RlJ’Æ–æ‚¹3Âö#ãÇâGµ2çWCò|Iær‡^ªWB6†«öâ+r¹rG.º2NªVâ<;Færb³‚R<:BFŒkjærs¢t6ŒkG&¸wR¹6’wÓÂ÷ãÆ'WGFöâ–CÒ'WD'Fâ#âGµ2çWCòuF‡R¹6’Æ–æ‚FŒ;¢s¢uG&¸wR¹6’‡^ªWB6†«öâwÓÂö'WGFöããÂöF—cæ°¢6WEF–ÖV÷WB‚‚“ÓâB‚r7WD'Fâr’æöæ6Æ–6³Ò‚“Óç°¢2çWCÒ2çWC°¢7–æ5WB‚“°¢6fR‚“°¢÷VåæVÂ‚wWBr“°¢Fö7B…2çWCò	úh¢>º×RlJ’Æ–æ‚¹2‡^ªWB6†«öâs¢tÆ–æ‚¹2I:2F‡R¹6’r“°¢6g‚…2çWCòvÆWfVÅWs¢v—FVÒr“°¢ÒÃ“° ¢ÖVÇ6R–b†¶–æCÓÓÒvÖr—°¢F—FÆSÒtæŒ:&âv¹¶’+rIª’F«òv¹¶’s°¢‡FÖÃ×&VæFW%v÷&ÆDÖ6&G2‚“°¢6WEF–ÖV÷WB‚‚“ÓâBB‚u¶FF×&Vv–öåÒr’æf÷$V6‚†#Óæ"æöæ6Æ–6³Ö7–æ2‚“Óç°¢2ç&Vv–öãÒ¶"æFF6WBç&Vv–öã²2ç&Vv–öä–CÒ‡&Vv–öç5µ2ç&Vv–öå×ÇÄDTdTÅEõ$Tt”ôâ’æ–C°¢7F÷'2æf÷$V6‚†ÓææÖW6‚bfæÖW6‚æF—7÷6R‚’“°¢7F÷'3ÕµÓ°¢&÷73ÖçVÆÃ°¢B‚r6&÷74&"r’æ†–FFVã×G'VS°¢Æ–W"çƒÓ·Æ–W"ç£Ó#°¢v—BÆöDÖ…2ç&Vv–öâ“°¢–æ—F–Æ—¦Tf—†VDVæVÖ–W2‚“°¢6fR‚“°¢6Æ÷6UæVÂ‚“°¢Fö7B‚	ù{¢I:2I«öâr·&Vv–öâ‚’ææÖR“°¢6g‚‚vÆWfVÅWr“°¢WFFT…TB‚“°¢Ò’Ã“° ¢ÖVÇ6W°¢F—FÆSÒt<:’I«wBb†¸wRìH6ærs°¢‡FÖÃÖÆF—b6Æ73Ò&6&B#ãÆ#åL;—’6¸–æ‚I¹2¸ÖÂö#ãÇä6«òI¹“¢Gµ2çVÆ—G“òt6ªWBÌkº6ær6òƒce2’s¢uF«÷B¶¸vÒ–âwÓÂ÷ãÆ'WGFöâ–CÒ'VÆ—G”'Fâ#ìI¹V’6«òI¹“Âö'WGFöããÆ'WGFöâ–CÒ'&W6WD'Fâ"6Æ73Ò&FævW"#åŒ;6NºòÆ¸wR6Œj’Îª’Nº²IªwSÂö'WGFöããÂöF—cæ°¢6WEF–ÖV÷WB‚‚“Óç°¢B‚r7VÆ—G”'Fâr’æöæ6Æ–6³Ò‚“Óç°¢2çVÆ—G“Õ2çVÆ—G“ó£°¢Ç”Væv–æU66Æ–ær‚“°¢6fR‚“°¢÷VåæVÂ‚w6WGF–æw2r“°¢Ó°¢B‚r7&W6WD'Fâr’æöæ6Æ–6³Ò‚“Óç°¢–b†6öæf—&Ò‚t.ªâ<;26ªö26ªöâ×^¹âŒ;6Fü:â.¹’F«öâG,:Ææ‚GRFœ:¦ãòr’—°¢Æö6Å7F÷&vRç&VÖ÷fT—FVÒ…4dR“°¢Æö6F–öâç&VÆöB‚“°¢Ğ¢Ó°¢ÒÃ“°¢Ğ¢Ö6F6‚†W'"—°¢6öç6öÆRæW'&÷"‚tÎ¹v’¶†’Ş¹òæVÃ¢rÂW'"“°¢‡FÖÃÖÆF—b6Æ73Ò&6&B#ãÇä¶Œ;FærF¸2Nª6’NºòÆ¸wS¢G¶W'"æÖW76vWÓÂ÷ãÂöF—cæ°¢Ğ ¢B‚r7æVÅF—FÆRr’çFW‡D6öçFVçC×F—FÆS°¢B‚r7æVÄ&öG’r’æ–ææW$…DÔÃÖ‡FÖÃ°§Ğ ¦gVæ7F–öâÇ”Væv–æU66Æ–ær‚—°¢–b‚Væv–æR—&WGW&ã°¢6öç7B66ÆS×v–æF÷råW&f÷&Öæ6U&öf–ÆS÷v–æF÷råW&f÷&Öæ6U&öf–ÆRæVæv–æU66ÆR‚“¢ƒôÖF‚æÖ–â‡v–æF÷ræFWf–6U—†VÅ&F–÷ÇÃÄÔô$”ÄUõ%TåD”ÔSóãS£"’“°¢Væv–æRç6WD†&Gv&U66Æ–ætÆWfVÂ‡66ÆR“°§Ğ ¦gVæ7F–öâWV—&W7B‡6Æ÷B—°¢ÆWB—FV×3Õ2æ—FV×7ÇÇ·Ó°¢ÆWB¶W“Ôö&¦V7Bæ¶W—2†—FV×2’æf–æB†ãÓç6Æ÷CÓÓÒwvVöâsöâæ–æ6ÇVFW2‚t¶«öÒr“§6Æ÷CÓÓÒv&Ö÷"söâæ–æ6ÇVFW2‚tvœ:r—ÇÆâæ–æ6ÇVFW2‚t,:òr“¦âæ–æ6ÇVFW2‚tv¹¶’r’“°¢–b‚¶W’—&WGW&âFö7B‚t¶Œ;Fær<;2G&ær.¸²Œ;’º7G&öærL;¦’r“°¢–b‚2æWV—ÖVçB•2æWV—ÖVçC×·Ó°¢2æWV—ÖVçE·6Æ÷EÓÖ¶W“°¢–b‡6Æ÷CÓÓÒwvVöâr—°¢2æFÖvRç‡—6–6ÃÒ…2æFÖvRç‡—6–6ÇÇÃ’³#°¢ÖVÇ6R–b‡6Æ÷CÓÓÒv&Ö÷"r—°¢2æÖ„‡³ÓS°¢2æFVfVç6Rç‡—6–6ÃÒ…2æFVfVç6Rç‡—6–6ÇÇÃ’³S°¢f÷"†6öç7BBöb²t¶–ÒrÂt¸örÂuFºw’rÂtŞ¹–2rÂuF¹RrÂu†öærrÂtÌ;F’uÒ•2æFVfVç6U·EÓÒ…2æFVfVç6U·E×ÇÃ’³#°¢ÖVÇ6W°¢2æ7&—D6†æ6SÒ…2æ7&—D6†æ6WÇÃ’²ã3°¢2ç7—&—E6Vç6R³Ó#°¢Ğ¢6fR‚“°¢WFFT…TB‚“°¢÷VåæVÂ‚vWV—ÖVçBr“°¢Fö7B‚|I:2G&ær.¸²r¶¶W’“°¢6g‚‚v—FVÒr“°§Ğ ¦gVæ7F–öâ6Æ÷6UæVÂ‚—°¢W6VCÖfÇ6S°¢B‚r7æVÂr’æ†–FFVã×G'VS°¢B‚r7æVÂr’ç7G–ÆRæF—7Æ“ÒvæöæRs°§Ğ ¦7–æ2gVæ7F–öâ–æ—B‚—°¢&öw&W72ƒRÂ|IærI¸Ö2Fæ‚ŞºV2Fœ:¦ân»>(
+br“°¢v—BÆöDÖÖæ–fW7B‚“° ¢&öw&W72ƒÂt¶¹ö’Nªò&'–Æöâæ§2Væv–æ^(
+br“°¢Væv–æSÖæWr$%”ÄôâäVæv–æR†6çf2ÇG'VRÇ°¢&W6W'fTG&v–æt'VffW#¦fÇ6RÀ¢7FVæ6–Ã¦fÇ6RÀ¢çF–Æ–3¢Ôô$”ÄUõ%TåD”ÔRÀ¢÷vW%&VfW&Væ6S¢v†–v‚×W&f÷&Öæ6RrÀ¢FEFôFWf–6U&F–ó¦fÇ6P¢Ò“°¢Ç”Væv–æU66Æ–ær‚“° ¢&öw&W72ƒ3ÂtN»ær¶Œ;Færv–âFœ:¦â>ª6æ(
+br“°¢v—B7&VFUv÷&ÆB‚“° ¢&öw&W72ƒSÂtîªFœ:¦âF¸2l:Æ–æ‚FŒ;®(
+br“°¢&VÆöEÆ–W$ÖFW&–Ç2‚“°¢7&VFUÆ–W"‚“°¢òòVæV×’FW‡GW&RÆ§’ÖÆöBF†VòÆşª’\:’F»2N«ò‡^ªWB†¸và¢v—BæWr&öÖ—6R‡#Óç6WEF–ÖV÷WB‡"ÄÔô$”ÄUõ%TåD”ÔSóc£’“° ¢&öw&W72ƒsRÂt¶†’Ş¹òG.ªÖâŒ:bœ:§Rn»>(
+br“°¢–æ—F–Æ—¦Tf—†VDVæVÖ–W2‚“°¢6WGW–çWB‚“°¢WFFT…TB‚“°¢G&tÖ–æ’‚“° ¢&öw&W72ƒÂuFœ:¦âI¹2I:2Ş¹òr“°¢7F'D'Fâæ†–FFVãÖfÇ6S°¢ÆöD×6rçFW‡D6öçFVçCÒt6ªÒI¸2,k¹¶2l:òFœ:¦âI¹2s° ¢7F'D'Fâæöæ6Æ–6³Ò‚“Óç°¢vWDVF–ò‚“°¢ÆöF–ærç&VÖ÷fR‚“°¢‡VBæ†–FFVãÖfÇ6S°¢vÖU7F'FVC×G'VS°¢Æ7C×W&f÷&Öæ6Rææ÷r‚“°¢Æ–W"çƒÓ°¢Æ–W"ç£Ó°¢–b‡Æ–W"æÖW6‚—Æ–W"æÖW6‚ç÷6—F–öâç6WBƒÃãc"Ã“°¢–b‡Æ–W"ç6†F÷r—Æ–W"ç6†F÷rç÷6—F–öâç6WBƒÃã’Ã“°¢–b†6ÖW&—°¢Æ6U7FæF&D6ÖW&ƒÃ“°¢Ğ¢–b‡WD7F÷"—°¢WD7F÷"çƒÒÓãS²WD7F÷"ç£ÒÓãS°¢–b‡WD7F÷"æÖW6‚—WD7F÷"æÖW6‚ç÷6—F–öâç6WB‚ÓãRÇWD7F÷"æÖW6‚ç÷6—F–öâç’ÂÓãR“°¢–b‡WD7F÷"ç6†F÷r—WD7F÷"ç6†F÷rç÷6—F–öâç6WB‚ÓãRÃã’ÂÓãR“°¢Ğ¢Fö7B‚~)Šò6Œ:òŞº¶ærIªòº÷RI«öâr·&Vv–öâ‚’ææÖR“°¢6g‚‚v'&V·F‡&÷Vv‚r“°¢6fR‚“°¢Ó° ¢–b‡v–æF÷rävÖTÆ–fV7–6ÆR—v–æF÷rävÖTÆ–fV7–6ÆRæ&–æB‡°¢6çf2ÆvWDVæv–æS¢‚“ÓæVæv–æRÀ¢W6S¢‚“Óç·W6VC×G'VS¶–b†VF–ô7G‚bfVF–ô7G‚ç7FFSÓÓÒw'Vææ–ærr–VF–ô7G‚ç7W7VæB‚’æ6F6‚‚‚“Óç·Ò“·ÒÀ¢&W7VÖS¢‚“Óç·W6VCÖfÇ6S¶Æ7C×W&f÷&Öæ6Rææ÷r‚“·ÒÀ¢öå&W6—¦S§WFFT÷'F†ô6ÖW&&÷VæG0¢Ò“°¢–b‡v–æF÷rävÖTWfVçG2—v–æF÷rävÖTWfVçG2æöâ‚wVÆ—G”6†ævVBrÂ‚“Óç¶Ç”Væv–æU66Æ–ær‚“¶Væv–æRç&W6—¦R‚“·WFFT÷'F†ô6ÖW&&÷VæG2‚“·Ò“°¢Væv–æRç'Vå&VæFW$Æö÷‡F–6²“°¢–b‚w6W'f–6Uv÷&¶W"v–âæf–vF÷"—°¢æf–vF÷"ç6W'f–6Uv÷&¶W"æFDWfVçDÆ—7FVæW"‚vÖW76vRrÆWfVçCÓç°¢–b‚WfVçBæFFÇÆWfVçBæFFçG—RÓÒt%T”ÄEô5D•dRr—&WGW&ã°¢6öç7B&Wf–÷W3ÖÆö6Å7F÷&vRævWD—FVÒ‚wGWF–VåöÆ7Eö'V–ÆBr“°¢Æö6Å7F÷&vRç6WD—FVÒ‚wGWF–VåöÆ7Eö'V–ÆBrÆWfVçBæFFæ'V–ÆB“°¢–b‡&Wf–÷W2bg&Wf–÷W2ÓÖWfVçBæFFæ'V–ÆB—·6fR‡G'VR“·Fö7B‚~)Ê‚I:2>ª×æª×B.ª6âtÔRŞ¹¶’â.ª6âŞ¹¶’L;–ær¶†’Nª6’Îª’G&ærâr“·Ğ¢Ò“°¢æf–vF÷"ç6W'f–6Uv÷&¶W"ç&Vv—7FW"‚râ÷7ræ§3÷cÓ##c“‚ÖÖö&–ÆRÖ6Æ&—G’×cRãr’çF†Vâ‡&VsÓç&VrçWFFR‚’’æ6F6‚‚‚“Óç·Ò“°¢Ğ§Ğ ¦–æ—B‚’æ6F6‚†SÓç°¢6öç6öÆRæW'&÷"†R“°¢ÆöD×6rçFW‡D6öçFVçCÒtÎ¹v’¶¹ö’Nªó¢r¶RæÖW76vS°¢7F'D'Fâæ†–FFVã×G'VS°§Ò“°§Ò’‚“° 
