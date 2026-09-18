@@ -1,7 +1,7 @@
 {
-  "buildVersion": "20260918-retina-fix-v5.9",
+  "buildVersion": "20260918-morning-visual-baseline-v6.0",
   "saveVersion": 5,
-  "shellCache": "game-shell-v14",
-  "assetCache": "game-assets-v14",
-  "mapCache": "game-maps-v14"
+  "shellCache": "game-shell-v15",
+  "assetCache": "game-assets-v15",
+  "mapCache": "game-maps-v15"
 }
