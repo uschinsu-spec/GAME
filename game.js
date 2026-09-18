@@ -573,6 +573,65 @@ function placeStandardCamera(x,z){
   camera.setTarget(new BABYLON.Vector3(x,0,z));
 }
 
+// ===== THANH VÂN THÔN — WALL COLLISION & SAFE ZONE =====
+// Vòng tường hình vuông đặt quanh x/z = ±40.
+// Player chỉ được xuyên qua tường ở cổng Bắc/Nam (giữa trục X).
+// Quái tuyệt đối không được đi vào phần bên trong tường.
+const VILLAGE_WALL_HALF=40;
+const VILLAGE_WALL_LIMIT=38.8;   // tâm nhân vật dừng trước mặt tường
+const VILLAGE_SAFE_HALF=38.2;    // khu vực an toàn thực tế
+const VILLAGE_GATE_HALF_WIDTH=4.2;
+
+function isVillageSafe(x,z){
+  return Math.abs(x)<VILLAGE_SAFE_HALF && Math.abs(z)<VILLAGE_SAFE_HALF;
+}
+
+function isVillageGateLane(x){
+  return Math.abs(x)<=VILLAGE_GATE_HALF_WIDTH;
+}
+
+// Giải collision cho player/dash.
+// Cho phép ra/vào ở cổng Bắc/Nam; 4 cạnh còn lại là tường cứng.
+function resolveVillageWallMove(fromX,fromZ,toX,toZ){
+  let x=toX,z=toZ;
+  const inFrom=Math.abs(fromX)<VILLAGE_WALL_LIMIT && Math.abs(fromZ)<VILLAGE_WALL_LIMIT;
+
+  // Cạnh Đông/Tây: không có cổng.
+  if(inFrom){
+    if(Math.abs(x)>=VILLAGE_WALL_LIMIT && Math.abs(z)<VILLAGE_WALL_LIMIT){
+      x=Math.sign(x||1)*VILLAGE_WALL_LIMIT;
+    }
+    // Cạnh Bắc/Nam: chỉ được qua đúng làn cổng.
+    if(Math.abs(z)>=VILLAGE_WALL_LIMIT && Math.abs(fromZ)<VILLAGE_WALL_LIMIT){
+      if(!isVillageGateLane(x)) z=Math.sign(z||1)*VILLAGE_WALL_LIMIT;
+    }
+  }else{
+    // Từ ngoài đi vào: chặn Đông/Tây hoàn toàn.
+    if(Math.abs(fromX)>=VILLAGE_WALL_LIMIT && Math.abs(x)<VILLAGE_WALL_LIMIT &&
+       Math.abs(z)<VILLAGE_WALL_LIMIT){
+      x=Math.sign(fromX||1)*VILLAGE_WALL_LIMIT;
+    }
+    // Từ ngoài Bắc/Nam vào trong chỉ qua cổng.
+    if(Math.abs(fromZ)>=VILLAGE_WALL_LIMIT && Math.abs(z)<VILLAGE_WALL_LIMIT &&
+       Math.abs(x)<VILLAGE_WALL_LIMIT){
+      if(!isVillageGateLane(x)) z=Math.sign(fromZ||1)*VILLAGE_WALL_LIMIT;
+    }
+  }
+  return {x,z};
+}
+
+// Đẩy quái ra khỏi khu an toàn nếu có actor cũ/teleport lọt vào.
+function ejectEnemyFromVillage(a){
+  if(!a || !isVillageSafe(a.x,a.z))return;
+  let dx=VILLAGE_SAFE_HALF-Math.abs(a.x);
+  let dz=VILLAGE_SAFE_HALF-Math.abs(a.z);
+  if(dx<dz){
+    a.x=(a.x>=0?1:-1)*(VILLAGE_WALL_HALF+2.5);
+  }else{
+    a.z=(a.z>=0?1:-1)*(VILLAGE_WALL_HALF+2.5);
+  }
+}
+
 function realmName(){return S.realm===0?`Luyện Khí Tầng ${S.realmStage}`:`${realms[S.realm]} · ${periods[S.period||0]}`}
 function gradeForLevel(){return clamp(1+Math.floor((S.level-1)/25),1,5)}
 function region(){return regions[S.region||0]||regions[0]}
@@ -998,10 +1057,15 @@ function spawnPack(){
   for(let i=0;i<(type==='wolf'?3:2);i++){
     let spawnX=clamp(player.x+Math.cos(ang)*r+rnd(-3,3),-MAP_BOUND,MAP_BOUND);
     let spawnZ=clamp(player.z+Math.sin(ang)*r+rnd(-3,3),-MAP_BOUND,MAP_BOUND);
-    // Không spawn trong vòng tường thành thôn trấn (bán kính 44m)
-    if(Math.abs(spawnX)<44&&Math.abs(spawnZ)<44){
-      spawnX=(spawnX>=0?1:-1)*rnd(48,72);
-      spawnZ=(spawnZ>=0?1:-1)*rnd(48,72);
+    // Tuyệt đối không spawn trong khu an toàn Thanh Vân Thôn.
+    if(isVillageSafe(spawnX,spawnZ)){
+      let side=Math.floor(Math.random()*4);
+      if(side===0){spawnX=rnd(-72,72);spawnZ=-rnd(46,72);}
+      else if(side===1){spawnX=rnd(-72,72);spawnZ=rnd(46,72);}
+      else if(side===2){spawnX=-rnd(46,72);spawnZ=rnd(-72,72);}
+      else {spawnX=rnd(46,72);spawnZ=rnd(-72,72);}
+      spawnX=clamp(spawnX,-MAP_BOUND,MAP_BOUND);
+      spawnZ=clamp(spawnZ,-MAP_BOUND,MAP_BOUND);
     }
     makeActor(type,spawnX,spawnZ,Math.random()<.08);
   }
@@ -1009,7 +1073,14 @@ function spawnPack(){
 
 function spawnBoss(){
   if(boss||S.questKills<20)return;
-  boss=makeActor('shadow',clamp(player.x+12,-MAP_BOUND,MAP_BOUND),clamp(player.z+8,-MAP_BOUND,MAP_BOUND),true);
+  let bx=clamp(player.x+12,-MAP_BOUND,MAP_BOUND);
+  let bz=clamp(player.z+8,-MAP_BOUND,MAP_BOUND);
+  if(isVillageSafe(bx,bz)){
+    // Nếu player đang trong thôn, boss xuất hiện ngoài cổng Nam thay vì bên trong khu an toàn.
+    bx=0;
+    bz=VILLAGE_WALL_HALF+12;
+  }
+  boss=makeActor('shadow',bx,bz,true);
   boss.name='Xích Viêm Ma Lang';
   boss.maxHp*=5.5;
   boss.hp=boss.maxHp;
@@ -1120,7 +1191,7 @@ function playerAttack(target,mult=1){
 function nearest(range=9){
   let best=null,bd=range;
   for(let a of actors){
-    if(a.dead)continue;
+    if(a.dead||isVillageSafe(a.x,a.z))continue;
     let d=Math.hypot(a.x-player.x,a.z-player.z);
     if(d<bd){bd=d;best=a}
   }
@@ -1174,7 +1245,7 @@ function useSkill(n){
   }else{
     // Chiêu AoE diện rộng (Trung, Thượng, Cực Phẩm)
     let range=skill.aoe;
-    let targets=actors.filter(a=>!a.dead&&Math.hypot(a.x-player.x,a.z-player.z)<range);
+    let targets=actors.filter(a=>!a.dead&&!isVillageSafe(a.x,a.z)&&Math.hypot(a.x-player.x,a.z-player.z)<range);
 
     ring(player.x,player.z,ec,range*0.65);
     let particleCount=skill.tierIdx===3?60:skill.tierIdx===2?40:24;
@@ -1208,8 +1279,11 @@ function useDash(){
   let l=Math.hypot(mx,mz);
   if(l<0.05){mx=player.facing==='left'?-1:1;mz=0;}else{mx/=l;mz/=l;}
   
-  player.x=clamp(player.x+mx*6.5,-MAP_BOUND,MAP_BOUND);
-  player.z=clamp(player.z+mz*6.5,-MAP_BOUND,MAP_BOUND);
+  let dashX=clamp(player.x+mx*6.5,-MAP_BOUND,MAP_BOUND);
+  let dashZ=clamp(player.z+mz*6.5,-MAP_BOUND,MAP_BOUND);
+  let dashMove=resolveVillageWallMove(player.x,player.z,dashX,dashZ);
+  player.x=dashMove.x;
+  player.z=dashMove.z;
   player.invuln=0.45;
   burst(player.x,player.z,'#a8fce4',18,4);
   updateCooldownUI();
@@ -1271,6 +1345,11 @@ function toast(t){
 
 function updateActor(a,dt){
   if(a.dead)return;
+
+  // Khu an toàn tuyệt đối: actor nào lọt vào sẽ bị đẩy ra ngoài ngay.
+  ejectEnemyFromVillage(a);
+
+  let playerSafe=isVillageSafe(player.x,player.z);
   let dx=player.x-a.x,dz=player.z-a.z,d=Math.hypot(dx,dz)||1;
   a.attackCd-=dt;
   a.bossSkillCd=(a.bossSkillCd||4.5)-dt;
@@ -1281,7 +1360,7 @@ function updateActor(a,dt){
     ring(player.x,player.z,'#ff3322',5);
     toast('⚠ Boss phát động Xích Viêm Trận!');
     setTimeout(()=>{
-      if(!a.dead&&dist(player,{x:player.x,z:player.z})<4.5){
+      if(!a.dead&&!isVillageSafe(player.x,player.z)&&dist(player,{x:player.x,z:player.z})<4.5){
         if(player.invuln<=0){
           let dmg=Math.max(5,a.atk*1.6-S.def);
           S.hp-=dmg;
@@ -1292,10 +1371,20 @@ function updateActor(a,dt){
     },1100);
   }
 
-  if(d>1.7 && (d<24 || a===boss)){
-    a.x+=dx/d*a.speed*dt;
-    a.z+=dz/d*a.speed*dt;
-  }else if(a.attackCd<=0 && d<=1.7){
+  if(!playerSafe && d>1.7 && (d<24 || a===boss)){
+    let oldX=a.x, oldZ=a.z;
+    let nextX=a.x+dx/d*a.speed*dt;
+    let nextZ=a.z+dz/d*a.speed*dt;
+
+    // Quái không bao giờ được xuyên vào khu an toàn, kể cả qua cổng.
+    if(!isVillageSafe(nextX,nextZ)){
+      a.x=nextX;
+      a.z=nextZ;
+    }else{
+      a.x=oldX;
+      a.z=oldZ;
+    }
+  }else if(!playerSafe && a.attackCd<=0 && d<=1.7){
     a.attackCd=1.2+rnd(0,.4);
     if(player.invuln<=0){
       let dmg=Math.max(1,a.atk-S.def*rnd(.5,1));
@@ -1382,8 +1471,11 @@ function updatePlayer(dt){
     let nx=mx/Math.max(1,l);
     let nz=mz/Math.max(1,l);
     let sp=6.2;
-    player.x=clamp(player.x+nx*sp*dt,-MAP_BOUND,MAP_BOUND);
-    player.z=clamp(player.z+nz*sp*dt,-MAP_BOUND,MAP_BOUND);
+    let nextX=clamp(player.x+nx*sp*dt,-MAP_BOUND,MAP_BOUND);
+    let nextZ=clamp(player.z+nz*sp*dt,-MAP_BOUND,MAP_BOUND);
+    let wallMove=resolveVillageWallMove(player.x,player.z,nextX,nextZ);
+    player.x=wallMove.x;
+    player.z=wallMove.z;
   }
 
   // Animation State Priority: Attack cannot be interrupted by run or idle
