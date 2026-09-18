@@ -7,13 +7,16 @@ if(!MOBILE)return;
 const STORAGE_KEY='tutien_camera_zoom_mode_v2';
 const MIN_ASPECT=0.45;
 const MODES=[
-  {id:'extreme-far', label:'CỰC XA', portrait:54, landscape:58},
-  {id:'far',         label:'XA',     portrait:46, landscape:50},
-  {id:'wide',        label:'RỘNG',   portrait:40, landscape:44},
-  {id:'normal',      label:'VỪA',    portrait:35, landscape:39},
-  {id:'close',       label:'GẦN',    portrait:32, landscape:35},
-  {id:'very-close',  label:'RẤT GẦN',portrait:28, landscape:31},
-  {id:'max-close',   label:'CỰC GẦN',portrait:25, landscape:28}
+  {id:'extreme-far', label:'CỰC XA',   portrait:54, landscape:58},
+  {id:'far',         label:'XA',       portrait:46, landscape:50},
+  {id:'wide',        label:'RỘNG',     portrait:40, landscape:44},
+  {id:'normal',      label:'VỪA',      portrait:35, landscape:39},
+  {id:'close',       label:'GẦN',      portrait:32, landscape:35},
+  {id:'very-close',  label:'RẤT GẦN',  portrait:28, landscape:31},
+  {id:'max-close',   label:'CỰC GẦN',  portrait:25, landscape:28},
+  {id:'ultra-close', label:'SIÊU GẦN', portrait:22, landscape:25},
+  {id:'portrait',    label:'CẬN CẢNH', portrait:19, landscape:22},
+  {id:'macro',       label:'SIÊU CẬN', portrait:16, landscape:19}
 ];
 
 // Keep the current game framing as the default on first load.
@@ -61,11 +64,11 @@ function showToast(){
   const mode=currentMode();
   toast.textContent='CAMERA · '+mode.label;
   toast.style.opacity='1';
-  toast.style.transform='translateY(0)';
+  toast.style.transform='translate(-50%,0)';
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>{
     toast.style.opacity='0';
-    toast.style.transform='translateY(6px)';
+    toast.style.transform='translate(-50%,6px)';
   },850);
 }
 
@@ -79,8 +82,7 @@ function setMode(index,announce=true){
 }
 
 function nextMode(){
-  // Sequence is extreme far -> far -> ... -> extreme close -> extreme far.
-  // Therefore every tap zooms closer until max, then the next tap jumps back to extreme far.
+  // Sequence is extreme far -> ... -> super close -> extreme far.
   setMode(modeIndex+1,true);
 }
 
@@ -91,7 +93,7 @@ function makeUI(){
   button=document.createElement('button');
   button.id='cameraZoomBtn';
   button.type='button';
-  button.innerHTML='<span aria-hidden="true" style="font-size:22px;line-height:1">🔍</span><b style="font-size:15px;line-height:1;margin-left:-4px;margin-top:-10px">+</b><small id="cameraZoomLevel" style="position:absolute;right:3px;bottom:2px;min-width:22px;padding:1px 4px;border-radius:9px;background:rgba(0,0,0,.64);font:700 9px/14px system-ui;color:#ffe59a">5/7</small>';
+  button.innerHTML='<span aria-hidden="true" style="font-size:22px;line-height:1">🔍</span><b style="font-size:15px;line-height:1;margin-left:-4px;margin-top:-10px">+</b><small id="cameraZoomLevel" style="position:absolute;right:3px;bottom:2px;min-width:26px;padding:1px 4px;border-radius:9px;background:rgba(0,0,0,.64);font:700 9px/14px system-ui;color:#ffe59a">5/10</small>';
   Object.assign(button.style,{
     position:'absolute',
     right:'max(10px, env(safe-area-inset-right))',
