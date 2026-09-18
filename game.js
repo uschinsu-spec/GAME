@@ -116,13 +116,18 @@ function sfx(type){
 const realms=['Luyện Khí','Trúc Cơ','Kết Đan','Nguyên Anh','Hóa Thần'];
 const periods=['Sơ Kỳ','Trung Kỳ','Hậu Kỳ','Đỉnh Phong'];
 
-// ===== CHÊNH LỆCH CẢNH GIỚI =====
-// Luyện Khí: mỗi tầng mạnh hơn tầng trước 35% theo cấp số nhân.
-// Đại cảnh giới: bước sang cảnh giới mới là một cú nhảy cực lớn.
-// Mỗi tiểu cảnh giới từ Trúc Cơ trở lên tiếp tục nhân 2.2 lần.
-const REALM_BASE_POWER=[1,60,1800,60000,2200000];
-const REALM_MINOR_MULT=2.2;
-const QI_STAGE_MULT=1.35;
+// ===== CẢNH GIỚI + ÁP CHẾ CẢNH GIỚI =====
+// Stat nền chỉ tăng vừa phải. Chênh lệch thật sự đến từ "áp chế cảnh giới".
+const REALM_BASE_POWER=[1,2.5,6,15,36];
+const REALM_MINOR_MULT=1.25;
+const QI_STAGE_MULT=1.08;
+
+// Áp chế: chênh mỗi tiểu cảnh giới tăng lợi thế 35%.
+// Mỗi đại cảnh giới chênh thêm hệ số 1.75.
+// Giới hạn để combat không vỡ số nhưng vẫn tạo cảm giác "trời với đất".
+const SUPPRESS_MINOR_MULT=1.35;
+const SUPPRESS_MAJOR_MULT=1.75;
+const SUPPRESS_MAX=12;
 
 function getRealmPowerMultiplier(){
   if((S.realm||0)===0){
@@ -134,9 +139,57 @@ function getRealmPowerMultiplier(){
 }
 
 function getRealmPowerText(){
-  const x=getRealmPowerMultiplier();
-  return x>=1000000?(x/1000000).toFixed(2)+'M×':x>=1000?(x/1000).toFixed(2)+'K×':x.toFixed(2)+'×';
+  return getRealmPowerMultiplier().toFixed(2)+'×';
 }
+
+function getPlayerRealmScore(){
+  if((S.realm||0)===0)return clamp((S.realmStage||1)-1,0,11);
+  return 12+(Math.max(1,S.realm)-1)*4+clamp(S.period||0,0,3);
+}
+
+function getPlayerMajorRealmIndex(){
+  return clamp(S.realm||0,0,realms.length-1);
+}
+
+// Quái hiện dùng level, nên quy đổi level -> bậc tu luyện để hệ áp chế hoạt động ngay.
+// 1-12 = Luyện Khí 1-12; sau đó mỗi 12 level xấp xỉ 1 đại cảnh giới,
+// và chia thành 4 tiểu cảnh giới trong đại cảnh giới đó.
+function getEnemyRealmInfo(enemyLv=1){
+  const lv=Math.max(1,Math.round(enemyLv||1));
+  if(lv<=12)return {major:0,minor:lv-1,score:lv-1};
+  const major=clamp(1+Math.floor((lv-13)/28),1,realms.length-1);
+  const local=(lv-13)%28;
+  const period=clamp(Math.floor(local/7),0,3);
+  return {major,minor:period,score:12+(major-1)*4+period};
+}
+
+function getRealmSuppressionByScores(attackerScore,attackerMajor,defenderScore,defenderMajor){
+  const diff=attackerScore-defenderScore;
+  if(diff<=0)return 1;
+  const majorDiff=Math.max(0,attackerMajor-defenderMajor);
+  const minorFactor=Math.pow(SUPPRESS_MINOR_MULT,diff);
+  const majorFactor=Math.pow(SUPPRESS_MAJOR_MULT,majorDiff);
+  return Math.min(SUPPRESS_MAX,minorFactor*majorFactor);
+}
+
+function getPlayerSuppressionVsActor(actor){
+  if(!actor)return 1;
+  const info=actor.realmInfo||getEnemyRealmInfo(actor.enemyLv||1);
+  return getRealmSuppressionByScores(
+    getPlayerRealmScore(),getPlayerMajorRealmIndex(),
+    info.score,info.major
+  );
+}
+
+function getActorSuppressionVsPlayer(actor){
+  if(!actor)return 1;
+  const info=actor.realmInfo||getEnemyRealmInfo(actor.enemyLv||1);
+  return getRealmSuppressionByScores(
+    info.score,info.major,
+    getPlayerRealmScore(),getPlayerMajorRealmIndex()
+  );
+}
+
 const techniques=[
   ['Hoàng','Thanh Tâm Quyết',1.05],
   ['Huyền','Huyền Nguyên Công',1.18],
@@ -1036,6 +1089,7 @@ function makeActor(type,x,z,elite=false){
     size:d.size*(elite?1.22:1),xp:d.xp,
     name:(elite?'Tinh Anh ':'')+d.name+' Lv.'+enemyLv,
     enemyLv,elite,dead:false,
+    realmInfo:getEnemyRealmInfo(enemyLv),
     damageType:({ice_wolf:'Thủy',fox:'Hỏa',golem:'Thổ',shadow:'Lôi',undead:'Mộc'}[type]||'physical'),
     attackCd:rnd(0,.7),bossSkillCd:4.5,
     frame:0,frameT:0
@@ -1197,15 +1251,19 @@ function getSkillPower(skill,mult=1,crit=false){
   let techMult=techniques[S.technique||0][2];
   let petMult=S.pet?1.08:1.0;
   let critMult=crit?(S.critDamage||1.8):1;
+  // Cảnh giới chỉ tăng stat vừa phải; áp chế được áp riêng khi damage chạm mục tiêu.
   let realmMult=getRealmPowerMultiplier();
   return base*realmMult*mult*techMult*spiritMult*petMult*critMult*rnd(.92,1.08);
 }
 
-function takePlayerDamage(raw,type='physical'){
+function takePlayerDamage(raw,type='physical',attacker=null){
   let defense=getPlayerDefenseStat(type);
-  const realmGuard=Math.sqrt(getRealmPowerMultiplier());
-  // Cảnh giới cao vừa tăng phòng thủ, vừa tạo "uy áp" giảm sát thương từ sinh vật cấp thấp.
-  let reduced=Math.max(1,(raw/realmGuard)-defense*rnd(.65,1.0));
+  const enemySuppress=getActorSuppressionVsPlayer(attacker);
+  const playerSuppress=getPlayerSuppressionVsActor(attacker);
+  // Nếu quái cao cảnh giới hơn: damage của quái được nhân bởi áp chế.
+  // Nếu người chơi cao hơn: damage nhận vào bị chia bởi áp chế của người chơi.
+  let realmFactor=enemySuppress/Math.max(1,playerSuppress);
+  let reduced=Math.max(1,raw*realmFactor-defense*rnd(.65,1.0));
   S.hp-=reduced;
   sfx('hit');
   floatText(player.mesh.position,`-${Math.round(reduced)} ${DAMAGE_LABELS[type]||type}`,DAMAGE_COLORS[type]||'#ff776d');
@@ -1216,7 +1274,8 @@ function takePlayerDamage(raw,type='physical'){
 function damage(a,d,crit=false,type='physical'){
   if(!a||a.dead)return;
   type=normalizeDamageType(type);
-  d=Math.max(1,Math.round(d));
+  const suppression=getPlayerSuppressionVsActor(a);
+  d=Math.max(1,Math.round(d*suppression));
   a.hp-=d;
   sfx(crit?'slash':'hit');
   floatText(a.mesh.position,`${crit?'Bạo ':''}-${d} ${DAMAGE_LABELS[type]||''}`,crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
@@ -1569,7 +1628,7 @@ function updateActor(a,dt){
     setTimeout(()=>{
       if(!a.dead&&!isVillageSafe(player.x,player.z)&&dist(player,{x:player.x,z:player.z})<4.5){
         if(player.invuln<=0){
-          takePlayerDamage(a.atk*1.6,'Hỏa');
+          takePlayerDamage(a.atk*1.6,'Hỏa',a);
         }
       }
     },1100);
@@ -1591,7 +1650,7 @@ function updateActor(a,dt){
   }else if(!playerSafe && a.attackCd<=0 && d<=1.7){
     a.attackCd=1.2+rnd(0,.4);
     if(player.invuln<=0){
-      takePlayerDamage(a.atk,a.damageType||'physical');
+      takePlayerDamage(a.atk,a.damageType||'physical',a);
     }
   }
 
@@ -2141,7 +2200,8 @@ function openPanel(kind){
           <div class="stat"><span>Sinh lực (HP)</span><b>${Math.round(S.hp)} / ${S.maxHp}</b></div>
           <div class="stat"><span>Pháp lực (MP)</span><b>${Math.round(S.mp)} / ${S.maxMp}</b></div>
           <div class="stat"><span>Thần thức</span><b>${Math.round(S.spiritSense)}</b></div>
-          <div class="stat"><span>Hệ số sức mạnh cảnh giới</span><b>${getRealmPowerText()}</b></div>
+          <div class="stat"><span>Hệ số stat cảnh giới</span><b>${getRealmPowerText()}</b></div>
+          <div class="stat"><span>Áp chế cảnh giới</span><b>+35% / tiểu cảnh · +75% / đại cảnh</b></div>
         </div>
         <div class="card" style="margin-top:8px"><b>⚔ Sát Thương</b>
           <div class="stat"><span>Damage Tổng</span><b>${Math.round(getTotalDamage())}</b></div>
@@ -2372,7 +2432,7 @@ function openPanel(kind){
         ?Math.round(350*Math.pow(1.55,Math.max(0,(S.realmStage||1)-1)))
         :Math.round(9000*Math.pow(4,S.realm-1)*Math.pow(2.4,S.period||0));
       let tech=techniques[S.technique||0];
-      html=`<div class="card"><b>☯ Cảnh giới: ${realmName()}</b><p>Tu vi: ${S.cultivation} / ${need}</p><p>Uy lực cảnh giới hiện tại: <b>${getRealmPowerText()}</b></p><p>Công pháp: <b>${tech[0]} phẩm · ${tech[1]}</b> (Hệ số ${tech[2]}x sức mạnh)</p><button class="action" id="breakBtn">Đột Phá Cảnh Giới</button></div><div class="cards">${techniques.map((t,i)=>`<div class="card"><b>${t[0]} phẩm · ${t[1]}</b><p>Tăng ${t[2]}x sát thương</p><button data-tech="${i}" ${i>S.technique||i>S.realm?'disabled':''}>${i===S.technique?'Đang tu':'Tu luyện'}</button></div>`).join('')}</div>`;
+      html=`<div class="card"><b>☯ Cảnh giới: ${realmName()}</b><p>Tu vi: ${S.cultivation} / ${need}</p><p>Hệ số stat cảnh giới: <b>${getRealmPowerText()}</b></p><p>Áp chế: <b>+35% mỗi tiểu cảnh · +75% mỗi đại cảnh chênh lệch</b></p><p>Công pháp: <b>${tech[0]} phẩm · ${tech[1]}</b> (Hệ số ${tech[2]}x sức mạnh)</p><button class="action" id="breakBtn">Đột Phá Cảnh Giới</button></div><div class="cards">${techniques.map((t,i)=>`<div class="card"><b>${t[0]} phẩm · ${t[1]}</b><p>Tăng ${t[2]}x sát thương</p><button data-tech="${i}" ${i>S.technique||i>S.realm?'disabled':''}>${i===S.technique?'Đang tu':'Tu luyện'}</button></div>`).join('')}</div>`;
       setTimeout(()=>{
         let bb=$('#breakBtn');
         if(bb)bb.onclick=()=>{
