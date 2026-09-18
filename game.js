@@ -443,7 +443,7 @@ const defaultState={
   name:'Linh Phong',level:1,xp:0,xpNeed:120,
   hp:620,maxHp:620,mp:180,maxMp:180,
   // Hệ thuộc tính chiến đấu chính thức — không còn atk/def/crit cũ.
-  damage:{total:42,physical:0,Kim:0,Hỏa:0,Thủy:0,Mộc:0,Thổ:0,Phong:0,Lôi:0},
+  damage:{physical:42,Kim:0,Hỏa:0,Thủy:0,Mộc:0,Thổ:0,Phong:0,Lôi:0},
   defense:{physical:8,Kim:0,Hỏa:0,Thủy:0,Mộc:0,Thổ:0,Phong:0,Lôi:0},
   critChance:.12,critDamage:1.8,
   spiritSense:100,moveSpeed:6.2,attackSpeed:1.0,castSpeed:1.0,
@@ -483,7 +483,7 @@ try{
   }
   if(typeof S.skillTierTab!=='number')S.skillTierTab=0;
 
-  // Migration save cũ -> Damage Tổng + % khuếch đại từng hệ.
+  // Migration save cũ -> damage thành phần; Damage Tổng được tính bằng tổng các thành phần.
   const statTypes=['physical','Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi'];
   const legacyAtk=typeof S.atk==='number'?S.atk:42;
   const legacyDef=typeof S.def==='number'?S.def:8;
@@ -493,24 +493,33 @@ try{
   const oldDamage=(S.damage&&typeof S.damage==='object')?{...S.damage}:null;
 
   if(!S.damage||typeof S.damage!=='object')S.damage={};
-  if(typeof S.damage.total!=='number'){
-    const oldPhysical=oldDamage&&typeof oldDamage.physical==='number'?oldDamage.physical:legacyAtk+(Number(legacyDamageBonus.physical)||0);
-    S.damage.total=Math.max(1,oldPhysical||42);
+
+  // Nếu save đang ở bản "Damage Tổng + % hệ" trước đó, quy đổi về damage phẳng:
+  // giữ Damage Tổng cũ làm Vật lý nền và biến % hệ thành lượng damage hệ tương ứng.
+  if(oldDamage&&typeof oldDamage.total==='number'){
+    const oldTotal=Math.max(1,oldDamage.total);
+    S.damage.physical=oldTotal;
     for(const t of statTypes){
-      const oldValue=oldDamage&&typeof oldDamage[t]==='number'
-        ? oldDamage[t]
-        : legacyAtk+(Number(legacyDamageBonus[t])||0);
-      S.damage[t]=Math.max(0,((oldValue/S.damage.total)-1)*100);
+      if(t==='physical')continue;
+      const pct=Number(oldDamage[t])||0;
+      S.damage[t]=Math.max(0,oldTotal*pct/100);
+    }
+    delete S.damage.total;
+  }else{
+    for(const t of statTypes){
+      if(typeof S.damage[t]!=='number'){
+        if(t==='physical')S.damage[t]=legacyAtk+(Number(legacyDamageBonus.physical)||0);
+        else S.damage[t]=Math.max(0,Number(legacyDamageBonus[t])||0);
+      }
     }
   }
-  for(const t of statTypes)if(typeof S.damage[t]!=='number')S.damage[t]=0;
 
   if(!S.defense||typeof S.defense!=='object')S.defense={};
   for(const t of statTypes){
     if(typeof S.defense[t]!=='number')S.defense[t]=(t==='physical'?legacyDef:0)+(Number(legacyDefenseBonus[t])||0);
   }
 
-  // Kiếm/Đao dùng Damage Vật lý, không có stat riêng.
+  // Kiếm/Đao dùng Vật lý, không có damage/phòng thủ riêng.
   delete S.damage.Kiếm;
   delete S.damage.Đao;
   delete S.defense.Kiếm;
@@ -1129,18 +1138,24 @@ function normalizeDamageType(type='physical'){
   return type==='Kiếm'||type==='Đao'?'physical':type;
 }
 
-function getTotalDamage(){
-  return Math.max(1,(S.damage&&Number(S.damage.total))||1);
-}
+const MATCHING_DAMAGE_MULT=2.0;
 
-function getDamageAmp(type='physical'){
+function getDamageComponent(type='physical'){
   type=normalizeDamageType(type);
   return Math.max(0,(S.damage&&Number(S.damage[type]))||0);
 }
 
+function getTotalDamage(){
+  return COMBAT_DAMAGE_TYPES.reduce((sum,t)=>sum+getDamageComponent(t),0);
+}
+
 function getPlayerDamageStat(type='physical'){
-  // Giá trị damage cuối trước hệ số skill: Damage Tổng × bonus đúng hệ.
-  return getTotalDamage()*(1+getDamageAmp(type)/100);
+  // Mọi skill dùng toàn bộ Damage Tổng.
+  // Riêng thành phần trùng hệ của skill được nhân cao hơn.
+  type=normalizeDamageType(type);
+  const total=getTotalDamage();
+  const matching=getDamageComponent(type);
+  return total + matching*(MATCHING_DAMAGE_MULT-1);
 }
 
 function getPlayerDefenseStat(type='physical'){
@@ -1151,7 +1166,7 @@ function getPlayerDefenseStat(type='physical'){
 function getSkillPower(skill,mult=1,crit=false){
   let rawType=skill&&skill.element?skill.element:'physical';
   let type=normalizeDamageType(rawType);
-  // Mọi skill dùng Damage Tổng; đúng hệ được nhân thêm % Damage hệ tương ứng.
+  // Mọi skill dùng Damage Tổng; riêng thành phần đúng hệ được nhân theo MATCHING_DAMAGE_MULT.
   // Kiếm/Đao được normalize thành Vật lý.
   let base=getPlayerDamageStat(type);
   // Chỉ Kim/Hỏa/Thủy/Mộc/Thổ/Phong/Lôi nhận thêm hệ số Thần thức.
@@ -1236,7 +1251,7 @@ function gainXP(v){
     S.hp=S.maxHp;
     S.maxMp+=15;
     S.mp=S.maxMp;
-    S.damage.total=(S.damage.total||0)+8;
+    S.damage.physical=(S.damage.physical||0)+8;
     S.defense.physical=(S.defense.physical||0)+2;
     S.spiritSense+=3;
     toast(`✨ Đột phá cấp độ Lv.${S.level}!`);
@@ -1830,9 +1845,8 @@ function updateHUD(){
   $('#gold').textContent=Math.floor(S.gold).toLocaleString();
   $('#stones').textContent=S.stones.toLocaleString();
   let petMult=S.pet?1.08:1.0;
-  let damageAmpScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.damage&&S.damage[t])||0),0);
   let defScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.defense&&S.defense[t])||0),0);
-  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+damageAmpScore*10+defScore*18)*(1+S.realm*.35)*petMult).toLocaleString();
+  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+defScore*18)*(1+S.realm*.35)*petMult).toLocaleString();
   $('#questText').innerHTML=`[Chính] Diệt Yêu Thú <span>${Math.min(20,S.questKills)}/20</span>`;
   $('#autoBtn').classList.toggle('on',S.auto);
   $('#miniName').textContent=region().name;
@@ -2058,10 +2072,10 @@ function useInventoryItem(name){
     toast('💎 Hấp thụ Linh Thạch: +50 Tu vi, +30 Vàng');
     sfx('item');
   }else if(name.includes('Boss Hồn Tinh')){
-    S.damage.total=(S.damage.total||0)+15;
+    for(const t of COMBAT_DAMAGE_TYPES)S.damage[t]=(S.damage[t]||0)+3;
     S.maxHp+=100;
     S.hp=S.maxHp;
-    toast('🔥 Dung hợp Hồn Tinh: +15 Damage Tổng, +100 Sinh lực!');
+    toast('🔥 Dung hợp Hồn Tinh: +3 mỗi loại damage, +100 Sinh lực!');
     sfx('breakthrough');
   }else{
     toast('Đã sử dụng '+name);
@@ -2091,7 +2105,7 @@ function openPanel(kind){
 
     }else if(kind==='character'){
       title='Thông Tin Nhân Vật';
-      let dmgRows=COMBAT_DAMAGE_TYPES.map(t=>`<div class="stat"><span>${DAMAGE_LABELS[t]} tăng</span><b>+${getDamageAmp(t).toFixed(1)}% → ${Math.round(getPlayerDamageStat(t))}</b></div>`).join('');
+      let dmgRows=COMBAT_DAMAGE_TYPES.map(t=>`<div class="stat"><span>Damage ${DAMAGE_LABELS[t]}</span><b>${Math.round(getDamageComponent(t))} · Skill ${DAMAGE_LABELS[t]}: ${Math.round(getPlayerDamageStat(t))}</b></div>`).join('');
       let defRows=COMBAT_DAMAGE_TYPES.map(t=>`<div class="stat"><span>Phòng thủ ${DAMAGE_LABELS[t]}</span><b>${Math.round(getPlayerDefenseStat(t))}</b></div>`).join('');
       html=`
         <div class="card"><b>👤 Cơ Bản</b>
@@ -2105,6 +2119,7 @@ function openPanel(kind){
         </div>
         <div class="card" style="margin-top:8px"><b>⚔ Sát Thương</b>
           <div class="stat"><span>Damage Tổng</span><b>${Math.round(getTotalDamage())}</b></div>
+          <div class="stat"><span>Ưu tiên đúng hệ</span><b>x${MATCHING_DAMAGE_MULT.toFixed(1)} phần damage đúng hệ</b></div>
           ${dmgRows}
           <div class="stat"><span>Tỷ lệ bạo kích</span><b>${Math.round((S.critChance||0)*100)}%</b></div>
           <div class="stat"><span>Sát thương bạo kích</span><b>${Math.round((S.critDamage||1.8)*100)}%</b></div>
@@ -2344,7 +2359,7 @@ function openPanel(kind){
           }
           S.maxHp+=240;
           S.hp=S.maxHp;
-          S.damage.total=(S.damage.total||0)+24;
+          S.damage.physical=(S.damage.physical||0)+24;
           S.defense.physical=(S.defense.physical||0)+7;
           save();
           closePanel();
@@ -2468,8 +2483,7 @@ function equipBest(slot){
   if(!S.equipment)S.equipment={};
   S.equipment[slot]=key;
   if(slot==='weapon'){
-    S.damage.total=(S.damage.total||0)+15;
-    S.damage.physical=(S.damage.physical||0)+5;
+    S.damage.physical=(S.damage.physical||0)+20;
   }else if(slot==='armor'){
     S.maxHp+=150;
     S.defense.physical=(S.defense.physical||0)+5;
