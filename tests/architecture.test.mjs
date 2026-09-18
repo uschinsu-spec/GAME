@@ -10,6 +10,13 @@ run('src/data/constants.js');
 run('src/core/event-bus.js');
 run('src/core/state.js');
 run('src/items/inventory-system.js');
+run('src/core/performance.js');
+assert.equal(context.PerformanceProfile.PROFILES.LOW.renderScale,1.5);
+assert.equal(context.PerformanceProfile.PROFILES.MEDIUM.renderScale,2.25);
+assert.equal(context.PerformanceProfile.PROFILES.HIGH.renderScale,3);
+context.PerformanceProfile.set('HIGH');
+assert.equal(context.PerformanceProfile.name,'HIGH');
+assert.equal(context.PerformanceProfile.manual,true);
 
 const legacy={
  items:{'Linh Thạch':5},equipment:{weapon:'Thanh Vân Kiếm',armor:null,ring:null},

@@ -3020,14 +3020,11 @@ function openPanel(kind){
 
     }else{
       title='Cài Đặt & Hiệu Năng';
-      html=`<div class="card"><b>Tùy chỉnh đồ họa</b><p>Chế độ: ${S.quality?'Chất lượng cao (60 FPS)':'Tiết kiệm pin'}</p><button id="qualityBtn">Đổi chế độ</button><button id="resetBtn" class="danger">Xóa dữ liệu chơi lại từ đầu</button></div>`;
+      const profile=window.PerformanceProfile,current=profile?profile.name:'MEDIUM',saved=String(S.settings&&S.settings.quality||'auto').toLowerCase();
+      const labels={LOW:'Thấp',MEDIUM:'Trung bình',HIGH:'Cao'},details={LOW:'30 FPS · 1,5×',MEDIUM:'45 FPS · 2,25×',HIGH:'60 FPS · 3×'};
+      html=`<div class="card"><b>Tùy chỉnh đồ họa</b><p>Đang dùng: <strong>${labels[current]}</strong> · ${details[current]}${saved==='auto'?' · Tự động':''}</p><div class="quality-options">${['LOW','MEDIUM','HIGH'].map(mode=>`<button data-quality="${mode}" class="${current===mode?'active':''}"><b>${labels[mode]}</b><small>${details[mode]}</small></button>`).join('')}</div><button id="resetBtn" class="danger">Xóa dữ liệu chơi lại từ đầu</button></div>`;
       setTimeout(()=>{
-        $('#qualityBtn').onclick=()=>{
-          S.quality=S.quality?0:1;
-          applyEngineScaling();
-          save();
-          openPanel('settings');
-        };
+        $$('[data-quality]').forEach(button=>button.onclick=()=>{const mode=button.dataset.quality;S.settings=S.settings||{};S.settings.quality=mode.toLowerCase();S.quality=mode==='LOW'?0:1;if(window.PerformanceProfile)window.PerformanceProfile.set(mode);applyEngineScaling();if(engine){engine.resize();updateOrthoCameraBounds();}save();openPanel('settings');});
         $('#resetBtn').onclick=()=>{
           if(confirm('Bạn có chắc chắn muốn xóa toàn bộ tiến trình tu tiên?')){
             localStorage.removeItem(SAVE);
@@ -3083,6 +3080,12 @@ function closePanel(){
 async function init(){
   progress(5,'Đang đọc danh mục tiên vực…');
   await loadMapManifest();
+
+  if(window.PerformanceProfile){
+    const savedQuality=String(S.settings&&S.settings.quality||'auto').toUpperCase();
+    if(window.PerformanceProfile.PROFILES[savedQuality])window.PerformanceProfile.set(savedQuality);
+    else window.PerformanceProfile.setAuto();
+  }
 
   progress(10,'Khởi tạo Babylon.js Engine…');
   engine=new BABYLON.Engine(canvas,true,{
@@ -3151,7 +3154,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-mobile-clarity-v5.1').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-quality-ui-v5.2').then(reg=>reg.update()).catch(()=>{});
   }
 }
 

@@ -91,6 +91,7 @@ html,body,#gameWrap,#renderCanvas{width:100%;height:100%;margin:0;overflow:hidde
 .card b{color:#f0d88c;font-size:13px}
 .card p{margin:4px 0;font-size:11px;color:#c9d7df;line-height:1.4}
 .card button,.action{margin-top:8px;border:1px solid #d7b867;background:linear-gradient(180deg,#4a3818,#2b1f0b);color:#fff;border-radius:8px;padding:8px;width:100%;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s}
+.quality-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.quality-options button{min-height:62px;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.quality-options button small{font-size:9px;color:#b9cbd3;font-weight:600}.quality-options button.active{background:linear-gradient(180deg,#80611c,#3c2b0c);border-color:#ffe08a;box-shadow:0 0 12px rgba(255,211,104,.38)}
 .card button:hover{background:linear-gradient(180deg,#614b22,#3d2c11)}
 .card button:disabled{opacity:.4;cursor:not-allowed}
 .btn-use{background:linear-gradient(180deg,#1c5344,#0f3127)!important;border-color:#5be3b6!important}

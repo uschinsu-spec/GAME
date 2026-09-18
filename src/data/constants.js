@@ -2,7 +2,7 @@
 const deepFreeze=value=>{if(value&&typeof value==='object'&&!Object.isFrozen(value)){Object.freeze(value);Object.values(value).forEach(deepFreeze);}return value;};
 const C={
  SAVE_VERSION:5,
- BUILD_VERSION:'20260918-mobile-clarity-v5.1',
+ BUILD_VERSION:'20260918-quality-ui-v5.2',
  SAVE_KEY:'tutien_chilo_save_v2',
  REALMS:['Luyện Khí','Trúc Cơ','Kết Đan','Nguyên Anh','Hóa Thần'],
  REALM_STAGES:['Sơ Kỳ','Trung Kỳ','Hậu Kỳ','Đỉnh Phong'],
