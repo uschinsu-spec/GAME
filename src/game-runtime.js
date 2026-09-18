@@ -1166,10 +1166,14 @@ async function createWorld(){
   scene=new BABYLON.Scene(engine);
   scene.skipPointerMovePicking=true;
   scene.constantlyUpdateMeshUnderPointer=false;
-  scene.skipPointerMovePicking=true;
-  scene.constantlyUpdateMeshUnderPointer=false;
-  scene.skipPointerMovePicking=true;
-  scene.constantlyUpdateMeshUnderPointer=false;
+  // Native-sharp HIGH: sharpen nhẹ sau rasterization để phục hồi chi tiết PNG
+  // bị mất khi sprite/prop được thu nhỏ vào orthographic view. Không áp dụng
+  // cho LOW/MEDIUM để giữ hiệu năng.
+  if(window.PerformanceProfile&&window.PerformanceProfile.name==='HIGH'){
+    scene.imageProcessingConfiguration.sharpenEnabled=true;
+    scene.imageProcessingConfiguration.sharpenEdgeAmount=0.18;
+    scene.imageProcessingConfiguration.sharpenColorAmount=0.04;
+  }
   camera=new BABYLON.FreeCamera('cam',BABYLON.Vector3.Zero(),scene);
   camera.mode=BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
   camera.minZ=.1;
@@ -3095,7 +3099,7 @@ async function init(){
   engine=new BABYLON.Engine(canvas,true,{
     preserveDrawingBuffer:false,
     stencil:false,
-    antialias:!MOBILE_RUNTIME,
+    antialias:true,
     powerPreference:'high-performance',
     adaptToDeviceRatio:false
   });
@@ -3149,7 +3153,15 @@ async function init(){
     resume:()=>{paused=false;last=performance.now();},
     onResize:updateOrthoCameraBounds
   });
-  if(window.GameEvents)window.GameEvents.on('qualityChanged',()=>{applyEngineScaling();engine.resize();updateOrthoCameraBounds();});
+  if(window.GameEvents)window.GameEvents.on('qualityChanged',()=>{
+    applyEngineScaling();engine.resize();updateOrthoCameraBounds();
+    if(scene&&scene.imageProcessingConfiguration){
+      const high=window.PerformanceProfile&&window.PerformanceProfile.name==='HIGH';
+      scene.imageProcessingConfiguration.sharpenEnabled=!!high;
+      scene.imageProcessingConfiguration.sharpenEdgeAmount=high?0.18:0;
+      scene.imageProcessingConfiguration.sharpenColorAmount=high?0.04:0;
+    }
+  });
   engine.runRenderLoop(tick);
   if('serviceWorker'in navigator){
     navigator.serviceWorker.addEventListener('message',event=>{
@@ -3158,7 +3170,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-native-sharp-v5.5').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-native-sharp-v5.6').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
