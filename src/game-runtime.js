@@ -3020,14 +3020,21 @@ function openPanel(kind){
 
     }else{
       title='Cài Đặt & Hiệu Năng';
-      html=`<div class="card"><b>Tùy chỉnh đồ họa</b><p>Chế độ: ${S.quality?'Chất lượng cao (60 FPS)':'Tiết kiệm pin'}</p><button id="qualityBtn">Đổi chế độ</button><button id="resetBtn" class="danger">Xóa dữ liệu chơi lại từ đầu</button></div>`;
+      const qp=window.PerformanceProfile;
+      const currentQuality=qp?qp.name:'MEDIUM';
+      const qualityLabel={LOW:'Low · 1.5×',MEDIUM:'Medium · 2.25×',HIGH:'High · 3.0×'}[currentQuality]||currentQuality;
+      html=`<div class="card"><b>Chất lượng đồ họa</b><p>Đang dùng: <strong>${qualityLabel}</strong></p><div class="qualityModes"><button data-quality="LOW" ${currentQuality==='LOW'?'disabled':''}>LOW · 1.5×</button><button data-quality="MEDIUM" ${currentQuality==='MEDIUM'?'disabled':''}>MEDIUM · 2.25×</button><button data-quality="HIGH" ${currentQuality==='HIGH'?'disabled':''}>HIGH · 3.0×</button></div><p><small>High nét nhất nhưng dùng GPU và pin nhiều hơn.</small></p><button id="resetBtn" class="danger">Xóa dữ liệu chơi lại từ đầu</button></div>`;
       setTimeout(()=>{
-        $('#qualityBtn').onclick=()=>{
-          S.quality=S.quality?0:1;
+        $('[data-quality]').forEach(btn=>btn.onclick=()=>{
+          const next=btn.dataset.quality;
+          if(window.PerformanceProfile)window.PerformanceProfile.set(next);
+          S.quality=next;
+          if(S.settings)S.settings.quality=next;
           applyEngineScaling();
           save();
           openPanel('settings');
-        };
+          toast('🖥 Đồ họa: '+next);
+        });
         $('#resetBtn').onclick=()=>{
           if(confirm('Bạn có chắc chắn muốn xóa toàn bộ tiến trình tu tiên?')){
             localStorage.removeItem(SAVE);
@@ -3151,7 +3158,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-mobile-clarity-v5.1').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-mobile-clarity-v5.3').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
