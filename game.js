@@ -412,6 +412,7 @@ function getSkillDef(skillId){
   let costStones=Math.round(rank.costStones*Math.pow(2.2,tierIdx));
   let costCult=Math.round(rank.costCult*Math.pow(2.4,tierIdx));
   let iconPath=`assets/skills/${elemKey}/${tier.id}_${rank.id}.png`;
+  let vfxPath=`assets/vfx/skills/${elemKey}/${tier.id}_${rank.id}.png`;
   return {
     id:skillId,
     name,
@@ -426,6 +427,7 @@ function getSkillDef(skillId){
     tierColor:tier.color,
     badge:`${tier.badge}·${rank.name[0]}`,
     icon:iconPath,
+    vfx:vfxPath,
     minRealm:tier.minRealm,
     minLevel:tier.minLevel,
     mult,
@@ -1203,6 +1205,7 @@ function useSkill(n){
       for(let i=0;i<3;i++){
         setTimeout(()=>playerAttack(t,dmgMult/2.4),i*75);
       }
+      playSkillVfx(skill,t.x,t.z,3.4+skill.tierIdx*0.45);
       slash(t.x,t.z,ec);
     }
   }else{
@@ -1210,6 +1213,7 @@ function useSkill(n){
     let range=skill.aoe;
     let targets=actors.filter(a=>!a.dead&&!isVillageSafe(a.x,a.z)&&Math.hypot(a.x-player.x,a.z-player.z)<range);
 
+    playSkillVfx(skill,player.x,player.z,Math.max(4.2,Math.min(10,range*0.95)));
     ring(player.x,player.z,ec,range*0.65);
     let particleCount=skill.tierIdx===3?60:skill.tierIdx===2?40:24;
     burst(player.x,player.z,ec,particleCount,range*0.75);
@@ -1285,6 +1289,34 @@ function burst(x,z,color,count=18,r=5){
     let a=rnd(0,6.28),sp=rnd(2,r);
     effects.push({mesh:s,t:rnd(.3,.6),max:.6,vx:Math.cos(a)*sp,vz:Math.sin(a)*sp,vy:rnd(.3,1.8)});
   }
+}
+
+function preloadSkillVfx(skill){
+  if(!skill||!skill.vfx)return null;
+  return makeSpriteMaterial(skill.vfx,`skill_vfx_${skill.id}`);
+}
+
+function playSkillVfx(skill,x,z,size=3.4){
+  if(!skill||!skill.vfx)return;
+  let fxMat=preloadSkillVfx(skill);
+  if(!fxMat)return;
+
+  // Mỗi skill đọc đúng 1 PNG vật lý riêng trong assets/vfx/skills/<hệ>/.
+  // Người dùng chỉ cần chép đè PNG tương ứng là đổi được VFX, không sửa code.
+  let plane=BABYLON.MeshBuilder.CreatePlane(
+    'skill_vfx_'+skill.id,
+    {size:1,sideOrientation:BABYLON.Mesh.DOUBLESIDE},
+    scene
+  );
+  plane.position.set(x,1.35,z);
+  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+  plane.material=fxMat;
+  plane.isPickable=false;
+  plane.renderingGroupId=2;
+
+  let base=Math.max(2.4,Math.min(10,size));
+  plane.scaling.setAll(base*0.72);
+  effects.push({mesh:plane,t:.82,max:.82,skillVfx:true,baseScale:base});
 }
 
 function floatText(pos,text,color){
@@ -1523,6 +1555,12 @@ function updatePlayer(dt){
 function updateEffects(dt){
   for(let e of effects){
     e.t-=dt;
+    if(e.skillVfx&&e.mesh){
+      let p=1-clamp(e.t/e.max,0,1);
+      let k=(e.baseScale||1)*(0.72+0.28*Math.sin(Math.min(1,p)*Math.PI/2));
+      e.mesh.scaling.setAll(k);
+      e.mesh.visibility=clamp(e.t/0.16,0,1);
+    }
     if(e.vx!=null){
       e.mesh.position.x+=e.vx*dt;
       e.mesh.position.z+=e.vz*dt;
@@ -1645,6 +1683,7 @@ function updateHUD(){
         btn.innerHTML+=`<span id="cd${i}"></span>`;
       }
       if(sk){
+        preloadSkillVfx(sk);
         if(!img){
           btn.innerHTML=`<img src="${sk.icon}" class="skill-icon-img" alt="${sk.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><b style="display:none">${sk.badge}</b><span id="cd${i}"></span>`;
         }else if(img.getAttribute('src')!==sk.icon){
