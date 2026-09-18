@@ -545,6 +545,34 @@ let last=performance.now(),spawnTimer=0,autoTimer=0,regenTimer=0,miniTimer=0,gam
 const keys={}, joy={x:0,y:0,active:false,pid:null}, cooldown=[0,0,0,0,0], dashCd={t:0};
 const spriteMats={}, matCache={}, mapPropMaterials={};
 
+// ===== VLTK-STYLE CAMERA STANDARD =====
+// Toàn bộ sprite/prop dùng chung một projection: orthographic 3/4 top-down,
+// góc nhìn 50°, không perspective scaling, hướng nhìn từ Nam lên Bắc.
+const CAMERA_STD={
+  elevationDeg:50,
+  distance:40,
+  viewHeight:38
+};
+
+function updateOrthoCameraBounds(){
+  if(!camera||!engine)return;
+  const aspect=Math.max(0.45,engine.getRenderWidth()/Math.max(1,engine.getRenderHeight()));
+  const halfH=CAMERA_STD.viewHeight*0.5;
+  camera.orthoTop=halfH;
+  camera.orthoBottom=-halfH;
+  camera.orthoLeft=-halfH*aspect;
+  camera.orthoRight=halfH*aspect;
+}
+
+function placeStandardCamera(x,z){
+  if(!camera)return;
+  const elev=CAMERA_STD.elevationDeg*Math.PI/180;
+  const horizontal=Math.cos(elev)*CAMERA_STD.distance;
+  const height=Math.sin(elev)*CAMERA_STD.distance;
+  camera.position.set(x,height,z-horizontal);
+  camera.setTarget(new BABYLON.Vector3(x,0,z));
+}
+
 function realmName(){return S.realm===0?`Luyện Khí Tầng ${S.realmStage}`:`${realms[S.realm]} · ${periods[S.period||0]}`}
 function gradeForLevel(){return clamp(1+Math.floor((S.level-1)/25),1,5)}
 function region(){return regions[S.region||0]||regions[0]}
@@ -731,9 +759,13 @@ function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
   let w=propDef.width*scale;
   let h=propDef.height*scale;
   let p=BABYLON.MeshBuilder.CreatePlane(name,{width:w,height:h},scene);
-  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_Y;
-  let yRatio = (propDef.yRatio !== undefined) ? propDef.yRatio : (name.startsWith('tree') ? 0.36 : (name.startsWith('grass') ? 0.36 : (name.startsWith('rock') ? 0.40 : 0.45)));
-  p.position.set(x,h*yRatio,z);
+  // PNG environment luôn quay thẳng vào camera giống player/enemy.
+  // Nhờ vậy ảnh pre-render không bị méo thêm bởi góc nhìn 3D của plane.
+  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+
+  // Chuẩn chân asset: tâm theo X, đáy PNG chạm mặt đất Y=0.
+  // Không dùng yRatio khác nhau nữa vì nó làm cây/đá/nhà có "camera" khác nhau.
+  p.position.set(x,h*0.5,z);
   p.material=getMapPropMaterial(propDef.file);
   p.isPickable=false;
 
@@ -842,13 +874,17 @@ function loadMap(regionIdx){
 
 function createWorld(){
   scene=new BABYLON.Scene(engine);
-  camera=new BABYLON.FreeCamera('cam',new BABYLON.Vector3(0,25,-25),scene);
-  camera.setTarget(new BABYLON.Vector3(0,0,3));
-  camera.fov=.66;
+  camera=new BABYLON.FreeCamera('cam',BABYLON.Vector3.Zero(),scene);
+  camera.mode=BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
   camera.minZ=.1;
+  camera.maxZ=180;
   camera.inputs.clear();
+  placeStandardCamera(0,0);
+  updateOrthoCameraBounds();
 
-  let light=new BABYLON.HemisphericLight('sky',new BABYLON.Vector3(.3,1,-.3),scene);
+  // Ánh sáng tổng thể thống nhất: từ trên-trái xuống.
+  // Asset PNG đã bake ánh sáng vẫn disableLighting để giữ màu gốc.
+  let light=new BABYLON.HemisphericLight('sky',new BABYLON.Vector3(-.45,1,-.35),scene);
   light.intensity=1.12;
   light.diffuse=new BABYLON.Color3(1.0,.98,.93);
   light.groundColor=new BABYLON.Color3(.36,.44,.38);
@@ -1287,8 +1323,9 @@ function updateActor(a,dt){
     a.shadow.position.x=a.x;
     a.shadow.position.z=a.z;
   }
-  let depth=clamp(.82+(a.z-player.z+10)*.008,.76,1.12);
-  a.mesh.scaling.setAll(depth);
+  // Orthographic: tuyệt đối không scale quái theo khoảng cách Z.
+  // Scale perspective giả làm sprite lệch tỷ lệ so với player/props.
+  a.mesh.scaling.setAll(1);
 }
 
 function playerDeath(){
@@ -1307,8 +1344,7 @@ function playerDeath(){
       player.shadow.position.z=0;
     }
     if(camera){
-      camera.position.set(0,25,-25);
-      camera.setTarget(new BABYLON.Vector3(0,0,3));
+      placeStandardCamera(0,0);
     }
     if(petActor){
       petActor.x=-1.5; petActor.z=-1.5;
@@ -1389,10 +1425,16 @@ function updatePlayer(dt){
   player.mesh.material=playerAnimMat(player.facing,player.state,player.frame);
   applyPlayerFacing(); // RIGHT = +X, LEFT = mirrored -X
 
-  // Smooth Camera Follow
-  camera.position.x+=(player.x-camera.position.x)*Math.min(1,dt*4.5);
-  camera.position.z+=((player.z-25)-camera.position.z)*Math.min(1,dt*4.5);
-  camera.setTarget(new BABYLON.Vector3(player.x,0,player.z+3));
+  // Smooth Camera Follow — giữ tuyệt đối camera orthographic 50°.
+  // Không đổi FOV/góc khi di chuyển nên mọi asset luôn cùng perspective.
+  const elev=CAMERA_STD.elevationDeg*Math.PI/180;
+  const horizontal=Math.cos(elev)*CAMERA_STD.distance;
+  const height=Math.sin(elev)*CAMERA_STD.distance;
+  const follow=Math.min(1,dt*4.5);
+  camera.position.x+=(player.x-camera.position.x)*follow;
+  camera.position.y+=(height-camera.position.y)*follow;
+  camera.position.z+=((player.z-horizontal)-camera.position.z)*follow;
+  camera.setTarget(new BABYLON.Vector3(player.x,0,player.z));
 
   // Update Companion Pet
   if(petActor&&petActor.mesh){
@@ -1707,7 +1749,10 @@ function setupInput(){
     if(e.target===$('#panel'))closePanel();
   });
 
-  window.addEventListener('resize',()=>engine.resize());
+  window.addEventListener('resize',()=>{
+    engine.resize();
+    updateOrthoCameraBounds();
+  });
   document.addEventListener('visibilitychange',()=>{paused=document.hidden});
 }
 
@@ -2166,8 +2211,7 @@ async function init(){
     if(player.mesh)player.mesh.position.set(0,1.62,0);
     if(player.shadow)player.shadow.position.set(0,0.019,0);
     if(camera){
-      camera.position.set(0,25,-25);
-      camera.setTarget(new BABYLON.Vector3(0,0,3));
+      placeStandardCamera(0,0);
     }
     if(petActor){
       petActor.x=-1.5; petActor.z=-1.5;
