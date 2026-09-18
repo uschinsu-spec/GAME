@@ -1,0 +1,49 @@
+name: Clean Game Build
+
+on:
+  push:
+    paths:
+      - 'scripts/clean-game.mjs'
+      - '.github/workflows/clean-game.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clean-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build clean game source
+        run: node scripts/clean-game.mjs
+
+      - name: Syntax audit
+        run: |
+          node --check game.js
+          node --check skill-master-data.js
+          node --check systems-progression.js
+          node --check world-runtime.js
+          node --check skill-runtime.js
+          git diff --check
+
+      - name: Commit generated clean source
+        run: |
+          if git diff --quiet -- game.js index.html; then
+            echo 'No generated changes.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add game.js index.html
+          git commit -m 'build: compile clean optimized game runtime'
+          git push
