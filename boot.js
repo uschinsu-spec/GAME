@@ -22,20 +22,35 @@ async function boot(){
 
     // MASTER SKILL 144 chiêu: dữ liệu/thông số theo file Excel + runtime status/CC.
     // VFX vẫn chỉ đọc asset path hiện có; người dùng sẽ thay PNG VFX riêng sau.
+    // QUAN TRỌNG: nếu patch skill sinh mã JS lỗi, tự động quay về source trước patch để GAME vẫn mở được.
     try{
       const [masterRes,runtimeRes]=await Promise.all([
-        fetch('./skill-master-data.js?v=1',{cache:'no-store'}),
-        fetch('./skill-runtime.js?v=1',{cache:'no-store'})
+        fetch('./skill-master-data.js?v=2',{cache:'no-store'}),
+        fetch('./skill-runtime.js?v=2',{cache:'no-store'})
       ]);
       if(!masterRes.ok)throw new Error('Không tải được skill-master-data.js ('+masterRes.status+')');
       if(!runtimeRes.ok)throw new Error('Không tải được skill-runtime.js ('+runtimeRes.status+')');
       (0,eval)((await masterRes.text())+'\n//# sourceURL=skill-master-data.js');
       (0,eval)((await runtimeRes.text())+'\n//# sourceURL=skill-runtime.js');
       if(typeof window.TuTienSkillPatch!=='function')throw new Error('TuTienSkillPatch không tồn tại');
-      src=window.TuTienSkillPatch(src);
+
+      const beforeSkillPatch=src;
+      const patched=window.TuTienSkillPatch(src);
+      try{
+        // Compile-only validation: bắt SyntaxError trước khi chạy GAME.
+        // new Function không thực thi game, chỉ kiểm tra source có parse được hay không.
+        new Function(patched);
+        src=patched;
+        console.info('[Boot] Skill patch hợp lệ.');
+      }catch(skillSyntaxErr){
+        src=beforeSkillPatch;
+        console.error('[Boot] Skill patch tạo source lỗi cú pháp — đã tự fallback về GAME gốc:',skillSyntaxErr);
+        if(msg)msg.textContent='Đang khởi động GAME (đã bỏ qua patch skill lỗi)…';
+      }
     }catch(skillErr){
-      console.error('Skill runtime error:',skillErr);
-      throw skillErr;
+      // Skill mở rộng không được phép làm toàn GAME chết.
+      console.error('Skill runtime fallback:',skillErr);
+      if(msg)msg.textContent='Đang khởi động GAME (skill mở rộng tạm bỏ qua)…';
     }
 
     // Không preload toàn bộ quái x 16 frame ngay khi mở trang.
@@ -44,6 +59,12 @@ async function boot(){
 
     // Chỉ tạo vài pack ban đầu; vòng game sẽ bổ sung dần sau khi người chơi vào.
     src=src.replace('for(let i=0;i<16;i++)spawnPack();','for(let i=0;i<4;i++)spawnPack();');
+
+    // Kiểm tra lần cuối trước khi chạy để tránh đứng màn hình loading vì SyntaxError.
+    try{new Function(src)}catch(finalSyntaxErr){
+      console.error('[Boot] Final source syntax error:',finalSyntaxErr);
+      throw new Error('Mã GAME lỗi cú pháp: '+finalSyntaxErr.message);
+    }
 
     (0,eval)(src+'\n//# sourceURL=game.optimized.js');
   }catch(err){
