@@ -9,6 +9,16 @@ function validateSource(src,stage){
     return {ok:false,error};
   }
 }
+function sanitizeGameSource(src){
+  if(typeof src!=='string')return src;
+  // game.js từng bị chèn nhầm output của công cụ vào đầu file:
+  // "Warning: truncated output ..." + "Total output lines: ...".
+  // Hai dòng này không phải JavaScript và gây SyntaxError: Unexpected identifier 'output'.
+  const before=src;
+  src=src.replace(/^\uFEFF?Warning:\s*truncated output[^\n]*\nTotal output lines:\s*\d+\s*\n+/,'');
+  if(src!==before)console.warn('[Boot/Audit] Đã loại bỏ preamble rác bị chèn nhầm khỏi game.js.');
+  return src;
+}
 async function fetchText(url,label){
   const res=await fetch(url,{cache:'no-store'});
   if(!res.ok)throw new Error('Không tải được '+label+' ('+res.status+')');
@@ -19,9 +29,10 @@ async function boot(){
   try{
     if(msg)msg.textContent='Đang kiểm tra toàn bộ GAME…';
 
-    const rawSrc=await fetchText('./game.js?v=31','game.js');
-    const rawCheck=validateSource(rawSrc,'game.js gốc');
-    if(!rawCheck.ok)throw new Error('game.js gốc lỗi cú pháp: '+rawCheck.error.message);
+    let rawSrc=await fetchText('./game.js?v=32','game.js');
+    rawSrc=sanitizeGameSource(rawSrc);
+    const rawCheck=validateSource(rawSrc,'game.js sau sanitize');
+    if(!rawCheck.ok)throw new Error('game.js lỗi cú pháp sau sanitize: '+rawCheck.error.message);
     let src=rawSrc;
 
     try{
