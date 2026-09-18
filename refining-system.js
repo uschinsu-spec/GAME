@@ -3,74 +3,19 @@ const M=()=>window.TuTienCraftingMaterials;
 const QUALITY_ORDER=['ha','trung','thuong','cuc'];
 const QUALITY_INDEX=Object.fromEntries(QUALITY_ORDER.map((q,i)=>[q,i]));
 const STAGES={
- mineral:[
-  {id:'ore',name:'Quặng thô',cost:1,time:1},
-  {id:'refined',name:'Tinh luyện',cost:3,time:1.8},
-  {id:'blank',name:'Tạo phôi',cost:5,time:2.5}
- ],
- herb:[
-  {id:'raw',name:'Linh dược thô',cost:1,time:1},
-  {id:'processed',name:'Sơ chế dược tài',cost:2,time:1.5},
-  {id:'essence',name:'Chiết xuất tinh hoa',cost:4,time:2.2}
- ]
+ mineral:[{id:'ore',name:'Quặng thô',cost:1,time:1},{id:'refined',name:'Tinh luyện',cost:3,time:1.8},{id:'blank',name:'Tạo phôi',cost:5,time:2.5}],
+ herb:[{id:'raw',name:'Linh dược thô',cost:1,time:1},{id:'processed',name:'Sơ chế dược tài',cost:2,time:1.5},{id:'essence',name:'Chiết xuất tinh hoa',cost:4,time:2.2}]
 };
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function qualityInfo(id){return M().QUALITIES.find(q=>q.id===id)||M().QUALITIES[0];}
 function material(id){return M().BY_ID[id]||null;}
 function professionCap(playerRealm=0,professionGrade=1){return Math.min(5,Math.min(playerRealm+1,professionGrade));}
-function canRefine(input,{playerRealm=0,professionGrade=1}={}){
- const mat=material(input.materialId);
- if(!mat)return {ok:false,reason:'Không tìm thấy nguyên liệu.'};
- const cap=professionCap(playerRealm,professionGrade);
- if(mat.grade>cap)return {ok:false,reason:`Cần cảnh giới/nghề Tinh Luyện Sư tối thiểu ${mat.grade} phẩm.`};
- return {ok:true,material:mat,cap};
-}
-function successChance({materialGrade=1,quality='ha',professionGrade=1,mastery=0}){
- const qi=QUALITY_INDEX[quality]??0;
- const gradeDelta=professionGrade-materialGrade;
- return clamp(.82+gradeDelta*.055+mastery*.0012-qi*.035,.35,.99);
-}
-function outputQuality(inputQuality='ha',roll=Math.random(),mastery=0,professionGrade=1,materialGrade=1){
- let idx=QUALITY_INDEX[inputQuality]??0;
- const upgrade=clamp(.04+mastery*.0015+(professionGrade-materialGrade)*.035,0,.35);
- const downgrade=clamp(.11-materialGrade*.008-mastery*.0005,0,.12);
- if(roll<upgrade)idx++;
- else if(roll>1-downgrade)idx--;
- return QUALITY_ORDER[clamp(idx,0,QUALITY_ORDER.length-1)];
-}
-function refine(input,ctx={}){
- const check=canRefine(input,ctx);
- if(!check.ok)return check;
- const mat=check.material;
- const quality=input.quality||'ha';
- const qty=Math.max(1,Math.floor(input.quantity||1));
- const professionGrade=ctx.professionGrade||1;
- const mastery=ctx.mastery||0;
- const chance=successChance({materialGrade:mat.grade,quality,professionGrade,mastery});
- const roll=typeof ctx.roll==='number'?ctx.roll:Math.random();
- if(roll>chance){
-  return {ok:false,reason:'Tinh luyện thất bại.',consumed:qty,successChance:chance,byproduct:{id:'tap_chat',name:'Tạp Chất',quantity:Math.max(1,Math.floor(qty*.35))}};
- }
- const q=qualityInfo(quality);
- const outQuality=outputQuality(quality,typeof ctx.qualityRoll==='number'?ctx.qualityRoll:Math.random(),mastery,professionGrade,mat.grade);
- const yieldQty=Math.max(1,Math.floor(qty*(.65+.05*professionGrade)*q.yield));
- if(mat.family==='mineral'){
-  const stage=input.stage||'ore';
-  const outputId=stage==='refined'?mat.product:mat.refined;
-  const outputName=stage==='refined'?`${mat.name.replace(/Khoáng|Thạch/g,'').trim()} Phôi`:`${mat.name} · Tinh Luyện`;
-  return {ok:true,family:'mineral',stage:stage==='refined'?'blank':'refined',input:input.materialId,output:{id:outputId,name:outputName,quantity:yieldQty,quality:outQuality,grade:mat.grade,element:mat.element,purity:q.purity},successChance:chance};
- }
- const stage=input.stage||'raw';
- const outputId=stage==='processed'?mat.essence:mat.processed;
- const outputName=stage==='processed'?`${mat.name} · Tinh Hoa`:`${mat.name} · Dược Tài`;
- return {ok:true,family:'herb',stage:stage==='processed'?'essence':'processed',input:input.materialId,output:{id:outputId,name:outputName,quantity:yieldQty,quality:outQuality,grade:mat.grade,element:mat.element,purity:q.purity},successChance:chance};
-}
-function preview(input,ctx={}){
- const check=canRefine(input,ctx);
- if(!check.ok)return check;
- const mat=check.material;
- const quality=input.quality||'ha';
- return {ok:true,material:mat,quality,successChance:successChance({materialGrade:mat.grade,quality,professionGrade:ctx.professionGrade||1,mastery:ctx.mastery||0}),stages:STAGES[mat.family]};
-}
-window.TuTienRefining={version:1,STAGES,professionCap,canRefine,successChance,preview,refine};
+function canRefine(input,{playerRealm=0,professionGrade=1}={}){const mat=material(input.materialId);if(!mat)return {ok:false,reason:'Không tìm thấy nguyên liệu.'};const cap=professionCap(playerRealm,professionGrade);if(mat.grade>cap)return {ok:false,reason:`Cần cảnh giới/nghề Tinh Luyện Sư tối thiểu ${mat.grade} phẩm.`};return {ok:true,material:mat,cap};}
+function successChance({materialGrade=1,quality='ha',professionGrade=1,mastery=0}){const qi=QUALITY_INDEX[quality]??0;const gradeDelta=professionGrade-materialGrade;return clamp(.82+gradeDelta*.055+mastery*.0012-qi*.035,.35,.99);}
+function outputQuality(inputQuality='ha',roll=Math.random(),mastery=0,professionGrade=1,materialGrade=1){let idx=QUALITY_INDEX[inputQuality]??0;const upgrade=clamp(.04+mastery*.0015+(professionGrade-materialGrade)*.035,0,.35);const downgrade=clamp(.11-materialGrade*.008-mastery*.0005,0,.12);if(roll<upgrade)idx++;else if(roll>1-downgrade)idx--;return QUALITY_ORDER[clamp(idx,0,QUALITY_ORDER.length-1)];}
+function refine(input,ctx={}){const check=canRefine(input,ctx);if(!check.ok)return check;const mat=check.material;const quality=input.quality||'ha';const qty=Math.max(1,Math.floor(input.quantity||1));const professionGrade=ctx.professionGrade||1;const mastery=ctx.mastery||0;const chance=successChance({materialGrade:mat.grade,quality,professionGrade,mastery});const roll=typeof ctx.roll==='number'?ctx.roll:Math.random();if(roll>chance)return {ok:false,reason:'Tinh luyện thất bại.',consumed:qty,successChance:chance,byproduct:{id:'tap_chat',name:'Tạp Chất',quantity:Math.max(1,Math.floor(qty*.35))}};const q=qualityInfo(quality);const outQuality=outputQuality(quality,typeof ctx.qualityRoll==='number'?ctx.qualityRoll:Math.random(),mastery,professionGrade,mat.grade);const yieldQty=Math.max(1,Math.floor(qty*(.65+.05*professionGrade)*q.yield));if(mat.family==='mineral'){const stage=input.stage||'ore';const outputId=stage==='refined'?mat.product:mat.refined;const outputName=stage==='refined'?`${mat.name.replace(/Khoáng|Thạch/g,'').trim()} Phôi`:`${mat.name} · Tinh Luyện`;return {ok:true,family:'mineral',stage:stage==='refined'?'blank':'refined',input:input.materialId,output:{id:outputId,name:outputName,quantity:yieldQty,quality:outQuality,grade:mat.grade,element:mat.element,purity:q.purity},successChance:chance,nextSystem:'artificing'};}const stage=input.stage||'raw';const outputId=stage==='processed'?mat.essence:mat.processed;const outputName=stage==='processed'?`${mat.name} · Tinh Hoa`:`${mat.name} · Dược Tài`;return {ok:true,family:'herb',stage:stage==='processed'?'essence':'processed',input:input.materialId,output:{id:outputId,name:outputName,quantity:yieldQty,quality:outQuality,grade:mat.grade,element:mat.element,purity:q.purity},successChance:chance,nextSystems:['alchemy','talisman','formation']};}
+function preview(input,ctx={}){const check=canRefine(input,ctx);if(!check.ok)return check;const mat=check.material;const quality=input.quality||'ha';return {ok:true,material:mat,quality,successChance:successChance({materialGrade:mat.grade,quality,professionGrade:ctx.professionGrade||1,mastery:ctx.mastery||0}),stages:STAGES[mat.family]};}
+function ensureEcosystemModules(){if(typeof document==='undefined')return;const files=['crafting-professions.js','crafting-world-data.js','crafting-recipes.js','crafting-core.js','spirit-field-system.js','artifact-growth-system.js'];for(const src of files){if(document.querySelector(`script[data-crafting-module="${src}"]`))continue;const s=document.createElement('script');s.src=src+'?v=1';s.dataset.craftingModule=src;s.defer=false;document.head.appendChild(s);}}
+window.TuTienRefining={version:2,STAGES,professionCap,canRefine,successChance,preview,refine,ensureEcosystemModules};
+ensureEcosystemModules();
 })();
