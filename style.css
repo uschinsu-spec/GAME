@@ -274,3 +274,19 @@ button{touch-action:manipulation}
   .skills{transform:scale(.80);transform-origin:bottom right}
   .bottomInfo{font-size:8px}.xp{width:62px}
 }
+
+
+/* v6.6 — iPhone portrait minimap must remain visible. This override is last
+   intentionally so older V8/V9 mobile rules cannot hide it. */
+@media(max-width:520px) and (orientation:portrait){
+  #hud .minimap{
+    display:block !important;
+    right:calc(var(--hud-safe-right) + 98px);
+    top:var(--hud-safe-top);
+    width:104px;
+    padding:3px;
+    z-index:23;
+  }
+  #hud .minimap canvas{width:96px;height:68px}
+  #hud .minimap span{font-size:8px;margin-top:2px}
+}
