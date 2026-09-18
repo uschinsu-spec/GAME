@@ -155,5 +155,15 @@ html,body,#gameWrap,#renderCanvas{width:100%;height:100%;margin:0;overflow:hidde
   .quest{width:54vw}
   .skills{transform:scale(.88);transform-origin:bottom right}
   .joystick{transform:scale(.88);transform-origin:bottom left}
-  .minimap{display:none}
+  /* iPhone: keep the minimap visible in the upper-right corner. */
+  .minimap{
+    display:block;
+    right:max(6px,env(safe-area-inset-right));
+    top:max(72px,calc(env(safe-area-inset-top) + 62px));
+    width:122px;
+    padding:4px;
+    z-index:12
+  }
+  .minimap canvas{width:114px;height:84px}
+  .minimap span{font-size:9px;margin-top:2px}
 }
