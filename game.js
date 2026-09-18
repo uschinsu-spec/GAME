@@ -1426,14 +1426,23 @@ function updatePlayer(dt){
   applyPlayerFacing(); // RIGHT = +X, LEFT = mirrored -X
 
   // Smooth Camera Follow — giữ tuyệt đối camera orthographic 50°.
-  // Không đổi FOV/góc khi di chuyển nên mọi asset luôn cùng perspective.
+  // Khi đang chạy: camera lerp nhẹ cho mượt.
+  // Khi vừa nhả joystick / dừng: snap ngay vào vị trí đích để map không còn trôi thêm vài frame.
   const elev=CAMERA_STD.elevationDeg*Math.PI/180;
   const horizontal=Math.cos(elev)*CAMERA_STD.distance;
   const height=Math.sin(elev)*CAMERA_STD.distance;
-  const follow=Math.min(1,dt*4.5);
-  camera.position.x+=(player.x-camera.position.x)*follow;
-  camera.position.y+=(height-camera.position.y)*follow;
-  camera.position.z+=((player.z-horizontal)-camera.position.z)*follow;
+  const camX=player.x;
+  const camZ=player.z-horizontal;
+  if(l>.05){
+    const follow=Math.min(1,dt*7.5);
+    camera.position.x+=(camX-camera.position.x)*follow;
+    camera.position.y+=(height-camera.position.y)*follow;
+    camera.position.z+=(camZ-camera.position.z)*follow;
+  }else{
+    camera.position.x=camX;
+    camera.position.y=height;
+    camera.position.z=camZ;
+  }
   camera.setTarget(new BABYLON.Vector3(player.x,0,player.z));
 
   // Update Companion Pet
