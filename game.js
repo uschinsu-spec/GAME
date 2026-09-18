@@ -115,6 +115,28 @@ function sfx(type){
 
 const realms=['Luyện Khí','Trúc Cơ','Kết Đan','Nguyên Anh','Hóa Thần'];
 const periods=['Sơ Kỳ','Trung Kỳ','Hậu Kỳ','Đỉnh Phong'];
+
+// ===== CHÊNH LỆCH CẢNH GIỚI =====
+// Luyện Khí: mỗi tầng mạnh hơn tầng trước 35% theo cấp số nhân.
+// Đại cảnh giới: bước sang cảnh giới mới là một cú nhảy cực lớn.
+// Mỗi tiểu cảnh giới từ Trúc Cơ trở lên tiếp tục nhân 2.2 lần.
+const REALM_BASE_POWER=[1,60,1800,60000,2200000];
+const REALM_MINOR_MULT=2.2;
+const QI_STAGE_MULT=1.35;
+
+function getRealmPowerMultiplier(){
+  if((S.realm||0)===0){
+    return Math.pow(QI_STAGE_MULT,Math.max(0,(S.realmStage||1)-1));
+  }
+  const realmIdx=clamp(S.realm||0,1,REALM_BASE_POWER.length-1);
+  const minor=clamp(S.period||0,0,3);
+  return REALM_BASE_POWER[realmIdx]*Math.pow(REALM_MINOR_MULT,minor);
+}
+
+function getRealmPowerText(){
+  const x=getRealmPowerMultiplier();
+  return x>=1000000?(x/1000000).toFixed(2)+'M×':x>=1000?(x/1000).toFixed(2)+'K×':x.toFixed(2)+'×';
+}
 const techniques=[
   ['Hoàng','Thanh Tâm Quyết',1.05],
   ['Huyền','Huyền Nguyên Công',1.18],
@@ -1160,7 +1182,8 @@ function getPlayerDamageStat(type='physical'){
 
 function getPlayerDefenseStat(type='physical'){
   type=normalizeDamageType(type);
-  return Math.max(0,(S.defense&&Number(S.defense[type]))||0);
+  const base=Math.max(0,(S.defense&&Number(S.defense[type]))||0);
+  return base*getRealmPowerMultiplier();
 }
 
 function getSkillPower(skill,mult=1,crit=false){
@@ -1174,13 +1197,15 @@ function getSkillPower(skill,mult=1,crit=false){
   let techMult=techniques[S.technique||0][2];
   let petMult=S.pet?1.08:1.0;
   let critMult=crit?(S.critDamage||1.8):1;
-  return base*mult*techMult*spiritMult*petMult*critMult*rnd(.92,1.08);
+  let realmMult=getRealmPowerMultiplier();
+  return base*realmMult*mult*techMult*spiritMult*petMult*critMult*rnd(.92,1.08);
 }
 
 function takePlayerDamage(raw,type='physical'){
   let defense=getPlayerDefenseStat(type);
-  // Giảm phẳng mềm: giữ cảm giác combat cũ nhưng áp dụng được cho mọi hệ.
-  let reduced=Math.max(1,raw-defense*rnd(.65,1.0));
+  const realmGuard=Math.sqrt(getRealmPowerMultiplier());
+  // Cảnh giới cao vừa tăng phòng thủ, vừa tạo "uy áp" giảm sát thương từ sinh vật cấp thấp.
+  let reduced=Math.max(1,(raw/realmGuard)-defense*rnd(.65,1.0));
   S.hp-=reduced;
   sfx('hit');
   floatText(player.mesh.position,`-${Math.round(reduced)} ${DAMAGE_LABELS[type]||type}`,DAMAGE_COLORS[type]||'#ff776d');
@@ -1846,7 +1871,7 @@ function updateHUD(){
   $('#stones').textContent=S.stones.toLocaleString();
   let petMult=S.pet?1.08:1.0;
   let defScore=COMBAT_DAMAGE_TYPES.reduce((v,t)=>v+Math.max(0,(S.defense&&S.defense[t])||0),0);
-  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+defScore*18)*(1+S.realm*.35)*petMult).toLocaleString();
+  $('#power').textContent=Math.round((S.maxHp*1.2+S.maxMp*.8+S.spiritSense*4+getTotalDamage()*45+defScore*18)*getRealmPowerMultiplier()*petMult).toLocaleString();
   $('#questText').innerHTML=`[Chính] Diệt Yêu Thú <span>${Math.min(20,S.questKills)}/20</span>`;
   $('#autoBtn').classList.toggle('on',S.auto);
   $('#miniName').textContent=region().name;
@@ -2116,6 +2141,7 @@ function openPanel(kind){
           <div class="stat"><span>Sinh lực (HP)</span><b>${Math.round(S.hp)} / ${S.maxHp}</b></div>
           <div class="stat"><span>Pháp lực (MP)</span><b>${Math.round(S.mp)} / ${S.maxMp}</b></div>
           <div class="stat"><span>Thần thức</span><b>${Math.round(S.spiritSense)}</b></div>
+          <div class="stat"><span>Hệ số sức mạnh cảnh giới</span><b>${getRealmPowerText()}</b></div>
         </div>
         <div class="card" style="margin-top:8px"><b>⚔ Sát Thương</b>
           <div class="stat"><span>Damage Tổng</span><b>${Math.round(getTotalDamage())}</b></div>
@@ -2342,12 +2368,15 @@ function openPanel(kind){
 
     }else if(kind==='cultivate'){
       title='Tu Vi · Cảnh Giới · Công Pháp';
-      let need=S.realm===0?350*S.realmStage:(S.realm+1)*2200*((S.period||0)+1);
+      let need=S.realm===0
+        ?Math.round(350*Math.pow(1.55,Math.max(0,(S.realmStage||1)-1)))
+        :Math.round(9000*Math.pow(4,S.realm-1)*Math.pow(2.4,S.period||0));
       let tech=techniques[S.technique||0];
-      html=`<div class="card"><b>☯ Cảnh giới: ${realmName()}</b><p>Tu vi: ${S.cultivation} / ${need}</p><p>Công pháp: <b>${tech[0]} phẩm · ${tech[1]}</b> (Hệ số ${tech[2]}x sức mạnh)</p><button class="action" id="breakBtn">Đột Phá Cảnh Giới</button></div><div class="cards">${techniques.map((t,i)=>`<div class="card"><b>${t[0]} phẩm · ${t[1]}</b><p>Tăng ${t[2]}x sát thương</p><button data-tech="${i}" ${i>S.technique||i>S.realm?'disabled':''}>${i===S.technique?'Đang tu':'Tu luyện'}</button></div>`).join('')}</div>`;
+      html=`<div class="card"><b>☯ Cảnh giới: ${realmName()}</b><p>Tu vi: ${S.cultivation} / ${need}</p><p>Uy lực cảnh giới hiện tại: <b>${getRealmPowerText()}</b></p><p>Công pháp: <b>${tech[0]} phẩm · ${tech[1]}</b> (Hệ số ${tech[2]}x sức mạnh)</p><button class="action" id="breakBtn">Đột Phá Cảnh Giới</button></div><div class="cards">${techniques.map((t,i)=>`<div class="card"><b>${t[0]} phẩm · ${t[1]}</b><p>Tăng ${t[2]}x sát thương</p><button data-tech="${i}" ${i>S.technique||i>S.realm?'disabled':''}>${i===S.technique?'Đang tu':'Tu luyện'}</button></div>`).join('')}</div>`;
       setTimeout(()=>{
         let bb=$('#breakBtn');
         if(bb)bb.onclick=()=>{
+          if(S.realm>=realms.length-1&&(S.period||0)>=3)return toast('Đã đạt Hóa Thần · Đỉnh Phong');
           if(S.cultivation<need)return toast('Chưa đủ tu vi để đột phá');
           S.cultivation-=need;
           if(S.realm===0){
@@ -2357,10 +2386,13 @@ function openPanel(kind){
             S.period=(S.period||0)+1;
             if(S.period>3){S.period=0;S.realm=Math.min(4,S.realm+1)}
           }
-          S.maxHp+=240;
+          S.maxHp=Math.round(S.maxHp*1.22+120);
+          S.maxMp=Math.round(S.maxMp*1.18+35);
           S.hp=S.maxHp;
-          S.damage.physical=(S.damage.physical||0)+24;
-          S.defense.physical=(S.defense.physical||0)+7;
+          S.mp=S.maxMp;
+          S.damage.physical=Math.round((S.damage.physical||0)*1.15+12);
+          S.defense.physical=Math.round((S.defense.physical||0)*1.18+4);
+          S.spiritSense=Math.round((S.spiritSense||0)*1.12+8);
           save();
           closePanel();
           burst(player.x,player.z,'#f6dd7c',50,8);
