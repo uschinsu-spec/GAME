@@ -76,48 +76,159 @@ function optimize(src){
     src=src.replace("(()=>{'use strict';",`(()=>{'use strict';\nconst MOBILE_RUNTIME=/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints||0)>1||Math.min(innerWidth||9999,innerHeight||9999)<820;`);
   }
 
-  // Thanh Vân Thôn: khi người chơi còn ở khu an toàn, quái tuần tra quanh cổng/vòng ngoài.
-  // Khi ra khỏi thôn, quái spawn gần người chơi hơn để luôn nhìn thấy và giao chiến được.
+  // ===== FIXED WORLD ENEMY POPULATION =====
+  // Tọa độ được sinh deterministically theo map id + slot id. Không phụ thuộc player.
+  // Thanh Vân Thôn: vùng gần safe-zone thưa; càng xa trung tâm mật độ càng cao.
   src=applyOnce(src,/function spawnPack\(\)\{[\s\S]*?\n\}\n\nfunction spawnBoss\(\)\{/,
-`function spawnPack(){
-  if(actors.filter(a=>!a.dead).length>(MOBILE_RUNTIME?22:30))return;
-  let rr=region(), pool=rr.enemy, type=pool[Math.floor(Math.random()*pool.length)];
-  let baseX=player.x,baseZ=player.z;
-
-  if(rr.id==='thanh_van_thon'&&isVillageSafe(player.x,player.z)){
-    const patrols=[
-      {x:-7,z:-(VILLAGE_WALL_RZ+7)},{x:7,z:-(VILLAGE_WALL_RZ+7)},
-      {x:-7,z:(VILLAGE_WALL_RZ+7)},{x:7,z:(VILLAGE_WALL_RZ+7)},
-      {x:-(VILLAGE_WALL_RX+7),z:-12},{x:(VILLAGE_WALL_RX+7),z:12}
-    ];
-    const p=patrols[Math.floor(Math.random()*patrols.length)];
-    baseX=p.x;baseZ=p.z;
-  }else{
-    let ang=rnd(0,Math.PI*2),r=rnd(MOBILE_RUNTIME?13:16,MOBILE_RUNTIME?22:28);
-    baseX=clamp(player.x+Math.cos(ang)*r,-MAP_BOUND,MAP_BOUND);
-    baseZ=clamp(player.z+Math.sin(ang)*r,-MAP_BOUND,MAP_BOUND);
-  }
-
-  const packSize=(type==='wolf'||type==='boar')?3:2;
-  for(let i=0;i<packSize;i++){
-    let spawnX=clamp(baseX+rnd(-3.2,3.2),-MAP_BOUND,MAP_BOUND);
-    let spawnZ=clamp(baseZ+rnd(-3.2,3.2),-MAP_BOUND,MAP_BOUND);
-    if(isVillageSafe(spawnX,spawnZ)){
-      let a=Math.atan2(spawnZ,spawnX);
-      if(!Number.isFinite(a))a=0;
-      spawnX=clamp(Math.cos(a)*(VILLAGE_WALL_RX+6),-MAP_BOUND,MAP_BOUND);
-      spawnZ=clamp(Math.sin(a)*(VILLAGE_WALL_RZ+6),-MAP_BOUND,MAP_BOUND);
+`function enemySeedHash(text){
+  let h=2166136261>>>0;
+  for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}
+  return h>>>0;
+}
+function enemySeedRand(seed){
+  seed=(seed+0x6D2B79F5)>>>0;
+  let t=seed;
+  t=Math.imul(t^(t>>>15),t|1);
+  t^=t+Math.imul(t^(t>>>7),t|61);
+  return {seed,value:((t^(t>>>14))>>>0)/4294967296};
+}
+function buildFixedEnemySpawns(){
+  const rr=region();
+  const isVillage=rr.id==='thanh_van_thon';
+  const bands=isVillage?[
+    {min:56,max:120,count:6},
+    {min:120,max:240,count:16},
+    {min:240,max:360,count:28},
+    {min:360,max:470,count:46}
+  ]:[
+    {min:35,max:150,count:12},
+    {min:150,max:280,count:22},
+    {min:280,max:390,count:28},
+    {min:390,max:470,count:34}
+  ];
+  const pool=(rr.enemy&&rr.enemy.length)?rr.enemy:['boar'];
+  const points=[];
+  let slot=0;
+  for(let bi=0;bi<bands.length;bi++){
+    const b=bands[bi];
+    for(let i=0;i<b.count;i++,slot++){
+      let seed=enemySeedHash(rr.id+':'+bi+':'+i);
+      let r1=enemySeedRand(seed);seed=r1.seed;
+      let r2=enemySeedRand(seed);seed=r2.seed;
+      let r3=enemySeedRand(seed);seed=r3.seed;
+      let r4=enemySeedRand(seed);
+      const angle=((i+r1.value*.72)/b.count)*Math.PI*2 + bi*.31;
+      const radius=Math.sqrt(b.min*b.min+r2.value*(b.max*b.max-b.min*b.min));
+      let x=Math.cos(angle)*radius;
+      let z=Math.sin(angle)*radius;
+      x=clamp(x,-MAP_BOUND,MAP_BOUND);
+      z=clamp(z,-MAP_BOUND,MAP_BOUND);
+      if(isVillageSafe(x,z)){
+        const p=clampToEllipse(x||1,z||1,VILLAGE_WALL_RX+8,VILLAGE_WALL_RZ+8,1.02);
+        x=p.x;z=p.z;
+      }
+      points.push({
+        id:rr.id+'_mob_'+slot,
+        x,z,
+        type:pool[Math.floor(r3.value*pool.length)%pool.length],
+        elite:r4.value<(.025+bi*.012),
+        band:bi
+      });
     }
-    makeActor(type,spawnX,spawnZ,Math.random()<.08);
   }
+  return points;
+}
+function initializeFixedEnemies(){
+  for(const a of actors){
+    try{if(a.mesh)a.mesh.dispose();}catch(e){}
+    try{if(a.shadow)a.shadow.dispose();}catch(e){}
+  }
+  actors=[];
+  boss=null;
+  const points=buildFixedEnemySpawns();
+  for(const p of points){
+    const a=makeActor(p.type,p.x,p.z,p.elite);
+    a.fixedSpawn=true;
+    a.spawnId=p.id;
+    a.spawnBand=p.band;
+    a.homeX=p.x;
+    a.homeZ=p.z;
+    a.respawnDelay=12+p.band*3;
+  }
+  console.info('[EnemyPopulation] '+region().name+': '+points.length+' fixed spawn points');
+}
+function respawnFixedEnemy(a){
+  if(!a||!a.fixedSpawn)return;
+  a.x=a.homeX;a.z=a.homeZ;
+  a.hp=a.maxHp;
+  a.dead=false;
+  a.attackCd=rnd(.2,.8);
+  a.stunT=0;
+  a.skillStatus={};a.skillDots={};a.skillBurnExplode=null;
+  if(a.mesh){a.mesh.position.set(a.x,a.size*.48,a.z);a.mesh.setEnabled(true);}
+  if(a.shadow){a.shadow.position.x=a.x;a.shadow.position.z=a.z;a.shadow.setEnabled(true);}
 }
 
-function spawnBoss(){`, 'Thanh Van Thon patrol spawn');
+function spawnBoss(){`, 'fixed coordinate enemy population');
+
+  // Quái cố định quay về home khi không giao chiến; không kéo quái xuyên nửa bản đồ.
+  src=applyOnce(src,
+`  if(!playerSafe && d>1.7 && (d<24 || a===boss)){
+    let oldX=a.x, oldZ=a.z;`,
+`  if(a.fixedSpawn && (playerSafe || d>=24)){
+    const hdx=a.homeX-a.x, hdz=a.homeZ-a.z, hd=Math.hypot(hdx,hdz);
+    if(hd>.35){
+      const homeStep=Math.min(hd,a.speed*.65*dt);
+      a.x+=hdx/Math.max(.001,hd)*homeStep;
+      a.z+=hdz/Math.max(.001,hd)*homeStep;
+    }
+  }
+
+  if(!playerSafe && d>1.7 && (d<24 || a===boss)){
+    let oldX=a.x, oldZ=a.z;`, 'fixed enemy leash');
+
+  // Quái cố định chết sẽ hồi sinh ở đúng spawn point thay vì bị xóa khỏi world.
+  src=applyOnce(src,
+`  setTimeout(()=>{
+    if(a.mesh)a.mesh.dispose();
+    if(a.shadow)a.shadow.dispose();
+    actors=actors.filter(x=>x!==a);
+  },800);`,
+`  if(a.fixedSpawn){
+    const respawnMs=Math.max(8000,(a.respawnDelay||15)*1000);
+    setTimeout(()=>respawnFixedEnemy(a),respawnMs);
+  }else{
+    setTimeout(()=>{
+      if(a.mesh)a.mesh.dispose();
+      if(a.shadow)a.shadow.dispose();
+      actors=actors.filter(x=>x!==a);
+    },800);
+  }`, 'fixed enemy respawn');
+
+  // Không sinh quái động quanh player trong auto-combat.
+  src=applyOnce(src,'    else if(actors.length<10)spawnPack();','    // Enemy population is fixed by map coordinates.','remove auto player spawn');
+
+  // Không sinh pack định kỳ. Chỉ giữ kiểm tra boss theo quest.
+  src=applyOnce(src,
+`    spawnTimer-=dt;
+    if(spawnTimer<=0){
+      spawnTimer=2.2;
+      spawnPack();
+      spawnBoss();
+    }`,
+`    spawnTimer-=dt;
+    if(spawnTimer<=0){
+      spawnTimer=2.2;
+      spawnBoss();
+    }`, 'remove periodic player spawn');
+
+  // Đổi map: dựng lại toàn bộ population cố định của map mới.
+  src=applyOnce(src,'        for(let i=0;i<(MOBILE_RUNTIME?5:8);i++)spawnPack();','        initializeFixedEnemies();','map fixed population');
+
+  // Khởi tạo: dựng quái toàn bản đồ một lần, không spawn quanh người chơi.
+  src=applyOnce(src,'  for(let i=0;i<(MOBILE_RUNTIME?4:8);i++)spawnPack();','  initializeFixedEnemies();','initial fixed population');
 
   src=applyOnce(src,/\n\s*preloadEnemySprites\(\);[^\n]*/,'\n  // Enemy texture lazy-load theo loại quái thực tế xuất hiện','enemy lazy-load');
-  src=applyOnce(src,'for(let i=0;i<16;i++)spawnPack();','for(let i=0;i<(MOBILE_RUNTIME?6:10);i++)spawnPack();','initial spawn');
-  src=applyOnce(src,'for(let i=0;i<12;i++)spawnPack();','for(let i=0;i<(MOBILE_RUNTIME?6:9);i++)spawnPack();','map spawn');
-  src=applyOnce(src,'if(actors.filter(a=>!a.dead).length>30)return;','if(actors.filter(a=>!a.dead).length>(MOBILE_RUNTIME?22:30))return;','actor cap');
   src=applyOnce(src,'const count=240; // khoảng cách ~1.08 world-unit, đủ kín cả ở frame cạnh mỏng.','const count=MOBILE_RUNTIME?156:240; // adaptive wall density','wall density');
   src=applyOnce(src,"for(let i=0;i<(cfg.treeCount||400);i++){","for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.treeCount||400),180):(cfg.treeCount||400));i++){",'tree cap');
   src=applyOnce(src,"for(let i=0;i<(cfg.rockCount||220);i++){","for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.rockCount||220),105):(cfg.rockCount||220));i++){",'rock cap');
@@ -148,14 +259,15 @@ src=optimize(src);
 src=src.replace(/[ \t]+$/gm,'');
 syntax(src,'game.js final optimized');
 assert(src.includes('const SKILL_MASTER=window.TuTienSkillMaster'),'skill master chưa được tích hợp');
-assert(src.includes("rr.id==='thanh_van_thon'&&isVillageSafe(player.x,player.z)"),'Thanh Vân Thôn patrol spawn chưa được tích hợp');
+assert(src.includes('function buildFixedEnemySpawns()'),'fixed enemy population chưa được tích hợp');
+assert(src.includes('initializeFixedEnemies();'),'map chưa gọi fixed enemy population');
 assert(!src.includes('…310 tokens truncated…'),'corruption vẫn còn');
 write('game.js',src);
 
 let index=read('index.html');
-index=index.replace(/<script src="boot\.js\?v=\d+"><\/script>/,`<script>\nwindow.addEventListener('error',function(e){var m=document.getElementById('loadMsg');if(m)m.textContent='Lỗi GAME: '+(e.message||'Không xác định');});\n<\/script>\n<script src="skill-master-data.js?v=3"><\/script>\n<script src="game.js?v=36"><\/script>`);
-index=index.replace(/game\.js\?v=\d+/,'game.js?v=36');
-assert(index.includes('skill-master-data.js?v=3')&&index.includes('game.js?v=36'),'Không cập nhật được index.html');
+index=index.replace(/<script src="boot\.js\?v=\d+"><\/script>/,`<script>\nwindow.addEventListener('error',function(e){var m=document.getElementById('loadMsg');if(m)m.textContent='Lỗi GAME: '+(e.message||'Không xác định');});\n<\/script>\n<script src="skill-master-data.js?v=3"><\/script>\n<script src="game.js?v=37"><\/script>`);
+index=index.replace(/game\.js\?v=\d+/,'game.js?v=37');
+assert(index.includes('skill-master-data.js?v=3')&&index.includes('game.js?v=37'),'Không cập nhật được index.html');
 write('index.html',index);
 
-console.log('✓ CLEAN BUILD hoàn tất: game.js không còn runtime source patch/eval');
+console.log('✓ CLEAN BUILD hoàn tất: fixed-coordinate enemy population active');
