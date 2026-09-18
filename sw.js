@@ -1,5 +1,5 @@
-const BUILD='20260918-enemy-x10-v6.3';
-const CACHE={shell:'game-shell-v18',assets:'game-assets-v18',maps:'game-maps-v18'};
+const BUILD='20260918-enemy-camps-minimap-v6.4';
+const CACHE={shell:'game-shell-v19',assets:'game-assets-v19',maps:'game-maps-v19'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
