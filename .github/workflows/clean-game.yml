@@ -9,6 +9,7 @@ on:
       - '*.html'
       - '*.css'
       - 'maps/**'
+      - 'tests/**'
       - '.github/workflows/clean-game.yml'
   workflow_dispatch:
 
@@ -40,3 +41,15 @@ jobs:
           node --check systems-progression.js
           find src -name '*.js' -print0 | xargs -0 -n1 node --check
           git diff --check
+
+      - name: Persist generated runtime bundle
+        run: |
+          if ! git diff --quiet -- src/runtime-core.js; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/runtime-core.js
+            git commit -m "Sync generated runtime core [skip ci]"
+            git push
+          else
+            echo "runtime-core.js already synchronized"
+          fi
