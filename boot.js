@@ -11,12 +11,64 @@ function validateSource(src,stage){
 }
 function sanitizeGameSource(src){
   if(typeof src!=='string')return src;
-  // game.js từng bị chèn nhầm output của công cụ vào đầu file:
-  // "Warning: truncated output ..." + "Total output lines: ...".
-  // Hai dòng này không phải JavaScript và gây SyntaxError: Unexpected identifier 'output'.
-  const before=src;
-  src=src.replace(/^\uFEFF?Warning:\s*truncated output[^\n]*\nTotal output lines:\s*\d+\s*\n+/,'');
-  if(src!==before)console.warn('[Boot/Audit] Đã loại bỏ preamble rác bị chèn nhầm khỏi game.js.');
+  let changed=false;
+
+  // game.js từng bị chèn nhầm output của công cụ vào đầu file.
+  const preamble=/^\uFEFF?Warning:\s*truncated output[^\n]*\nTotal output lines:\s*\d+\s*\n+/;
+  if(preamble.test(src)){
+    src=src.replace(preamble,'');
+    changed=true;
+    console.warn('[Boot/Audit] Đã loại bỏ preamble rác khỏi game.js.');
+  }
+
+  // Commit refactor map 524c98a6 đã vô tình chèn marker truncate vào GIỮA code,
+  // làm mất phần cuối damageFromRealmSource(), getSystemContext() và đầu kill().
+  // Khôi phục nguyên đoạn chuẩn từ parent commit 75221256 trước khi parse source.
+  const brokenCombat=/const sourceSuppress=getRealmSuppressionByScores\(sourceScore,sourceMa…310 tokens truncated…tem\('Linh Thạch',1\);/;
+  if(brokenCombat.test(src)){
+    src=src.replace(brokenCombat,`const sourceSuppress=getRealmSuppressionByScores(sourceScore,sourceMajor,info.score,info.major);
+  const defenderSuppress=getRealmSuppressionByScores(info.score,info.major,sourceScore,sourceMajor);
+  d=Math.max(1,Math.round(d*sourceSuppress/Math.max(1,defenderSuppress)));
+  a.hp-=d;
+  sfx(crit?'slash':'hit');
+  floatText(a.mesh.position,(label?label+' ':'')+'-'+d+' '+(DAMAGE_LABELS[type]||''),crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
+  flash(a.mesh);
+  if(a===boss)$('#bossFill').style.width=clamp(a.hp/a.maxHp*100,0,100)+'%';
+  if(a.hp<=0)kill(a);
+}
+
+function getSystemContext(){
+  return {
+    save,updateHUD,toast,sfx,openPanel,closePanel,
+    getActors:()=>actors,
+    getPlayer:()=>player,
+    realmDamage:damageFromRealmSource,
+    burst,ring,slash
+  };
+}
+
+function kill(a){
+  a.dead=true;
+  a.mesh.setEnabled(false);
+  if(a.shadow)a.shadow.setEnabled(false);
+  S.kills++;
+  S.questKills++;
+  gainXP(a.xp);
+  const formationCult=window.TuTienSystems?window.TuTienSystems.getCultivationMultiplier(S,player):1;
+  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation*getTechniqueCultivationMultiplier()*formationCult);
+  
+  // Loot
+  if(Math.random()<.75){
+    let g=Math.round(rnd(6,25)*(1+S.level*.05));
+    S.gold+=g;
+    if(Math.random()<.2){
+      S.stones++;
+      addItem('Linh Thạch',1);`);
+    changed=true;
+    console.warn('[Boot/Audit] Đã phục hồi block combat bị truncate trong game.js.');
+  }
+
+  if(changed)console.info('[Boot/Audit] game.js đã được repair trước compile.');
   return src;
 }
 async function fetchText(url,label){
@@ -29,10 +81,10 @@ async function boot(){
   try{
     if(msg)msg.textContent='Đang kiểm tra toàn bộ GAME…';
 
-    let rawSrc=await fetchText('./game.js?v=32','game.js');
+    let rawSrc=await fetchText('./game.js?v=33','game.js');
     rawSrc=sanitizeGameSource(rawSrc);
-    const rawCheck=validateSource(rawSrc,'game.js sau sanitize');
-    if(!rawCheck.ok)throw new Error('game.js lỗi cú pháp sau sanitize: '+rawCheck.error.message);
+    const rawCheck=validateSource(rawSrc,'game.js sau repair');
+    if(!rawCheck.ok)throw new Error('game.js lỗi cú pháp sau repair: '+rawCheck.error.message);
     let src=rawSrc;
 
     try{
