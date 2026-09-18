@@ -1051,22 +1051,24 @@ function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
 }
 
 function spawnVillageCurvedWall(){
-  // 9 frame tường đá camera 50°, cùng đáy/baseline.
-  // Các hướng đối xứng dùng file riêng và mirror để giữ ánh sáng/camera đồng nhất.
+  // Bộ 9 PNG tường đá đã chuẩn hóa cùng canvas + cùng baseline,
+  // render sẵn đúng camera orthographic elevation 50° của GAME.
   const wallFiles=[
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_00.png',
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_01.png',
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_02.png',
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_03.png',
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_04.png',
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_05.png',
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_06.png',
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_07.png',
-    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_08.png'
+    'assets/maps/common/fences_gates/stone_wall_50deg_00.png',
+    'assets/maps/common/fences_gates/stone_wall_50deg_01.png',
+    'assets/maps/common/fences_gates/stone_wall_50deg_02.png',
+    'assets/maps/common/fences_gates/stone_wall_50deg_03.png',
+    'assets/maps/common/fences_gates/stone_wall_50deg_04.png',
+    'assets/maps/common/fences_gates/stone_wall_50deg_05.png',
+    'assets/maps/common/fences_gates/stone_wall_50deg_06.png',
+    'assets/maps/common/fences_gates/stone_wall_50deg_07.png',
+    'assets/maps/common/fences_gates/stone_wall_50deg_08.png'
   ];
-  const rx=43.0,rz=40.0;
-  const count=208; // overlap nhẹ để các đoạn kín khít, không hở khe.
 
+  const rx=43.0,rz=40.0;
+  const count=208; // khoảng cách ~1.25 world-unit: overlap nhẹ để tường kín khít.
+
+  // Góc tiếp tuyến ellipse -> frame gần nhất trong 9 hướng (-90°..+90°, bước 22.5°).
   function frameForTangent(a){
     const tx=-rx*Math.sin(a);
     const tz= rz*Math.cos(a);
@@ -1081,20 +1083,20 @@ function spawnVillageCurvedWall(){
     const x=Math.cos(a)*rx;
     const z=Math.sin(a)*rz;
 
-    // Chừa đúng hai cổng Bắc/Nam.
+    // Chừa hai lối cổng Bắc/Nam, các đoạn còn lại nối liên tục quanh trấn.
     if(Math.abs(x)<7.0 && Math.abs(z)>rz-4.6)continue;
 
     const fi=frameForTangent(a);
-    const wallDef={
-      file:wallFiles[fi],
-      width:1.55,
-      height:3.35,
-      noShadow:true
-    };
-    const wall=spawnMapProp('village_curve_wall_'+i,wallDef,x,z,0.0);
-
-    // Frame 05..08 là các hướng đối xứng của 03..00.
-    if(fi>4 && wall) wall.scaling.x*=-1;
+    spawnMapProp(
+      'village_curve_wall_'+i,
+      {
+        file:wallFiles[fi],
+        width:1.55,
+        height:3.35,
+        noShadow:true
+      },
+      x,z,0.0
+    );
   }
 
   // Hai cổng chính giữ nguyên.
