@@ -95,6 +95,10 @@
   </div>
 </div>
 <script src="systems-progression.js?v=1"></script>
-<script src="boot.js?v=13"></script>
+<script>
+window.addEventListener('error',function(e){var m=document.getElementById('loadMsg');if(m)m.textContent='Lỗi GAME: '+(e.message||'Không xác định');});
+</script>
+<script src="skill-master-data.js?v=3"></script>
+<script src="game.js?v=35"></script>
 </body>
 </html>

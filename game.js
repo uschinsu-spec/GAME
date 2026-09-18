@@ -1,7 +1,5 @@
-Warning: truncated output (original token count: 30310)
-Total output lines: 2965
-
 (()=>{'use strict';
+const MOBILE_RUNTIME=/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints||0)>1||Math.min(innerWidth||9999,innerHeight||9999)<820;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const canvas=$('#renderCanvas'), loading=$('#loading'), loadMsg=$('#loadMsg'), loadBar=$('#loadBar'), startBtn=$('#startBtn'), hud=$('#hud');
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), rnd=(a,b)=>a+Math.random()*(b-a), dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
@@ -325,7 +323,7 @@ const elements=[
   ['Lôi','⚡'],['Kiếm','劍'],['Đao','刀']
 ];
 // Dữ liệu map nằm trong /maps để game.js luôn gọn khi có hàng trăm bản đồ.
-const MAP_DATA_VERSION='20260918-1';
+const MAP_DATA_VERSION='20260918-2';
 const DEFAULT_MAP_ID='thanh_van_thon';
 const DEFAULT_REGION={id:DEFAULT_MAP_ID,name:'Thanh Vân Thôn',kind:'Thôn',min:1,max:12,color:'#668071',enemy:['boar','archer'],file:'maps/thanh_van_thon.json'};
 let regions=[DEFAULT_REGION];
@@ -342,14 +340,30 @@ async function fetchMapJson(url){
 
 async function loadMapManifest(){
   try{
-    const data=await fetchMapJson('maps/manifest.json');
-    if(!data||!Array.isArray(data.maps)||data.maps.length===0)throw new Error('Danh mục map trống');
-    mapManifest=data;
-    regions=data.maps;
+    const root=await fetchMapJson('maps/manifest.json');
+    let allMaps=Array.isArray(root.maps)?root.maps:[];
+    if(allMaps.length===0&&Array.isArray(root.catalogs)&&root.catalogs.length){
+      const catalogs=await Promise.all(root.catalogs.map(file=>fetchMapJson(file)));
+      allMaps=catalogs.flatMap(c=>Array.isArray(c.maps)?c.maps:[]);
+    }
+    if(allMaps.length===0)throw new Error('Danh mục map trống');
+    mapManifest={...root,maps:allMaps};
+    regions=allMaps;
+
+    const legacyRegionIds=['thanh_van_thon','linh_son_ngoai_vi','bach_ngoc_thanh','thanh_van_tong','van_dam_sa_mac','yeu_vuc','cam_dia_han_uyen','ma_vuc'];
+    const legacyIndex=Number.isInteger(S.region)?clamp(S.region,0,legacyRegionIds.length-1):0;
+    const legacyId=legacyRegionIds[legacyIndex]||root.defaultMap||DEFAULT_MAP_ID;
+    const requestedId=(typeof S.regionId==='string'&&S.regionId)?S.regionId:legacyId;
+    const resolvedId=regions.some(r=>r.id===requestedId)?requestedId:(root.defaultMap||DEFAULT_MAP_ID);
+    const resolvedIndex=Math.max(0,regions.findIndex(r=>r.id===resolvedId));
+    S.region=resolvedIndex;
+    S.regionId=resolvedId;
   }catch(err){
     console.warn('Dùng danh mục map dự phòng:',err);
     mapManifest={schemaVersion:1,defaultMap:DEFAULT_MAP_ID,maps:[DEFAULT_REGION]};
     regions=mapManifest.maps;
+    S.region=0;
+    S.regionId=DEFAULT_MAP_ID;
   }
 }
 
@@ -376,7 +390,15 @@ async function getMapConfig(id){
   const meta=regions.find(r=>r.id===id);
   const file=(meta&&meta.file)||('maps/'+id+'.json');
   try{
-    const cfg=normalizeMapConfig(await fetchMapJson(file),id);
+    const raw=await fetchMapJson(file);
+    let cfg=raw;
+    if(raw&&raw.extends){
+      const base=await fetchMapJson(raw.extends);
+      cfg={...base,...raw,...(raw.overrides||{})};
+      delete cfg.extends;
+      delete cfg.overrides;
+    }
+    cfg=normalizeMapConfig(cfg,id);
     MAP_CONFIGS[id]=cfg;
     return cfg;
   }catch(err){
@@ -396,150 +418,45 @@ const MAP_BOUND = MAP_HALF - 15; // 485
 const RADAR_RANGE = 75; // Bán kính quét Radar minimap (mét)
 
 // ==========================================
-// HỆ THỐNG KỸ NĂNG: TỨ ĐẠI ĐẲNG CẤP & TỨ PHẨM VỊ
-// 4 Cấp: Hoàng -> Huyền -> Địa -> Thiên
-// 4 Phẩm: Hạ -> Trung -> Thượng -> Cực (16 bí tịch / hệ)
-// ==========================================
-const SKILL_TIERS=[
-  {id:'hoang',name:'Hoàng Cấp',minRealm:0,minLevel:1,color:'#68d391',badge:'Hoàng'},
-  {id:'huyen',name:'Huyền Cấp',minRealm:1,minLevel:20,color:'#63b3ed',badge:'Huyền'},
-  {id:'dia',name:'Địa Cấp',minRealm:2,minLevel:45,color:'#b794f4',badge:'Địa'},
-  {id:'thien',name:'Thiên Cấp',minRealm:3,minLevel:75,color:'#f6ad55',badge:'Thiên'}
-];
-
-const SKILL_RANKS=[
-  {id:'ha',name:'Hạ Phẩm',multBase:1.5,mpBase:18,cdBase:3.2,costStones:40,costCult:100},
-  {id:'trung',name:'Trung Phẩm',multBase:2.1,mpBase:32,cdBase:4.8,costStones:100,costCult:250},
-  {id:'thuong',name:'Thượng Phẩm',multBase:3.0,mpBase:50,cdBase:6.8,costStones:220,costCult:550},
-  {id:'cuc',name:'Cực Phẩm',multBase:4.2,mpBase:75,cdBase:9.5,costStones:450,costCult:1200}
-];
-
-const ELEMENT_SKILL_NAMES={
-  'Kiếm':[
-    'Thanh Phong Kiếm Thức','Lưu Vân Kiếm Khí','Tật Điện Kiếm Thức','Hồi Phong Kiếm Quyết',
-    'Quy Nguyên Kiếm Trận','Huyền Quang Kiếm Vũ','Tứ Linh Kiếm Ảnh','Thiên Kiếm Phá Toái',
-    'Địa Sát Kiếm Lôi','Bát Hoang Kiếm Nhận','Thái Ất Kiếm Cương','Vạn Kiếm Quy Tông',
-    'Cửu Kiếp Kiếm Điển','Tru Tiên Kiếm Trận','Hỗn Độn Kiếm Ý','Nhất Niệm Trảm Chư Thiên'
-  ],
-  'Đao':[
-    'Liệp Hổ Đao Pháp','Khai Sơn Đao Khí','Đoạn Lãng Đao Quyết','Bá Vương Khai Thiên Đao',
-    'Cuồng Phong Đao Trận','Huyết Ảnh Ma Đao','Liệt Không Toái Nhận','Vô Ngân Phách Địa Đao',
-    'Thất Sát Đao Quyết','Diêm La Huyết Nhận','Cửu U Bá Hoàng Đao','Thần Ma Toái Hồn Trảm',
-    'Hồng Mông Khai Thiên Đao','Bát Hoang Diệt Tuyệt Đao','Hỗn Độn Đao Ý','Nghịch Mệnh Trảm Thiên Đao'
-  ],
-  'Hỏa':[
-    'Xích Viêm Hỏa Cầu','Liệt Diễm Thiêu Thiên','Hỏa Điểu Phá Không','Hỏa Long Bộc Phá',
-    'Bát Hoang Ly Hỏa','Tử Diễm Ma Hỏa Quyết','Hỏa Phượng Liêu Nguyên','Xích Tiêu Diệt Ma Trận',
-    'Cửu U Minh Hỏa','Tam Muội Chân Hỏa','Hỗn Độn Thần Diễm','Liệt Diễm Thiêu Chư Thiên',
-    'Thái Dương Thần Hỏa','Hồng Mông Chân Hỏa','Cửu Chuyển Niết Bàn Hỏa','Phần Thiên Táng Thế Thần Thông'
-  ],
-  'Lôi':[
-    'Dẫn Lôi Châm','Lôi Quang Nhất Trảm','Thiểm Điện Liên Ba','Ngũ Lôi Oanh Đỉnh',
-    'Tật Điện Cuồng Lôi','Tử Tiêu Lôi Trận','Thiên Lôi Phá Không','Cửu Thiên Lôi Vũ',
-    'Cửu Thiên Huyền Lôi','Thái Ất Thần Lôi Trận','Lôi Đình Phạt Thế','Vạn Lôi Hóa Kiếp',
-    'Tử Vi Thần Lôi Quyết','Diệt Thế Lôi Kiếp','Hỗn Độn Thần Lôi','Thiên Kiếp Thần Phạt Thần Thông'
-  ],
-  'Thủy':[
-    'Hàn Băng Thứ','Lưu Thủy Đoạn Đao','Băng Thuẫn Hộ Thể','Hàn Băng Bộc Phá',
-    'Băng Phong Vạn Lý','Huyền Băng Kiếm Trận','Băng Phượng Hóa Thần','Huyền Minh Chân Thủy',
-    'Cửu U Băng Phách','Băng Hà Diệt Thế','Thái Âm Thần Thủy','Vạn Tượng Băng Táng',
-    'Nhược Thủy Tam Thiên','Hỗn Độn Băng Linh','Tuyệt Đối Linh Độ','Hàn Băng Đóng Băng Chư Thiên'
-  ],
-  'Mộc':[
-    'Thanh Mộc Thứ','Linh Đằng Trói Buộc','Diệp Nhận Loạn Vũ','Vạn Diệp Hoa Vũ',
-    'Cổ Mộc Khôi Lỗi','Linh Mộc Hộ Thể','Vạn Mộc Triều Tông','Sinh Linh Thần Hóa',
-    'Trường Sinh Thần Quyết','Bát Hoang Thần Mộc','Thông Thiên Linh Đằng','Vạn Cổ Mộc Linh Trận',
-    'Kiến Mộc Khai Thiên','Hồng Mông Tiên Thảo','Nghịch Chuyển Sinh Tử','Mộc Linh Khởi Nguyên Thần Thông'
-  ],
-  'Phong':[
-    'Phong Nhận Thuật','Tật Phong Trảm','Cuồng Phong Loạn Vũ','Phong Long Quyển',
-    'Liệt Phong Trận','Vô Ảnh Phong Thức','Thiên Phong Phá Thể','Bão Táp Băng Toái',
-    'Bát Diện Linh Phong','Cửu Thiên Cương Phong','Hư Không Liệt Phong','Tật Phong Vô Cực Trận',
-    'Thái Hư Thần Phong','Hồng Mông Phong Kiếp','Phong Thần Toái Hư','Vạn Cổ Hư Vô Phong Thần Thông'
-  ],
-  'Thổ':[
-    'Thạch Giáp Thuật','Lạc Thạch Trận','Nham Thuẫn Hộ Thể','Nham Thạch Bạo Phá',
-    'Đại Địa Chi Lực','Kim Cương Nham Thể','Địa Long Cuồng Ba','Bát Hoang Nham Trận',
-    'Địa Mạch Thần Lực','Thái Sơn Áp Đỉnh','Vạn Trượng Địa Nham','Đại Địa Liệt Cương',
-    'Huyền Hoàng Chi Khí','Bất Động Minh Vương Thổ','Hồng Mông Thổ Nhận','Thiên Địa Quy Nhất Thần Thông'
-  ],
-  'Kim':[
-    'Kim Cang Chỉ','Kim Đao Toái Khí','Bạch Kim Hộ Thuẫn','Phá Giáp Thần Quyết',
-    'Kim Qua Thiết Mã','Thái Canh Kiếm Khí','Vạn Nhận Triều Tông','Kim Cương Bất Hoại',
-    'Thái Canh Kim Sát','Thiên Canh Thần Nhận','Vạn Kiếm Quy Tông','Kim Quang Toái Hư',
-    'Hỗn Độn Canh Kim','Hồng Mông Thần Binh','Khai Thiên Thần Sát','Canh Kim Diệt Thế Thần Thông'
-  ]
-};
-
-function getElementKey(elemName){
-  let map={'Kiếm':'kiem','Đao':'dao','Hỏa':'hoa','Lôi':'loi','Thủy':'thuy','Mộc':'moc','Phong':'phong','Thổ':'tho','Kim':'kim'};
-  return map[elemName]||'kiem';
-}
-
-function getElementNameFromKey(key){
-  let map={'kiem':'Kiếm','dao':'Đao','hoa':'Hỏa','loi':'Lôi','thuy':'Thủy','moc':'Mộc','phong':'Phong','tho':'Thổ','kim':'Kim'};
-  return map[key]||'Kiếm';
-}
-
-function getElementColorByName(elemName){
-  return {
-    Kim:'#ffd86b',Hỏa:'#ff6b3d',Thủy:'#64cfff',
-    Thổ:'#c9a56b',Mộc:'#68df8b',Phong:'#a7f3dc',
-    Lôi:'#9d8cff',Kiếm:'#7ceaff',Đao:'#ff776d'
-  }[elemName]||'#7ceaff';
-}
-
-function getSkillId(elemName,tierIdx,rankIdx){
-  let key=getElementKey(elemName);
-  return `${key}_${tierIdx}_${rankIdx}`;
-}
-
-function getSkillDef(skillId){
-  if(!skillId)return null;
-  let parts=skillId.split('_');
-  if(parts.length<3)return null;
-  let elemKey=parts[0], tierIdx=parseInt(parts[1],10), rankIdx=parseInt(parts[2],10);
-  let elemName=getElementNameFromKey(elemKey);
-  let names=ELEMENT_SKILL_NAMES[elemName]||ELEMENT_SKILL_NAMES['Kiếm'];
-  let flatIdx=tierIdx*4+rankIdx;
-  let name=names[flatIdx]||`Bí Kíp ${tierIdx}-${rankIdx}`;
-  let tier=SKILL_TIERS[tierIdx]||SKILL_TIERS[0];
-  let rank=SKILL_RANKS[rankIdx]||SKILL_RANKS[0];
-  let tierMults=[1.0, 2.0, 3.8, 7.5];
-  let tm=tierMults[tierIdx]||1.0;
-  let mult=rank.multBase*tm;
-  let mp=Math.round(rank.mpBase*(1+tierIdx*0.85));
-  let cd=parseFloat((rank.cdBase+tierIdx*1.5).toFixed(1));
-  let aoe=rankIdx===0?0:(4.5+rankIdx*2.2+tierIdx*1.5);
-  let costStones=Math.round(rank.costStones*Math.pow(2.2,tierIdx));
-  let costCult=Math.round(rank.costCult*Math.pow(2.4,tierIdx));
-  let iconPath=`assets/skills/${elemKey}/${tier.id}_${rank.id}.png`;
-  let vfxPath=`assets/vfx/skills/${elemKey}/${tier.id}_${rank.id}.png`;
-  return {
-    id:skillId,
-    name,
-    element:elemName,
-    elemKey,
-    tierIdx,
-    rankIdx,
-    tierId:tier.id,
-    rankId:rank.id,
-    tierName:tier.name,
-    rankName:rank.name,
-    tierColor:tier.color,
-    badge:`${tier.badge}·${rank.name[0]}`,
-    icon:iconPath,
-    vfx:vfxPath,
-    minRealm:tier.minRealm,
-    minLevel:tier.minLevel,
-    mult,
-    mp,
-    cd,
-    aoe,
-    costStones,
-    costCult
-  };
-}
+  // HỆ THỐNG KỸ NĂNG — MASTER DATA TỪ EXCEL
+  // 144 skill / 9 hệ / 4 cấp / 4 phẩm. VFX path giữ nguyên.
+  // ==========================================
+  const SKILL_MASTER=window.TuTienSkillMaster;
+  if(!SKILL_MASTER||!SKILL_MASTER.elements||SKILL_MASTER.skillCount!==144){
+    throw new Error('Skill master data chưa tải hoặc không đủ 144 skill');
+  }
+  const SKILL_TIERS=SKILL_MASTER.tiers;
+  const SKILL_RANKS=SKILL_MASTER.ranks;
+  const ELEMENT_SKILL_NAMES=Object.fromEntries(Object.entries(SKILL_MASTER.elements).map(([name,e])=>[name,e.names]));
+  function getElementKey(elemName){const e=SKILL_MASTER.elements[elemName];return e?e.key:'kiem';}
+  function getElementNameFromKey(key){for(const [name,e] of Object.entries(SKILL_MASTER.elements))if(e.key===key)return name;return 'Kiếm';}
+  function getElementColorByName(elemName){return {Kim:'#ffd86b',Hỏa:'#ff6b3d',Thủy:'#64cfff',Thổ:'#c9a56b',Mộc:'#68df8b',Phong:'#a7f3dc',Lôi:'#9d8cff',Kiếm:'#7ceaff',Đao:'#ff776d'}[elemName]||'#7ceaff';}
+  function getSkillId(elemName,tierIdx,rankIdx){return getElementKey(elemName)+'_'+tierIdx+'_'+rankIdx;}
+  function getSkillBalance(tierIdx,rankIdx){return SKILL_MASTER.balance[tierIdx*4+rankIdx]||null;}
+  function getSkillDef(skillId){
+    if(!skillId)return null;
+    const parts=skillId.split('_');if(parts.length<3)return null;
+    const elemKey=parts[0],tierIdx=parseInt(parts[1],10),rankIdx=parseInt(parts[2],10);
+    if(!Number.isFinite(tierIdx)||!Number.isFinite(rankIdx)||tierIdx<0||tierIdx>3||rankIdx<0||rankIdx>3)return null;
+    const element=getElementNameFromKey(elemKey),edata=SKILL_MASTER.elements[element],bal=getSkillBalance(tierIdx,rankIdx);
+    if(!edata||!bal)return null;
+    const tier=SKILL_TIERS[tierIdx],rank=SKILL_RANKS[rankIdx],flat=tierIdx*4+rankIdx,profile=edata.profiles[rankIdx]||{};
+    const name=edata.names[flat]||('Bí Kíp '+tierIdx+'-'+rankIdx);
+    return {
+      id:skillId,name,element,elemKey,tierIdx,rankIdx,tierId:tier.id,rankId:rank.id,tierName:tier.name,rankName:rank.name,tierColor:tier.color,
+      badge:(tier.badge||tier.name||'')+'·'+String(rank.name||'').charAt(0),
+      minRealm:bal.minRealm,minLevel:bal.minLevel,mult:bal.mult,mp:bal.mp,cd:bal.cd,aoe:bal.aoe,hits:bal.hits,targetRange:bal.targetRange,
+      forceCritAoE:!!bal.forceCritAoE,spiritScaling:!!edata.spiritScaling,costStones:bal.costStones,costCult:bal.costCult,upgradeCosts:bal.upgradeCosts,
+      icon:'assets/skills/'+elemKey+'/'+tier.id+'_'+rank.id+'.png',
+      vfx:'assets/vfx/skills/'+elemKey+'/'+tier.id+'_'+rank.id+'.png',
+      role:profile.role||'',mechanicText:name+': '+(profile.mechanic||''),statusText:profile.status||'',effect:profile.effect||null
+    };
+  }
+  function getSkillUpgradeCost(skill,curLv){
+    if(!skill||curLv>=5)return null;
+    const list=skill.upgradeCosts||[],c=list[curLv-1];
+    return c?{stones:Number(c.stones)||0,cult:Number(c.cult)||0,toLevel:Number(c.toLevel)||curLv+1}:null;
+  }
 
 const defaultState={
   name:'Linh Phong',level:1,xp:0,xpNeed:120,
@@ -715,6 +632,8 @@ function ellipseNorm(x,z,rx,rz){
   return Math.sqrt((x*x)/(rx*rx)+(z*z)/(rz*rz));
 }
 function isVillageSafe(x,z){
+  const current=regions&&regions.length?(regions[S.region||0]||regions[0]):null;
+  if(current&&current.id!==DEFAULT_MAP_ID)return false;
   return ellipseNorm(x,z,VILLAGE_SAFE_RX,VILLAGE_SAFE_RZ)<1;
 }
 function isVillageGateLane(x,z){
@@ -727,6 +646,8 @@ function clampToEllipse(x,z,rx,rz,scaleBias=1){
   return {x:x*s,z:z*s};
 }
 function resolveVillageWallMove(fromX,fromZ,toX,toZ){
+  const current=regions&&regions.length?(regions[S.region||0]||regions[0]):null;
+  if(current&&current.id!==DEFAULT_MAP_ID)return {x:toX,z:toZ};
   const fromN=ellipseNorm(fromX,fromZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ);
   const toN=ellipseNorm(toX,toZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ);
   const crossing=(fromN<1&&toN>=1)||(fromN>=1&&toN<1);
@@ -751,7 +672,64 @@ function ejectEnemyFromVillage(a){
 
 function realmName(){return S.realm===0?`Luyện Khí Tầng ${S.realmStage}`:`${realms[S.realm]} · ${periods[S.period||0]}`}
 function gradeForLevel(){return clamp(1+Math.floor((S.level-1)/25),1,5)}
-function region(){return regions[S.region||0]||regions[0]}
+function regionIndexById(id){
+  if(!id)return -1;
+  return regions.findIndex(r=>r.id===id);
+}
+function region(){
+  const byId=regionIndexById(S.regionId);
+  if(byId>=0){
+    S.region=byId;
+    return regions[byId];
+  }
+  const byIndex=regions[S.region||0]||regions[0]||DEFAULT_REGION;
+  if(byIndex)S.regionId=byIndex.id;
+  return byIndex;
+}
+function mapRealmLabel(r){
+  const a=realms[clamp(Number(r.minRealm)||0,0,realms.length-1)]||realms[0];
+  const b=realms[clamp(Number(r.maxRealm??r.minRealm)||0,0,realms.length-1)]||a;
+  return a===b?a:(a+' → '+b);
+}
+function isMapAccessible(r){
+  if(!r)return false;
+  if(r.id===S.regionId||r===regions[S.region||0])return true;
+  const minRealm=Number(r.minRealm)||0;
+  const minLevel=Number(r.min)||1;
+  return (S.realm||0)>=minRealm && (S.level||1)>=minLevel;
+}
+function enemyDisplayName(id){
+  return ({boar:'Sơn Trư',archer:'Tiễn Thủ',bandit:'Đạo Tặc',tiger:'Hổ Thần',skeleton:'Khô Cốt',undead:'Bạo Thi',ice_wolf:'Băng Lang',wolf:'Ma Lang',fox:'Linh Hồ',golem:'Thạch Khôi',shadow:'Ảnh Thú'})[id]||id;
+}
+function renderWorldMapCards(){
+  const groups=new Map();
+  regions.forEach((r,i)=>{
+    const key=r.continentName||'Khu vực khác';
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push({r,i});
+  });
+  let html=`<div class="card"><b>🌏 Nhân Giới</b><p>11 đại châu/vực · 22 khu vực · ${regions.length} map. Map mở theo cảnh giới và cấp độ nhân vật.</p><div class="stat"><span>Hiện tại</span><b>${realmName()} · Lv.${S.level}</b></div></div>`;
+  for(const [continent,items] of groups){
+    const first=items[0]&&items[0].r;
+    html+=`<div class="card" style="margin-top:8px"><b>🗺 ${continent}</b><p>${first&&first.element?'Thuộc tính: '+first.element:''} ${first&&first.faction?'· '+first.faction:''}</p></div><div class="cards">`;
+    for(const {r,i} of items){
+      const current=(r.id===S.regionId)||i===S.region;
+      const unlocked=isMapAccessible(r);
+      const status=current?'Đang ở đây':unlocked?'Dịch chuyển':`Yêu cầu ${mapRealmLabel(r)} · Lv.${r.min}`;
+      html+=`<div class="card">
+        <b>${r.kind} · ${r.name}</b>
+        <p>${r.regionName||''}</p>
+        <p><b>${mapRealmLabel(r)}</b> · Lv.${r.min}–${r.max}</p>
+        <p>${r.element?'Hệ '+r.element+' · ':''}${r.faction||'Trung lập'}</p>
+        <p>${(r.enemy||[]).map(enemyDisplayName).join(', ')}</p>
+        <small>${(r.features||[]).join(' · ')}</small>
+        <button data-region="${i}" ${unlocked?'':'disabled'}>${status}</button>
+      </div>`;
+    }
+    html+='</div>';
+  }
+  return html;
+}
 function progress(p,msg){loadBar.style.width=p+'%';loadMsg.textContent=msg}
 
 // Material Pool / Cache to prevent memory leaks
@@ -973,7 +951,7 @@ function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
   p.material=getMapPropMaterial(propDef.file);
   p.isPickable=false;
 
-  if(!propDef.noShadow){
+  if(!propDef.noShadow && (!MOBILE_RUNTIME || Math.hypot(x,z)<82 || name.includes('village') || name.includes('gate'))){
     let shadowSize=Math.max(w*0.82, 1.2);
     let sh=BABYLON.MeshBuilder.CreatePlane(name+'_sh',{width:shadowSize,height:shadowSize*0.62},scene);
     sh.rotation.x=Math.PI/2;
@@ -1008,7 +986,7 @@ function spawnVillageCurvedWall(){
   const wallFrameOrder=[6,5,2,1,4,0,7,3,8];
 
   const rx=43.0,rz=40.0;
-  const count=240; // khoảng cách ~1.08 world-unit, đủ kín cả ở frame cạnh mỏng.
+  const count=MOBILE_RUNTIME?156:240; // adaptive wall density
 
   // Góc tiếp tuyến ellipse -> frame gần nhất trong 9 hướng (-90°..+90°, bước 22.5°).
   function frameForTangent(a){
@@ -1091,7 +1069,7 @@ async function loadMap(regionIdx){
       gt.vScale=gScale;
       gt.wrapU=BABYLON.Texture.WRAP_ADDRESSMODE;
       gt.wrapV=BABYLON.Texture.WRAP_ADDRESSMODE;
-      gt.anisotropicFilteringLevel=8;
+      gt.anisotropicFilteringLevel=MOBILE_RUNTIME?2:4;
       gm.diffuseTexture=gt;
       gm.specularColor=BABYLON.Color3.Black();
       gm.backFaceCulling=false;
@@ -1107,7 +1085,7 @@ async function loadMap(regionIdx){
   // Cây cối PNG (Trees)
   const vcx=cfg.villageClearX||14, vcz=cfg.villageClearZ||16;
   if(cfg.trees&&cfg.trees.length>0){
-    for(let i=0;i<(cfg.treeCount||400);i++){
+    for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.treeCount||400),180):(cfg.treeCount||400));i++){
       let x=rnd(-MAP_BOUND,MAP_BOUND),z=rnd(-MAP_BOUND,MAP_BOUND);
       if(Math.abs(x)<vcx&&Math.abs(z)<vcz)continue;
       if(cfg.river&&cfg.river.enabled&&Math.abs(x-cfg.river.x)<14)continue;
@@ -1118,7 +1096,7 @@ async function loadMap(regionIdx){
 
   // Đá PNG (Rocks)
   if(cfg.rocks&&cfg.rocks.length>0){
-    for(let i=0;i<(cfg.rockCount||220);i++){
+    for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.rockCount||220),105):(cfg.rockCount||220));i++){
       let x=rnd(-MAP_BOUND,MAP_BOUND),z=rnd(-MAP_BOUND,MAP_BOUND);
       if(Math.abs(x)<vcx&&Math.abs(z)<vcz)continue;
       if(cfg.river&&cfg.river.enabled&&Math.abs(x-cfg.river.x)<12)continue;
@@ -1138,7 +1116,7 @@ async function loadMap(regionIdx){
   // Linh thảo / Bụi cỏ & Bụi hoa PNG (Grass, Bush, Flowers)
   let grassPool=(cfg.decor||[]).slice(1);
   if(grassPool.length>0){
-    for(let i=0;i<(cfg.grassCount||140);i++){
+    for(let i=0;i<(MOBILE_RUNTIME?Math.min((cfg.grassCount||140),75):(cfg.grassCount||140));i++){
       let x=rnd(-MAP_BOUND,MAP_BOUND),z=rnd(-MAP_BOUND,MAP_BOUND);
       if(Math.abs(x)<vcx&&Math.abs(z)<vcz)continue;
       let gDef=grassPool[Math.floor(Math.random()*grassPool.length)];
@@ -1163,6 +1141,8 @@ async function loadMap(regionIdx){
 
 async function createWorld(){
   scene=new BABYLON.Scene(engine);
+  scene.skipPointerMovePicking=true;
+  scene.constantlyUpdateMeshUnderPointer=false;
   camera=new BABYLON.FreeCamera('cam',BABYLON.Vector3.Zero(),scene);
   camera.mode=BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
   camera.minZ=.1;
@@ -1283,7 +1263,7 @@ function syncPet(){
 }
 
 function spawnPack(){
-  if(actors.filter(a=>!a.dead).length>30)return;
+  if(actors.filter(a=>!a.dead).length>(MOBILE_RUNTIME?22:30))return;
   let rr=region(), pool=rr.enemy, type=pool[Math.floor(Math.random()*pool.length)];
   let ang=rnd(0,Math.PI*2),r=rnd(44,66);
   for(let i=0;i<(type==='wolf'?3:2);i++){
@@ -1308,8 +1288,10 @@ function spawnBoss(){
     bx=0;
     bz=VILLAGE_WALL_RZ+12;
   }
-  boss=makeActor('shadow',bx,bz,true);
-  boss.name='Xích Viêm Ma Lang';
+  const bossRegion=region();
+  const bossType=bossRegion.bossType||'shadow';
+  boss=makeActor(bossType,bx,bz,true);
+  boss.name=bossRegion.boss||'Xích Viêm Ma Lang';
   boss.maxHp*=5.5;
   boss.hp=boss.maxHp;
   boss.atk*=1.8;
@@ -1337,6 +1319,83 @@ function normalizeDamageType(type='physical'){
 }
 
 const MATCHING_DAMAGE_MULT=2.0;
+  const SKILL_RUNTIME={swordIntent:0,swordIntentExpire:0};
+  function nowMs(){return performance.now();}
+  function getSwordIntentStacks(){if(SKILL_RUNTIME.swordIntentExpire<=nowMs()){SKILL_RUNTIME.swordIntent=0;SKILL_RUNTIME.swordIntentExpire=0;}return SKILL_RUNTIME.swordIntent||0;}
+  function addSwordIntent(stacks=1,duration=4){SKILL_RUNTIME.swordIntent=Math.min(3,getSwordIntentStacks()+Math.max(0,stacks||0));SKILL_RUNTIME.swordIntentExpire=nowMs()+Math.max(0,duration||4)*1000;}
+  function consumeSwordIntent(){const n=getSwordIntentStacks();SKILL_RUNTIME.swordIntent=0;SKILL_RUNTIME.swordIntentExpire=0;return n;}
+  function actorSkillState(a){if(!a.skillStatus||typeof a.skillStatus!=='object')a.skillStatus={};if(!a.skillDots||typeof a.skillDots!=='object')a.skillDots={};return a.skillStatus;}
+  function timedStatus(a,key,amount,duration){if(!a||a.dead)return;const s=actorSkillState(a),end=nowMs()+Math.max(0,duration||0)*1000,old=s[key];if(old&&old.end>end&&Number(old.amount)>=Number(amount||0))return;s[key]={amount:Number(amount)||0,end};}
+  function statusAmount(a,key){const s=a&&a.skillStatus&&a.skillStatus[key];if(!s||s.end<=nowMs())return 0;return Number(s.amount)||0;}
+  function applyStun(a,duration){if(a&&!a.dead)a.stunT=Math.max(Number(a.stunT)||0,Math.max(0,Number(duration)||0));}
+  function applyRoot(a,duration){timedStatus(a,'root',1,duration);}
+  function applySlow(a,amount,duration){timedStatus(a,'slow',clamp(Number(amount)||0,0,.85),duration);}
+  function getActorMoveMultiplier(a){if(!a)return 1;if(statusAmount(a,'root')>0||statusAmount(a,'freeze')>0)return 0;return Math.max(.15,1-statusAmount(a,'slow'));}
+  function getActorAttackIntervalMultiplier(a){const slow=statusAmount(a,'attackSlow');return slow>0?1/Math.max(.2,1-slow):1;}
+  function getActorIncomingMultiplier(a,type='physical'){
+    if(!a)return 1;type=normalizeDamageType(type);let mult=1;
+    mult*=1+statusAmount(a,'shock');
+    if(type==='Hỏa')mult*=1+statusAmount(a,'fireTaken');
+    const all=statusAmount(a,'shredAll'),phys=statusAmount(a,'shredPhysical'),kim=statusAmount(a,'shredKim');
+    if(all>0)mult*=1+all;if(type==='physical'&&phys>0)mult*=1+phys;if(type==='Kim'&&kim>0)mult*=1+kim;
+    return mult;
+  }
+  function applyDot(a,key,type,dps,duration,maxStacks=1){
+    if(!a||a.dead)return;actorSkillState(a);const now=nowMs(),old=a.skillDots[key];let stacks=1;
+    if(old&&old.end>now)stacks=Math.min(Math.max(1,maxStacks||1),(old.stacks||1)+1);
+    a.skillDots[key]={type:normalizeDamageType(type),dps:Math.max(Number(dps)||0,old&&old.end>now?Number(old.dps)||0:0),stacks,end:now+Math.max(.1,Number(duration)||1)*1000,next:old&&old.end>now?Math.min(old.next||now+1000,now+1000):now+1000};
+  }
+  function processActorSkillEffects(a){
+    if(!a||a.dead)return;const now=nowMs();
+    if(a.skillStatus)for(const [k,v] of Object.entries(a.skillStatus))if(!v||v.end<=now)delete a.skillStatus[k];
+    if(a.skillDots)for(const [k,dot] of Object.entries(a.skillDots)){if(!dot||dot.end<=now){delete a.skillDots[k];continue;}if(now>=dot.next){dot.next+=1000;damage(a,Math.max(1,(dot.dps||0)*(dot.stacks||1)),false,dot.type,true);if(a.dead)return;}}
+  }
+  function moveActorRadial(a,cx,cz,distance,pull=true){
+    if(!a||a.dead)return;let dx=a.x-cx,dz=a.z-cz,len=Math.hypot(dx,dz)||1,sign=pull?-1:1;
+    let nx=clamp(a.x+dx/len*distance*sign,-MAP_BOUND,MAP_BOUND),nz=clamp(a.z+dz/len*distance*sign,-MAP_BOUND,MAP_BOUND);
+    if(isVillageSafe(nx,nz)){const p=clampToEllipse(nx,nz,VILLAGE_WALL_RX+2,VILLAGE_WALL_RZ+2,1.02);nx=p.x;nz=p.z;}a.x=nx;a.z=nz;
+  }
+  function healPlayerPct(pct,label='Hồi phục'){const heal=Math.max(1,Math.round((S.maxHp||1)*Math.max(0,Number(pct)||0))),before=S.hp;S.hp=Math.min(S.maxHp,S.hp+heal);const gained=Math.max(0,Math.round(S.hp-before));if(gained>0&&player&&player.mesh)floatText(player.mesh.position,'+'+gained+' '+label,'#7dff9c');return gained;}
+  function findWindPierceTarget(primary,range=6,dotMin=.55){
+    if(!primary||!player)return null;const vx=primary.x-player.x,vz=primary.z-player.z,vl=Math.hypot(vx,vz)||1,ux=vx/vl,uz=vz/vl;let best=null,bd=Infinity;
+    for(const a of actors){if(!a||a===primary||a.dead||isVillageSafe(a.x,a.z))continue;const wx=a.x-primary.x,wz=a.z-primary.z,d=Math.hypot(wx,wz);if(d<=.05||d>range)continue;const dot=(wx/d)*ux+(wz/d)*uz;if(dot>=dotMin&&d<bd){best=a;bd=d;}}
+    return best;
+  }
+  function applySkillStatus(target,skill,dealt,ctx={}){
+    if(!target||target.dead||!skill||!skill.effect)return;const e=skill.effect,k=e.kind;
+    switch(k){
+      case 'sword_intent': addSwordIntent(e.stackPerHit||1,e.duration||4); break;
+      case 'shred': for(const t of (e.types||['all'])){const key=t==='all'?'shredAll':t==='physical'?'shredPhysical':t==='Kim'?'shredKim':'shredAll';timedStatus(target,key,e.amount||0,e.duration||3);} break;
+      case 'sword_field': if((ctx.pulse||0)===0)applyRoot(target,e.root||.35); break;
+      case 'bleed': applyDot(target,'bleed','physical',dealt*(e.pctPerSec||.12),e.duration||3,e.maxStacks||1); break;
+      case 'burn': applyDot(target,'burn','Hỏa',dealt*(e.pctPerSec||.1),e.duration||3,e.maxStacks||1); break;
+      case 'burn_vulnerability': applyDot(target,'burn','Hỏa',dealt*(e.pctPerSec||.1),e.duration||4,e.maxStacks||1);timedStatus(target,'fireTaken',e.fireTaken||.08,e.duration||4); break;
+      case 'burn_explode': applyDot(target,'burn','Hỏa',dealt*(e.pctPerSec||.1),e.duration||5,1);target.skillBurnExplode={damage:dealt*(e.explodeRatio||.5),radius:e.radius||4.8,end:nowMs()+(e.duration||5)*1000}; break;
+      case 'chance_stun': if(Math.random()<(e.chance||0))applyStun(target,e.duration||.3); break;
+      case 'shock': timedStatus(target,'shock',e.damageTaken||.06,e.duration||3); break;
+      case 'shock_stun': timedStatus(target,'shock',e.damageTaken||.1,e.duration||3);applyStun(target,e.stun||.5); break;
+      case 'slow': applySlow(target,e.amount||.18,e.duration||2.5); break;
+      case 'slow_freeze': applySlow(target,e.slow||.25,e.duration||3);if(Math.random()<(e.freezeChance||.12)){timedStatus(target,'freeze',1,e.freeze||.6);applyStun(target,e.freeze||.6);} break;
+      case 'chill_stack': {actorSkillState(target);const now=nowMs(),old=target.skillStatus.chill;let stacks=old&&old.end>now?Math.min(e.maxStacks||3,(old.stacks||0)+1):1;target.skillStatus.chill={amount:e.slow||.35,stacks,end:now+(e.duration||4)*1000};applySlow(target,e.slow||.35,e.duration||4);if(stacks>=(e.maxStacks||3)){timedStatus(target,'freeze',1,e.freeze||.8);applyStun(target,e.freeze||.8);delete target.skillStatus.chill;}break;}
+      case 'freeze': if(target===boss)applySlow(target,e.bossSlow||.3,e.bossSlowDuration||3);else{timedStatus(target,'freeze',1,e.duration||1);applyStun(target,e.duration||1);} break;
+      case 'poison': applyDot(target,'poison','Mộc',dealt*(e.pctPerSec||.07),e.duration||4,e.maxStacks||1); break;
+      case 'root': if(target===boss)applySlow(target,e.bossSlow||.2,e.bossSlowDuration||2);else applyRoot(target,e.duration||.6); break;
+      case 'root_heal': applyRoot(target,e.root||.8); break;
+      case 'pull_slow': moveActorRadial(target,player.x,player.z,e.pullDistance||1.5,true);applySlow(target,e.slow||.15,e.slowDuration||2); break;
+      case 'knockback': if(!(target===boss&&e.bossImmune))moveActorRadial(target,player.x,player.z,e.distance||2.2,false); break;
+      case 'pull_push': moveActorRadial(target,player.x,player.z,e.pullDistance||2.5,true);setTimeout(()=>{if(target&&!target.dead)moveActorRadial(target,player.x,player.z,e.pushDistance||3.2,false);},Math.max(50,(e.pullDuration||.6)*1000)); break;
+      case 'stun': if(!(target===boss&&e.bossImmune))applyStun(target,e.duration||.45); break;
+      case 'attack_slow': timedStatus(target,'attackSlow',e.amount||.1,e.duration||3); break;
+      case 'stun_boss_slow': if(target===boss)applySlow(target,e.bossSlow||.25,e.bossSlowDuration||3);else applyStun(target,e.stun||.8); break;
+    }
+  }
+  function triggerSkillDeathEffect(a){
+    if(!a||!a.skillBurnExplode||a.skillBurnExplode.end<=nowMs())return;const info=a.skillBurnExplode;a.skillBurnExplode=null;
+    const nearby=actors.filter(x=>x&&!x.dead&&x!==a&&Math.hypot(x.x-a.x,x.z-a.z)<=info.radius);
+    ring(a.x,a.z,'#ff6b22',Math.max(2.5,info.radius*.7));burst(a.x,a.z,'#ff7a18',24,Math.max(3,info.radius));
+    for(const t of nearby)damage(t,info.damage,false,'Hỏa',true);
+  }
+
 
 function getDamageComponent(type='physical'){
   type=normalizeDamageType(type);
@@ -1367,17 +1426,14 @@ function getPlayerDefenseStat(type='physical'){
 function getSkillPower(skill,mult=1,crit=false){
   let rawType=skill&&skill.element?skill.element:'physical';
   let type=normalizeDamageType(rawType);
-  // Mọi skill dùng Damage Tổng; riêng thành phần đúng hệ được nhân theo MATCHING_DAMAGE_MULT.
-  // Kiếm/Đao được normalize thành Vật lý.
   let base=getPlayerDamageStat(type);
-  // Chỉ Kim/Hỏa/Thủy/Mộc/Thổ/Phong/Lôi nhận thêm hệ số Thần thức.
   const heartFx=getHeartMethodEffects();
-  let spiritMult=type==='physical'?1:(1+(Math.max(0,S.spiritSense||0)*heartFx.spirit)/1000);
+  let spiritMult=skill&&skill.spiritScaling?(1+(Math.max(0,S.spiritSense||0)*heartFx.spirit)/1000):1;
   let petMult=S.pet?1.08:1.0;
   let critMult=crit?(S.critDamage||1.8):1;
-  // Cảnh giới chỉ tăng stat vừa phải; áp chế được áp riêng khi damage chạm mục tiêu.
   let realmMult=getRealmPowerMultiplier();
-  return base*realmMult*mult*spiritMult*petMult*critMult*rnd(.92,1.08);
+  let swordMult=skill&&skill.element==='Kiếm'?(1+getSwordIntentStacks()*.04):1;
+  return base*realmMult*mult*spiritMult*petMult*critMult*swordMult*rnd(.92,1.08);
 }
 
 function takePlayerDamage(raw,type='physical',attacker=null){
@@ -1405,17 +1461,19 @@ function takePlayerDamage(raw,type='physical',attacker=null){
   return reduced;
 }
 
-function damage(a,d,crit=false,type='physical'){
-  if(!a||a.dead)return;
+function damage(a,d,crit=false,type='physical',fromStatus=false){
+  if(!a||a.dead)return 0;
   type=normalizeDamageType(type);
   const suppression=getPlayerSuppressionVsActor(a);
+  d*=getActorIncomingMultiplier(a,type);
   d=Math.max(1,Math.round(d*suppression));
   a.hp-=d;
   sfx(crit?'slash':'hit');
   floatText(a.mesh.position,`${crit?'Bạo ':''}-${d} ${DAMAGE_LABELS[type]||''}`,crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
   flash(a.mesh);
   if(a===boss)$('#bossFill').style.width=clamp(a.hp/a.maxHp*100,0,100)+'%';
-  if(a.hp<=0)kill(a);
+  if(a.hp<=0){triggerSkillDeathEffect(a);kill(a);}
+  return d;
 }
 
 function damageFromRealmSource(a,d,sourceMajor,type='physical',crit=false,label=''){
@@ -1424,7 +1482,44 @@ function damageFromRealmSource(a,d,sourceMajor,type='physical',crit=false,label=
   sourceMajor=clamp(Number(sourceMajor)||0,0,realms.length-1);
   const sourceScore=sourceMajor===0?11:12+(sourceMajor-1)*4+3;
   const info=a.realmInfo||getEnemyRealmInfo(a.enemyLv||1);
-  const sourceSuppress=getRealmSuppressionByScores(sourceScore,sourceMa…310 tokens truncated…tem('Linh Thạch',1);
+  const sourceSuppress=getRealmSuppressionByScores(sourceScore,sourceMajor,info.score,info.major);
+  const defenderSuppress=getRealmSuppressionByScores(info.score,info.major,sourceScore,sourceMajor);
+  d=Math.max(1,Math.round(d*sourceSuppress/Math.max(1,defenderSuppress)));
+  a.hp-=d;
+  sfx(crit?'slash':'hit');
+  floatText(a.mesh.position,(label?label+' ':'')+'-'+d+' '+(DAMAGE_LABELS[type]||''),crit?'#fff08b':(DAMAGE_COLORS[type]||'#ffd08a'));
+  flash(a.mesh);
+  if(a===boss)$('#bossFill').style.width=clamp(a.hp/a.maxHp*100,0,100)+'%';
+  if(a.hp<=0)kill(a);
+}
+
+function getSystemContext(){
+  return {
+    save,updateHUD,toast,sfx,openPanel,closePanel,
+    getActors:()=>actors,
+    getPlayer:()=>player,
+    realmDamage:damageFromRealmSource,
+    burst,ring,slash
+  };
+}
+
+function kill(a){
+  a.dead=true;
+  a.mesh.setEnabled(false);
+  if(a.shadow)a.shadow.setEnabled(false);
+  S.kills++;
+  S.questKills++;
+  gainXP(a.xp);
+  const formationCult=window.TuTienSystems?window.TuTienSystems.getCultivationMultiplier(S,player):1;
+  S.cultivation+=Math.round(a.xp*.85*getHeartMethodEffects().cultivation*getTechniqueCultivationMultiplier()*formationCult);
+
+  // Loot
+  if(Math.random()<.75){
+    let g=Math.round(rnd(6,25)*(1+S.level*.05));
+    S.gold+=g;
+    if(Math.random()<.2){
+      S.stones++;
+      addItem('Linh Thạch',1);
       toast('💎 Nhặt Linh Thạch x1');
       sfx('item');
     }
@@ -1503,11 +1598,16 @@ function playerAttack(target,mult=1){
   damage(target,d,crit,'physical');
 }
 
-function skillAttack(target,skill,mult=1,forceCrit=false){
-  if(!target||!skill)return;
+function skillAttack(target,skill,mult=1,forceCrit=false,ctx={}){
+  if(!target||!skill||target.dead)return 0;
+  const e=skill.effect||{};
+  if(e.kind==='execute'&&target.maxHp>0&&target.hp/target.maxHp<(e.threshold||.25))mult*=1+(e.bonus||.2);
+  if(e.kind==='instant_pierce')mult*=1+(e.amount||.18);
   let crit=forceCrit||Math.random()<(S.critChance||0);
   let d=getSkillPower(skill,mult,crit);
-  damage(target,d,crit,normalizeDamageType(skill.element));
+  const dealt=damage(target,d,crit,normalizeDamageType(skill.element));
+  applySkillStatus(target,skill,dealt,ctx);
+  return dealt;
 }
 
 function nearest(range=9){
@@ -1530,68 +1630,52 @@ function getElementColor(){
 
 function useSkill(n){
   if(paused||cooldown[n]>0)return;
-  let slotIdx=n-1;
-  let skillId=(S.equippedSkills&&S.equippedSkills[slotIdx])||null;
-  if(!skillId){
-    toast('Ô kỹ năng '+n+' chưa trang bị bí tịch!');
-    return;
-  }
-  let skill=getSkillDef(skillId);
-  if(!skill)return;
-
-  if(S.mp<skill.mp){
-    toast(`Linh lực không đủ (${Math.round(S.mp)}/${skill.mp} MP)!`);
-    return;
-  }
-
+  let slotIdx=n-1,skillId=(S.equippedSkills&&S.equippedSkills[slotIdx])||null;
+  if(!skillId){toast('Ô kỹ năng '+n+' chưa trang bị bí tịch!');return;}
+  let skill=getSkillDef(skillId);if(!skill)return;
+  if(S.mp<skill.mp){toast(`Linh lực không đủ (${Math.round(S.mp)}/${skill.mp} MP)!`);return;}
   S.mp=Math.max(0,S.mp-skill.mp);
   cooldown[n]=skill.cd/Math.max(0.35,(S.castSpeed||1)*getHeartMethodEffects().cast);
   triggerPlayerAttack();
-
   let lv=(S.learnedSkills&&S.learnedSkills[skillId])||1;
-  let dmgMult=skill.mult*(1+(lv-1)*0.15);
-  let ec=getElementColorByName(skill.element);
-
-  // Âm thanh tương ứng cấp bậc kỹ năng
-  sfx('skill'+Math.min(4,skill.tierIdx+1));
-
+  let dmgMult=skill.mult*(1+(lv-1)*0.15),effect=skill.effect||{};
+  if(effect.kind==='sword_ultimate'){
+    const stacks=getSwordIntentStacks();
+    if(stacks>0){dmgMult*=1+stacks*(effect.bonusPerStack||.08);consumeSwordIntent();toast('⚔ Kiếm Ý bộc phát ×'+stacks+'!');}
+  }
+  let ec=getElementColorByName(skill.element);sfx('skill'+Math.min(4,skill.tierIdx+1));
   if(skill.aoe===0){
-    // Chiêu đơn mục tiêu / Liên hoàn trảm (Hạ Phẩm)
-    let t=nearest(11);
+    let t=nearest(skill.targetRange||11);
     if(t){
-      for(let i=0;i<3;i++){
-        setTimeout(()=>skillAttack(t,skill,dmgMult/2.4),i*75);
+      const baseHit=dmgMult/2.4;let weights=[1,1,1];
+      if(effect.kind==='bleed'&&Array.isArray(effect.hitWeights))weights=effect.hitWeights;
+      for(let i=0;i<3;i++)setTimeout(()=>{if(t&&!t.dead)skillAttack(t,skill,baseHit*(weights[i]||1),false,{hit:i,isFinal:i===2});},i*75);
+      if(effect.kind==='pierce_secondary'){
+        const second=findWindPierceTarget(t,effect.maxDistance||6,effect.coneDot||.55);
+        if(second)for(let i=0;i<3;i++)setTimeout(()=>{if(second&&!second.dead)skillAttack(second,skill,baseHit*(effect.secondaryRatio||.6),false,{hit:i,isSecondary:true,isFinal:i===2});},i*75+30);
       }
-      playSkillVfx(skill,t.x,t.z,3.4+skill.tierIdx*0.45,t.x-player.x,t.z-player.z,false);
-      slash(t.x,t.z,ec);
+      playSkillVfx(skill,t.x,t.z,3.4+skill.tierIdx*0.45,t.x-player.x,t.z-player.z,false);slash(t.x,t.z,ec);
     }
   }else{
-    // Chiêu AoE diện rộng (Trung, Thượng, Cực Phẩm)
     let range=skill.aoe;
     let targets=actors.filter(a=>!a.dead&&!isVillageSafe(a.x,a.z)&&Math.hypot(a.x-player.x,a.z-player.z)<range);
-
     playSkillVfx(skill,player.x,player.z,Math.max(4.2,Math.min(10,range*0.95)),0,0,true);
     ring(player.x,player.z,ec,range*0.65);
-    let particleCount=skill.tierIdx===3?60:skill.tierIdx===2?40:24;
-    burst(player.x,player.z,ec,particleCount,range*0.75);
-
-    // Rung chuyển trời đất khi thi triển Địa Cấp / Thiên Cấp
-    if(skill.tierIdx>=2&&camera){
-      let ox=camera.position.x,oz=camera.position.z;
-      let mag=skill.tierIdx===3?0.38:0.18;
-      camera.position.x+=rnd(-mag,mag);
-      camera.position.z+=rnd(-mag,mag);
-      setTimeout(()=>{if(camera){camera.position.x=ox;camera.position.z=oz;}},120);
+    let particleCount=MOBILE_RUNTIME?(skill.tierIdx===3?36:skill.tierIdx===2?26:18):(skill.tierIdx===3?60:skill.tierIdx===2?40:24);burst(player.x,player.z,ec,particleCount,range*0.75);
+    if(skill.tierIdx>=2&&camera){let ox=camera.position.x,oz=camera.position.z,mag=skill.tierIdx===3?0.38:0.18;camera.position.x+=rnd(-mag,mag);camera.position.z+=rnd(-mag,mag);setTimeout(()=>{if(camera){camera.position.x=ox;camera.position.z=oz;}},120);}
+    let isCrit=skill.forceCritAoE||Math.random()<(S.critChance||0);
+    if(effect.kind==='sword_field'&&effect.pulses>1){
+      const pulses=Math.max(1,effect.pulses|0),gap=Math.max(80,effect.pulseGapMs||180);
+      for(let p=0;p<pulses;p++)setTimeout(()=>{for(const a of targets)if(a&&!a.dead)skillAttack(a,skill,dmgMult/pulses,isCrit,{pulse:p,isFinal:p===pulses-1});},p*gap);
+    }else{
+      targets.forEach((a,i)=>setTimeout(()=>{if(a&&!a.dead)skillAttack(a,skill,dmgMult,isCrit,{isFinal:true});},i*22));
     }
-
-    let isCrit=skill.tierIdx>=2||Math.random()<(S.critChance||0);
-    targets.forEach((a,i)=>{
-      setTimeout(()=>skillAttack(a,skill,dmgMult,isCrit),i*22);
-    });
+    if(effect.kind==='heal_pulse'){
+      const pulses=Math.max(1,effect.pulses||3),gap=Math.max(80,effect.pulseGapMs||240);
+      for(let p=0;p<pulses;p++)setTimeout(()=>{healPlayerPct(effect.healPct||.02,'Sinh lực');updateHUD();},p*gap);
+    }else if(effect.kind==='root_heal'){healPlayerPct(effect.healPct||.06,'Sinh lực');}
   }
-
-  updateHUD();
-  updateCooldownUI();
+  updateHUD();updateCooldownUI();
 }
 
 function useDash(){
@@ -1602,7 +1686,7 @@ function useDash(){
   let mz=joy.y+(keys['w']||keys['arrowup']?1:0)+(keys['s']||keys['arrowdown']?-1:0);
   let l=Math.hypot(mx,mz);
   if(l<0.05){mx=player.facing==='left'?-1:1;mz=0;}else{mx/=l;mz/=l;}
-  
+
   let dashX=clamp(player.x+mx*6.5,-MAP_BOUND,MAP_BOUND);
   let dashZ=clamp(player.z+mz*6.5,-MAP_BOUND,MAP_BOUND);
   let dashMove=resolveVillageWallMove(player.x,player.z,dashX,dashZ);
@@ -1747,6 +1831,8 @@ function toast(t){
 
 function updateActor(a,dt){
   if(a.dead)return;
+  processActorSkillEffects(a);
+  if(a.dead)return;
   if((a.stunT||0)>0){
     a.stunT=Math.max(0,(a.stunT||0)-dt);
     return;
@@ -1756,6 +1842,7 @@ function updateActor(a,dt){
   ejectEnemyFromVillage(a);
 
   let playerSafe=isVillageSafe(player.x,player.z);
+  let moveMult=getActorMoveMultiplier(a);
   let dx=player.x-a.x,dz=player.z-a.z,d=Math.hypot(dx,dz)||1;
   a.attackCd-=dt;
   a.bossSkillCd=(a.bossSkillCd||4.5)-dt;
@@ -1776,8 +1863,8 @@ function updateActor(a,dt){
 
   if(!playerSafe && d>1.7 && (d<24 || a===boss)){
     let oldX=a.x, oldZ=a.z;
-    let nextX=a.x+dx/d*a.speed*dt;
-    let nextZ=a.z+dz/d*a.speed*dt;
+    let nextX=a.x+dx/d*a.speed*moveMult*dt;
+    let nextZ=a.z+dz/d*a.speed*moveMult*dt;
 
     // Quái không bao giờ được xuyên vào khu an toàn, kể cả qua cổng.
     if(!isVillageSafe(nextX,nextZ)){
@@ -1788,7 +1875,7 @@ function updateActor(a,dt){
       a.z=oldZ;
     }
   }else if(!playerSafe && a.attackCd<=0 && d<=1.7){
-    a.attackCd=1.2+rnd(0,.4);
+    a.attackCd=(1.2+rnd(0,.4))*getActorAttackIntervalMultiplier(a);
     if(player.invuln<=0){
       takePlayerDamage(a.atk,a.damageType||'physical',a);
     }
@@ -2022,7 +2109,7 @@ function tick(){
     dashCd.t=Math.max(0,dashCd.t-dt);
     autoCombat(dt);
     if(window.TuTienSystems)window.TuTienSystems.update(S,dt,getSystemContext());
-    
+
     // Passive HP/MP Regen
     regenTimer-=dt;
     if(regenTimer<=0){
@@ -2120,7 +2207,7 @@ function drawMini(){
   if(!c)return;
   let x=c.getContext('2d');
   x.clearRect(0,0,c.width,c.height);
-  
+
   let cx=c.width/2, cy=c.height/2;
   let rx=c.width*0.44, ry=c.height*0.44;
 
@@ -2258,7 +2345,7 @@ function setupInput(){
 
   $('#menuBtn').onclick=()=>$('#menuGrid').hidden=!$('#menuGrid').hidden;
   $$('[data-panel]').forEach(b=>b.addEventListener('click',()=>openPanel(b.dataset.panel)));
-  
+
   // Reliable panel close handlers
   $('#closePanel').onclick=closePanel;
   $('#panel').addEventListener('click',e=>{
@@ -2288,7 +2375,7 @@ function useInventoryItem(name){
   if(!S.items||!S.items[name]||S.items[name]<=0)return toast('Đã hết vật phẩm');
   S.items[name]--;
   if(S.items[name]<=0)delete S.items[name];
-  
+
   if(name.includes('Hồi Khí Đan')){
     S.hp=S.maxHp;
     S.mp=S.maxMp;
@@ -2438,8 +2525,9 @@ function openPanel(kind){
         let isLearned = S.learnedSkills && S.learnedSkills[skillId];
         let lv = isLearned ? S.learnedSkills[skillId] : 0;
         let canLearn = S.realm >= sk.minRealm && S.level >= sk.minLevel;
-        let upCostStones = Math.round(sk.costStones * 0.75 * Math.max(1, lv));
-        let upCostCult = Math.round(sk.costCult * 0.85 * Math.max(1, lv));
+        let upCost = getSkillUpgradeCost(sk,Math.max(1,lv));
+        let upCostStones = upCost ? upCost.stones : 0;
+        let upCostCult = upCost ? upCost.cult : 0;
         let dmgPercent = Math.round(sk.mult * 100 * (1 + Math.max(0, lv - 1) * 0.15));
 
         cardsHtml += `<div class="card skill-card ${isLearned ? 'learned' : ''}">
@@ -2455,7 +2543,7 @@ function openPanel(kind){
               ⚔ Sát thương: <b style="color:#ffe07a">${dmgPercent}% Công Kích</b><br>
               💧 Linh lực: <b>${sk.mp} MP</b> · ⏱ Hồi chiêu: <b>${sk.cd}s</b><br>
               🎯 Phạm vi: <b>${sk.aoe === 0 ? 'Đơn mục tiêu (3 liên trảm)' : sk.aoe + 'm (AoE diện rộng)'}</b><br>
-              ☯ Yêu cầu: <b>${realms[sk.minRealm]} (Lv.${sk.minLevel}+)</b>
+              ☯ Yêu cầu: <b>${realms[sk.minRealm]} (Lv.${sk.minLevel}+)</b><br>🧩 Vai trò: <b>${sk.role||'Kỹ năng chiến đấu'}</b><br>✨ Hiệu ứng: <b>${sk.statusText||'Không'}</b>
             </p>
           </div>
           <div>
@@ -2535,8 +2623,10 @@ function openPanel(kind){
           if(!sk) return;
           let curLv = (S.learnedSkills && S.learnedSkills[skId]) || 1;
           if(curLv >= 5) return toast('Bí tịch đã đạt cảnh giới đại viên mãn!');
-          let upCostStones = Math.round(sk.costStones * 0.75 * curLv);
-          let upCostCult = Math.round(sk.costCult * 0.85 * curLv);
+          let upCost = getSkillUpgradeCost(sk,curLv);
+          if(!upCost) return toast('Không có dữ liệu nâng cấp cho kỹ năng này');
+          let upCostStones = upCost.stones;
+          let upCostCult = upCost.cult;
           if(S.stones < upCostStones) return toast('Không đủ Linh Thạch!');
           if(S.cultivation < upCostCult) return toast('Không đủ Tu Vi!');
           S.stones -= upCostStones;
@@ -2782,17 +2872,17 @@ function openPanel(kind){
       },0);
 
     }else if(kind==='map'){
-      title='Bản Đồ Thế Giới (8 Đại Khu Vực)';
-      html=`<div class="cards">${regions.map((r,i)=>`<div class="card"><b>${r.kind} · ${r.name}</b><p>Lv.${r.min}–${r.max} · ${r.enemy.map(e=>({wolf:'Ma Lang',fox:'Linh Hồ',golem:'Thạch Khôi',shadow:'Ảnh Thú'})[e]).join(', ')}</p><button data-region="${i}" ${S.level<r.min?'disabled':''}>${i===S.region?'Đang ở đây':'Dịch chuyển'}</button></div>`).join('')}</div>`;
+      title='Nhân Giới · Đại Thế Giới';
+      html=renderWorldMapCards();
       setTimeout(()=>$$('[data-region]').forEach(b=>b.onclick=async()=>{
-        S.region=+b.dataset.region;
+        S.region=+b.dataset.region; S.regionId=(regions[S.region]||DEFAULT_REGION).id;
         actors.forEach(a=>a.mesh&&a.mesh.dispose());
         actors=[];
         boss=null;
         $('#bossBar').hidden=true;
         player.x=0;player.z=2;
         await loadMap(S.region);
-        for(let i=0;i<12;i++)spawnPack();
+        for(let i=0;i<(MOBILE_RUNTIME?5:8);i++)spawnPack();
         save();
         closePanel();
         toast('🗺 Đã đến '+region().name);
@@ -2829,7 +2919,7 @@ function openPanel(kind){
 
 function applyEngineScaling(){
   if(!engine)return;
-  let dpr=Math.min(window.devicePixelRatio||1, 2.0);
+  let dpr=Math.min(window.devicePixelRatio||1, MOBILE_RUNTIME?1.5:2.0);
   let scale=S.quality ? (1.0/dpr) : (1.0/Math.min(dpr, 1.25));
   engine.setHardwareScalingLevel(scale);
 }
@@ -2871,7 +2961,7 @@ async function init(){
   engine=new BABYLON.Engine(canvas,true,{
     preserveDrawingBuffer:false,
     stencil:false,
-    antialias:true,
+    antialias:!MOBILE_RUNTIME,
     powerPreference:'high-performance',
     adaptToDeviceRatio:true
   });
@@ -2883,11 +2973,11 @@ async function init(){
   progress(50,'Nạp tiên thể và linh thú…');
   preloadPlayerMaterials();
   createPlayer();
-  preloadEnemySprites(); // Nạp 7 loại quái x 16 frames (right+left)
-  await new Promise(r=>setTimeout(r,250));
+  // Enemy texture lazy-load theo loại quái thực tế xuất hiện
+  await new Promise(r=>setTimeout(r,MOBILE_RUNTIME?60:100));
 
   progress(75,'Khai mở trận pháp & yêu vực…');
-  for(let i=0;i<16;i++)spawnPack();
+  for(let i=0;i<(MOBILE_RUNTIME?4:8);i++)spawnPack();
   setupInput();
   updateHUD();
   drawMini();
@@ -2895,7 +2985,7 @@ async function init(){
   progress(100,'Tiên đồ đã mở!');
   startBtn.hidden=false;
   loadMsg.textContent='Chạm để bước vào tiên đồ';
-  
+
   startBtn.onclick=()=>{
     getAudio();
     loading.remove();
@@ -2914,7 +3004,7 @@ async function init(){
       if(petActor.mesh)petActor.mesh.position.set(-1.5,petActor.mesh.position.y,-1.5);
       if(petActor.shadow)petActor.shadow.position.set(-1.5,0.019,-1.5);
     }
-    toast('☯ Chào mừng đạo hữu đến Thanh Vân Thôn');
+    toast('☯ Chào mừng đạo hữu đến '+region().name);
     sfx('breakthrough');
     save();
   };
