@@ -2730,7 +2730,7 @@ function openPanel(kind){
           sfx('breakthrough'); updateHUD();
         };
 
-        $('[data-tech-select]').forEach(b=>b.onclick=()=>{
+        $$('[data-tech-select]').forEach(b=>b.onclick=()=>{
           const type=normalizeTechniqueType(b.dataset.techSelect);
           if(!isTechniqueRealmAllowed(type))return toast('Cảnh giới hiện tại chưa đủ để vận hành công pháp này');
           S.activeCultivationTechnique=type;
