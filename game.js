@@ -1145,6 +1145,8 @@ async function createWorld(){
   scene.constantlyUpdateMeshUnderPointer=false;
   scene.skipPointerMovePicking=true;
   scene.constantlyUpdateMeshUnderPointer=false;
+  scene.skipPointerMovePicking=true;
+  scene.constantlyUpdateMeshUnderPointer=false;
   camera=new BABYLON.FreeCamera('cam',BABYLON.Vector3.Zero(),scene);
   camera.mode=BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
   camera.minZ=.1;
@@ -1264,37 +1266,93 @@ function syncPet(){
   }
 }
 
-function spawnPack(){
-  if(actors.filter(a=>!a.dead).length>(MOBILE_RUNTIME?22:30))return;
-  let rr=region(), pool=rr.enemy, type=pool[Math.floor(Math.random()*pool.length)];
-  let baseX=player.x,baseZ=player.z;
-
-  if(rr.id==='thanh_van_thon'&&isVillageSafe(player.x,player.z)){
-    const patrols=[
-      {x:-7,z:-(VILLAGE_WALL_RZ+7)},{x:7,z:-(VILLAGE_WALL_RZ+7)},
-      {x:-7,z:(VILLAGE_WALL_RZ+7)},{x:7,z:(VILLAGE_WALL_RZ+7)},
-      {x:-(VILLAGE_WALL_RX+7),z:-12},{x:(VILLAGE_WALL_RX+7),z:12}
-    ];
-    const p=patrols[Math.floor(Math.random()*patrols.length)];
-    baseX=p.x;baseZ=p.z;
-  }else{
-    let ang=rnd(0,Math.PI*2),r=rnd(MOBILE_RUNTIME?13:16,MOBILE_RUNTIME?22:28);
-    baseX=clamp(player.x+Math.cos(ang)*r,-MAP_BOUND,MAP_BOUND);
-    baseZ=clamp(player.z+Math.sin(ang)*r,-MAP_BOUND,MAP_BOUND);
-  }
-
-  const packSize=(type==='wolf'||type==='boar')?3:2;
-  for(let i=0;i<packSize;i++){
-    let spawnX=clamp(baseX+rnd(-3.2,3.2),-MAP_BOUND,MAP_BOUND);
-    let spawnZ=clamp(baseZ+rnd(-3.2,3.2),-MAP_BOUND,MAP_BOUND);
-    if(isVillageSafe(spawnX,spawnZ)){
-      let a=Math.atan2(spawnZ,spawnX);
-      if(!Number.isFinite(a))a=0;
-      spawnX=clamp(Math.cos(a)*(VILLAGE_WALL_RX+6),-MAP_BOUND,MAP_BOUND);
-      spawnZ=clamp(Math.sin(a)*(VILLAGE_WALL_RZ+6),-MAP_BOUND,MAP_BOUND);
+function enemySeedHash(text){
+  let h=2166136261>>>0;
+  for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}
+  return h>>>0;
+}
+function enemySeedRand(seed){
+  seed=(seed+0x6D2B79F5)>>>0;
+  let t=seed;
+  t=Math.imul(t^(t>>>15),t|1);
+  t^=t+Math.imul(t^(t>>>7),t|61);
+  return {seed,value:((t^(t>>>14))>>>0)/4294967296};
+}
+function buildFixedEnemySpawns(){
+  const rr=region();
+  const isVillage=rr.id==='thanh_van_thon';
+  const bands=isVillage?[
+    {min:56,max:120,count:6},
+    {min:120,max:240,count:16},
+    {min:240,max:360,count:28},
+    {min:360,max:470,count:46}
+  ]:[
+    {min:35,max:150,count:12},
+    {min:150,max:280,count:22},
+    {min:280,max:390,count:28},
+    {min:390,max:470,count:34}
+  ];
+  const pool=(rr.enemy&&rr.enemy.length)?rr.enemy:['boar'];
+  const points=[];
+  let slot=0;
+  for(let bi=0;bi<bands.length;bi++){
+    const b=bands[bi];
+    for(let i=0;i<b.count;i++,slot++){
+      let seed=enemySeedHash(rr.id+':'+bi+':'+i);
+      let r1=enemySeedRand(seed);seed=r1.seed;
+      let r2=enemySeedRand(seed);seed=r2.seed;
+      let r3=enemySeedRand(seed);seed=r3.seed;
+      let r4=enemySeedRand(seed);
+      const angle=((i+r1.value*.72)/b.count)*Math.PI*2 + bi*.31;
+      const radius=Math.sqrt(b.min*b.min+r2.value*(b.max*b.max-b.min*b.min));
+      let x=Math.cos(angle)*radius;
+      let z=Math.sin(angle)*radius;
+      x=clamp(x,-MAP_BOUND,MAP_BOUND);
+      z=clamp(z,-MAP_BOUND,MAP_BOUND);
+      if(isVillageSafe(x,z)){
+        const p=clampToEllipse(x||1,z||1,VILLAGE_WALL_RX+8,VILLAGE_WALL_RZ+8,1.02);
+        x=p.x;z=p.z;
+      }
+      points.push({
+        id:rr.id+'_mob_'+slot,
+        x,z,
+        type:pool[Math.floor(r3.value*pool.length)%pool.length],
+        elite:r4.value<(.025+bi*.012),
+        band:bi
+      });
     }
-    makeActor(type,spawnX,spawnZ,Math.random()<.08);
   }
+  return points;
+}
+function initializeFixedEnemies(){
+  for(const a of actors){
+    try{if(a.mesh)a.mesh.dispose();}catch(e){}
+    try{if(a.shadow)a.shadow.dispose();}catch(e){}
+  }
+  actors=[];
+  boss=null;
+  const points=buildFixedEnemySpawns();
+  for(const p of points){
+    const a=makeActor(p.type,p.x,p.z,p.elite);
+    a.fixedSpawn=true;
+    a.spawnId=p.id;
+    a.spawnBand=p.band;
+    a.homeX=p.x;
+    a.homeZ=p.z;
+    a.respawnDelay=12+p.band*3;
+  }
+  console.info('[EnemyPopulation] '+region().name+': '+points.length+' fixed spawn points');
+}
+function respawnFixedEnemy(a){
+  if(!a||!a.fixedSpawn)return;
+  a.x=a.homeX;a.z=a.homeZ;
+  a.hp=a.maxHp;
+  a.dead=false;
+  a.attackCd=rnd(.2,.8);
+  a.stunT=0;
+  a.skillStatus={};a.skillDots={};a.skillBurnExplode=null;
+  if(a.mesh){a.mesh.position.set(a.x,a.size*.48,a.z);a.mesh.setEnabled(true);}
+  if(a.shadow){a.shadow.position.x=a.x;a.shadow.position.z=a.z;a.shadow.setEnabled(true);}
 }
 
 function spawnBoss(){
@@ -1555,11 +1613,16 @@ function kill(a){
     $('#bossBar').hidden=true;
     S.questKills=0;
   }
-  setTimeout(()=>{
-    if(a.mesh)a.mesh.dispose();
-    if(a.shadow)a.shadow.dispose();
-    actors=actors.filter(x=>x!==a);
-  },800);
+  if(a.fixedSpawn){
+    const respawnMs=Math.max(8000,(a.respawnDelay||15)*1000);
+    setTimeout(()=>respawnFixedEnemy(a),respawnMs);
+  }else{
+    setTimeout(()=>{
+      if(a.mesh)a.mesh.dispose();
+      if(a.shadow)a.shadow.dispose();
+      actors=actors.filter(x=>x!==a);
+    },800);
+  }
   save();
   updateHUD();
 }
@@ -1879,6 +1942,15 @@ function updateActor(a,dt){
     },1100);
   }
 
+  if(a.fixedSpawn && (playerSafe || d>=24)){
+    const hdx=a.homeX-a.x, hdz=a.homeZ-a.z, hd=Math.hypot(hdx,hdz);
+    if(hd>.35){
+      const homeStep=Math.min(hd,a.speed*.65*dt);
+      a.x+=hdx/Math.max(.001,hd)*homeStep;
+      a.z+=hdz/Math.max(.001,hd)*homeStep;
+    }
+  }
+
   if(!playerSafe && d>1.7 && (d<24 || a===boss)){
     let oldX=a.x, oldZ=a.z;
     let nextX=a.x+dx/d*a.speed*moveMult*dt;
@@ -2096,7 +2168,7 @@ function autoCombat(dt){
     autoTimer=.52/Math.max(0.35,(S.attackSpeed||1)*getHeartMethodEffects().attack);
     let t=nearest(7.5);
     if(t)playerAttack(t,1);
-    else if(actors.length<10)spawnPack();
+    // Enemy population is fixed by map coordinates.
   }
   for(let i=1;i<=4;i++){
     let skillId=(S.equippedSkills&&S.equippedSkills[i-1])||null;
@@ -2141,7 +2213,6 @@ function tick(){
     spawnTimer-=dt;
     if(spawnTimer<=0){
       spawnTimer=2.2;
-      spawnPack();
       spawnBoss();
     }
     miniTimer-=dt;
@@ -2900,7 +2971,7 @@ function openPanel(kind){
         $('#bossBar').hidden=true;
         player.x=0;player.z=2;
         await loadMap(S.region);
-        for(let i=0;i<(MOBILE_RUNTIME?5:8);i++)spawnPack();
+        initializeFixedEnemies();
         save();
         closePanel();
         toast('🗺 Đã đến '+region().name);
@@ -2995,7 +3066,7 @@ async function init(){
   await new Promise(r=>setTimeout(r,MOBILE_RUNTIME?60:100));
 
   progress(75,'Khai mở trận pháp & yêu vực…');
-  for(let i=0;i<(MOBILE_RUNTIME?4:8);i++)spawnPack();
+  initializeFixedEnemies();
   setupInput();
   updateHUD();
   drawMini();
