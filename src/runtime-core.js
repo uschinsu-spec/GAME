@@ -162,7 +162,7 @@ function savedQuality(){try{const v=localStorage.getItem(STORAGE_KEY);return PRO
 let name=savedQuality()||'HIGH',current={...PROFILES[name]},samples=[],lastEval=performance.now(),cooldownUntil=0;
 function sample(dt){if(!Number.isFinite(dt)||dt<=0)return current;samples.push(1/dt);if(samples.length>240)samples.shift();const now=performance.now();if(now-lastEval<5000||samples.length<60)return current;lastEval=now;samples.length=0;return current;}
 function setQuality(next){if(PROFILES[next]){name=next;current={...PROFILES[next]};try{localStorage.setItem(STORAGE_KEY,name);}catch(_){}window.GameEvents&&window.GameEvents.emit('qualityChanged',{name,profile:current,reason:'manual'});}return current;}
-window.PerformanceProfile={PROFILES,STORAGE_KEY,get name(){return name;},get current(){return current;},sample,set:setQuality,engineScale(){const dpr=Math.max(1,window.devicePixelRatio||1);return dpr/Math.min(dpr,current.renderScale);}};
+window.PerformanceProfile={PROFILES,STORAGE_KEY,get name(){return name;},get current(){return current;},sample,set:setQuality,engineScale(){const dpr=Math.max(1,window.devicePixelRatio||1);return 1/Math.min(dpr,current.renderScale);}};
 })();
 ;
 (()=>{'use strict';
