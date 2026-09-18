@@ -1036,38 +1036,68 @@ function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
   p.material=getMapPropMaterial(propDef.file);
   p.isPickable=false;
 
-  let shadowSize=Math.max(w*0.82, 1.2);
-  let sh=BABYLON.MeshBuilder.CreatePlane(name+'_sh',{width:shadowSize,height:shadowSize*0.62},scene);
-  sh.rotation.x=Math.PI/2;
-  sh.position.set(x,0.02,z + 0.1);
-  sh.material=getSoftShadowMaterial();
-  sh.isPickable=false;
-
-  decor.push(p,sh);
+  if(!propDef.noShadow){
+    let shadowSize=Math.max(w*0.82, 1.2);
+    let sh=BABYLON.MeshBuilder.CreatePlane(name+'_sh',{width:shadowSize,height:shadowSize*0.62},scene);
+    sh.rotation.x=Math.PI/2;
+    sh.position.set(x,0.02,z + 0.1);
+    sh.material=getSoftShadowMaterial();
+    sh.isPickable=false;
+    decor.push(p,sh);
+  }else{
+    decor.push(p);
+  }
   return p;
 }
 
 function spawnVillageCurvedWall(){
-  // Micro wall module: đoạn cực hẹp để ghép mượt theo mọi đường cong.
-  const wallDef={
-    file:'assets/maps/common/fences_gates/stone_wall_micro_50deg.png',
-    width:1.55,height:3.0
-  };
+  // 9 frame tường đá camera 50°, cùng đáy/baseline.
+  // Các hướng đối xứng dùng file riêng và mirror để giữ ánh sáng/camera đồng nhất.
+  const wallFiles=[
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_00.png',
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_01.png',
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_02.png',
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_03.png',
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_04.png',
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_05.png',
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_06.png',
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_07.png',
+    'assets/maps/common/fences_gates/wall_50deg/stone_wall_50deg_08.png'
+  ];
   const rx=43.0,rz=40.0;
-  const count=176;
+  const count=208; // overlap nhẹ để các đoạn kín khít, không hở khe.
 
-  for(let i=0;i<count;i++){
-    let a=(i/count)*Math.PI*2;
-    let x=Math.cos(a)*rx;
-    let z=Math.sin(a)*rz;
-
-    // Chừa khe cổng Bắc/Nam rộng, không có tường che đường.
-    if(Math.abs(x)<7.0 && Math.abs(z)>rz-4.6)continue;
-
-    spawnMapProp('village_curve_wall_'+i,wallDef,x,z,0.0);
+  function frameForTangent(a){
+    const tx=-rx*Math.sin(a);
+    const tz= rz*Math.cos(a);
+    let deg=Math.atan2(tz,tx)*180/Math.PI;
+    while(deg>90)deg-=180;
+    while(deg<-90)deg+=180;
+    return Math.max(0,Math.min(8,Math.round((deg+90)/22.5)));
   }
 
-  // Hai cổng chính bám theo biên oval.
+  for(let i=0;i<count;i++){
+    const a=(i/count)*Math.PI*2;
+    const x=Math.cos(a)*rx;
+    const z=Math.sin(a)*rz;
+
+    // Chừa đúng hai cổng Bắc/Nam.
+    if(Math.abs(x)<7.0 && Math.abs(z)>rz-4.6)continue;
+
+    const fi=frameForTangent(a);
+    const wallDef={
+      file:wallFiles[fi],
+      width:1.55,
+      height:3.35,
+      noShadow:true
+    };
+    const wall=spawnMapProp('village_curve_wall_'+i,wallDef,x,z,0.0);
+
+    // Frame 05..08 là các hướng đối xứng của 03..00.
+    if(fi>4 && wall) wall.scaling.x*=-1;
+  }
+
+  // Hai cổng chính giữ nguyên.
   spawnMapProp('village_gate_north',
     {file:'assets/maps/common/fences_gates/gate_ornate_01.png',width:5.8,height:5.4},
     0,-rz,0.01);
@@ -1075,7 +1105,6 @@ function spawnVillageCurvedWall(){
     {file:'assets/maps/common/fences_gates/gate_wood_01.png',width:5.0,height:4.6},
     0,rz,0.01);
 
-  // Đèn đánh dấu hai bên mỗi cổng.
   const lamp={file:'assets/maps/common/lanterns/lantern_tall_wood_01.png',width:2.0,height:3.6};
   spawnMapProp('gate_n_l',lamp,-6.2,-rz,0.01);
   spawnMapProp('gate_n_r',lamp, 6.2,-rz,0.01);
