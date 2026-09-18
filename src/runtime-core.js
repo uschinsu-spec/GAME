@@ -156,11 +156,13 @@ window.SaveService={configure(options={}){if(options.stateGetter)stateGetter=opt
 })();
 ;
 (()=>{'use strict';
-const PROFILES={LOW:{renderScale:1.25,targetFps:30,enemyNearHz:20,enemyMidHz:8,enemyFarHz:2,maxVfx:36,particleScale:.45,shadowDistance:24},MEDIUM:{renderScale:1.65,targetFps:45,enemyNearHz:30,enemyMidHz:12,enemyFarHz:3,maxVfx:60,particleScale:.7,shadowDistance:40},HIGH:{renderScale:2,targetFps:60,enemyNearHz:60,enemyMidHz:20,enemyFarHz:6,maxVfx:100,particleScale:1,shadowDistance:65}};
-function detect(){const mobile=(navigator.maxTouchPoints||0)>1||Math.min(screen.width,screen.height)<820;const memory=Number(navigator.deviceMemory)||0,cores=Number(navigator.hardwareConcurrency)||2;let name=mobile?'MEDIUM':'HIGH';if((memory&&memory<=4)||cores<=4)name='LOW';else if(!mobile&&cores>=8&&(memory===0||memory>=8))name='HIGH';return name;}
-let name=detect(),current={...PROFILES[name]},samples=[],lastEval=performance.now(),cooldownUntil=0;
-function sample(dt){if(!Number.isFinite(dt)||dt<=0)return current;samples.push(1/dt);if(samples.length>240)samples.shift();const now=performance.now();if(now-lastEval<5000||samples.length<60)return current;lastEval=now;const avg=samples.reduce((a,b)=>a+b,0)/samples.length;samples.length=0;if(now<cooldownUntil)return current;if(avg<current.targetFps*.72&&name!=='LOW'){name=name==='HIGH'?'MEDIUM':'LOW';current={...PROFILES[name]};cooldownUntil=now+12000;window.GameEvents&&window.GameEvents.emit('qualityChanged',{name,profile:current,reason:'fps-low'});}else if(avg>current.targetFps*.96&&name==='LOW'){name='MEDIUM';current={...PROFILES[name]};cooldownUntil=now+30000;window.GameEvents&&window.GameEvents.emit('qualityChanged',{name,profile:current,reason:'fps-stable'});}return current;}
-window.PerformanceProfile={PROFILES,get name(){return name;},get current(){return current;},sample,set(next){if(PROFILES[next]){name=next;current={...PROFILES[next]};window.GameEvents&&window.GameEvents.emit('qualityChanged',{name,profile:current,reason:'manual'});}return current;},engineScale(){const dpr=Math.max(1,window.devicePixelRatio||1);return dpr/Math.min(dpr,current.renderScale);}};
+const PROFILES={LOW:{renderScale:1.5,targetFps:30,enemyNearHz:20,enemyMidHz:8,enemyFarHz:2,maxVfx:36,particleScale:.45,shadowDistance:24},MEDIUM:{renderScale:2.25,targetFps:45,enemyNearHz:30,enemyMidHz:12,enemyFarHz:3,maxVfx:60,particleScale:.7,shadowDistance:40},HIGH:{renderScale:3,targetFps:60,enemyNearHz:60,enemyMidHz:20,enemyFarHz:6,maxVfx:100,particleScale:1,shadowDistance:65}};
+const STORAGE_KEY='tutien_graphics_quality';
+function savedQuality(){try{const v=localStorage.getItem(STORAGE_KEY);return PROFILES[v]?v:null;}catch(_){return null;}}
+let name=savedQuality()||'HIGH',current={...PROFILES[name]},samples=[],lastEval=performance.now(),cooldownUntil=0;
+function sample(dt){if(!Number.isFinite(dt)||dt<=0)return current;samples.push(1/dt);if(samples.length>240)samples.shift();const now=performance.now();if(now-lastEval<5000||samples.length<60)return current;lastEval=now;samples.length=0;return current;}
+function setQuality(next){if(PROFILES[next]){name=next;current={...PROFILES[next]};try{localStorage.setItem(STORAGE_KEY,name);}catch(_){}window.GameEvents&&window.GameEvents.emit('qualityChanged',{name,profile:current,reason:'manual'});}return current;}
+window.PerformanceProfile={PROFILES,STORAGE_KEY,get name(){return name;},get current(){return current;},sample,set:setQuality,engineScale(){const dpr=Math.max(1,window.devicePixelRatio||1);return dpr/Math.min(dpr,current.renderScale);}};
 })();
 ;
 (()=>{'use strict';
