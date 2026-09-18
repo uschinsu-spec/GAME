@@ -242,66 +242,7 @@ const MAP_CONFIGS={
       {file:'assets/maps/common/lanterns/lantern_shrine_01.png',width:2.0,height:3.2,x:-16,z:16,yRatio:0.46},
       {file:'assets/maps/common/lanterns/lantern_shrine_01.png',width:2.0,height:3.2,x:-26,z:16,yRatio:0.46},
 
-      // ── TƯỜNG THÀNH BAO QUANH — Bắc (z=-40) ──
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-36,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-30,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-24,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-18,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-12,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:12,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:18,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:24,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:30,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:36,z:-40,yRatio:0.46},
-      // Cổng Bắc (trung tâm mặt Bắc)
-      {file:'assets/maps/common/fences_gates/gate_ornate_01.png',width:5.2,height:5.0,x:0,z:-40,yRatio:0.44},
-      {file:'assets/maps/common/lanterns/lantern_tall_wood_01.png',width:2.0,height:3.6,x:-6,z:-40,yRatio:0.46},
-      {file:'assets/maps/common/lanterns/lantern_tall_wood_01.png',width:2.0,height:3.6,x:6,z:-40,yRatio:0.46},
-
-      // ── TƯỜNG THÀNH — Nam (z=+40) ──
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-36,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-30,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-24,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-18,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-12,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:12,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:18,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:24,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:30,z:40,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:36,z:40,yRatio:0.46},
-      // Cổng Nam (đường lớn từ đồng bằng lên)
-      {file:'assets/maps/common/fences_gates/gate_wood_01.png',width:4.2,height:4.0,x:0,z:40,yRatio:0.44},
-      {file:'assets/maps/common/signs/notice_board_01.png',width:2.6,height:3.0,x:5,z:38,yRatio:0.44},
-      {file:'assets/maps/common/lanterns/lantern_tall_wood_01.png',width:2.0,height:3.6,x:-5,z:40,yRatio:0.46},
-      {file:'assets/maps/common/lanterns/lantern_tall_wood_01.png',width:2.0,height:3.6,x:5,z:40,yRatio:0.46},
-
-      // ── TƯỜNG THÀNH — Tây (x=-40) ──
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:-36,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:-28,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:-20,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:-12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:0,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:20,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:28,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:-40,z:36,yRatio:0.46},
-
-      // ── TƯỜNG THÀNH — Đông (x=+40) ──
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:-36,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:-28,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:-20,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:-12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:0,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:12,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:20,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:28,yRatio:0.46},
-      {file:'assets/maps/common/fences_gates/stone_wall_village_01.png',width:5.6,height:2.8,x:40,z:36,yRatio:0.46},
-
-      // ── 4 GÓC TƯỜNG — Tháp gác 4 góc ──
-      {file:'assets/maps/common/fences_gates/bell_gate_01.png',width:3.6,height:4.2,x:-40,z:-40,yRatio:0.44},
-      {file:'assets/maps/common/fences_gates/bell_gate_01.png',width:3.6,height:4.2,x:40,z:-40,yRatio:0.44},
-      {file:'assets/maps/common/fences_gates/bell_gate_01.png',width:3.6,height:4.2,x:-40,z:40,yRatio:0.44},
-      {file:'assets/maps/common/fences_gates/bell_gate_01.png',width:3.6,height:4.2,x:40,z:40,yRatio:0.44},
+      // Vòng tường đá bo cong được dựng động trong spawnVillageCurvedWall().
 
       // ── TƯỜNG TRONG — Ngăn khu phố với quảng trường ──
       {file:'assets/maps/common/fences_gates/fence_ornate_01.png',width:3.2,height:1.8,x:-12,z:-12,yRatio:0.46},
@@ -573,63 +514,50 @@ function placeStandardCamera(x,z){
   camera.setTarget(new BABYLON.Vector3(x,0,z));
 }
 
-// ===== THANH VÂN THÔN — WALL COLLISION & SAFE ZONE =====
-// Vòng tường hình vuông đặt quanh x/z = ±40.
-// Player chỉ được xuyên qua tường ở cổng Bắc/Nam (giữa trục X).
-// Quái tuyệt đối không được đi vào phần bên trong tường.
-const VILLAGE_WALL_HALF=40;
-const VILLAGE_WALL_LIMIT=38.8;   // tâm nhân vật dừng trước mặt tường
-const VILLAGE_SAFE_HALF=38.2;    // khu vực an toàn thực tế
-const VILLAGE_GATE_HALF_WIDTH=4.2;
+// ===== THANH VÂN THÔN — CURVED WALL COLLISION & SAFE ZONE =====
+// Vòng tường bo cong dạng oval quanh thôn; cổng Bắc/Nam là lối ra vào duy nhất.
+const VILLAGE_WALL_RX=43.0;
+const VILLAGE_WALL_RZ=40.0;
+const VILLAGE_SAFE_RX=40.5;
+const VILLAGE_SAFE_RZ=37.5;
+const VILLAGE_GATE_HALF_WIDTH=4.6;
 
+function ellipseNorm(x,z,rx,rz){
+  return Math.sqrt((x*x)/(rx*rx)+(z*z)/(rz*rz));
+}
 function isVillageSafe(x,z){
-  return Math.abs(x)<VILLAGE_SAFE_HALF && Math.abs(z)<VILLAGE_SAFE_HALF;
+  return ellipseNorm(x,z,VILLAGE_SAFE_RX,VILLAGE_SAFE_RZ)<1;
 }
-
-function isVillageGateLane(x){
-  return Math.abs(x)<=VILLAGE_GATE_HALF_WIDTH;
+function isVillageGateLane(x,z){
+  return Math.abs(x)<=VILLAGE_GATE_HALF_WIDTH && Math.abs(z)>=VILLAGE_WALL_RZ-4.0;
 }
-
-// Giải collision cho player/dash.
-// Cho phép ra/vào ở cổng Bắc/Nam; 4 cạnh còn lại là tường cứng.
+function clampToEllipse(x,z,rx,rz,scaleBias=1){
+  let n=ellipseNorm(x,z,rx,rz);
+  if(n<0.0001)return {x:0,z:rz*scaleBias};
+  let s=scaleBias/n;
+  return {x:x*s,z:z*s};
+}
 function resolveVillageWallMove(fromX,fromZ,toX,toZ){
-  let x=toX,z=toZ;
-  const inFrom=Math.abs(fromX)<VILLAGE_WALL_LIMIT && Math.abs(fromZ)<VILLAGE_WALL_LIMIT;
+  const fromN=ellipseNorm(fromX,fromZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ);
+  const toN=ellipseNorm(toX,toZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ);
+  const crossing=(fromN<1&&toN>=1)||(fromN>=1&&toN<1);
+  if(!crossing)return {x:toX,z:toZ};
 
-  // Cạnh Đông/Tây: không có cổng.
-  if(inFrom){
-    if(Math.abs(x)>=VILLAGE_WALL_LIMIT && Math.abs(z)<VILLAGE_WALL_LIMIT){
-      x=Math.sign(x||1)*VILLAGE_WALL_LIMIT;
-    }
-    // Cạnh Bắc/Nam: chỉ được qua đúng làn cổng.
-    if(Math.abs(z)>=VILLAGE_WALL_LIMIT && Math.abs(fromZ)<VILLAGE_WALL_LIMIT){
-      if(!isVillageGateLane(x)) z=Math.sign(z||1)*VILLAGE_WALL_LIMIT;
-    }
-  }else{
-    // Từ ngoài đi vào: chặn Đông/Tây hoàn toàn.
-    if(Math.abs(fromX)>=VILLAGE_WALL_LIMIT && Math.abs(x)<VILLAGE_WALL_LIMIT &&
-       Math.abs(z)<VILLAGE_WALL_LIMIT){
-      x=Math.sign(fromX||1)*VILLAGE_WALL_LIMIT;
-    }
-    // Từ ngoài Bắc/Nam vào trong chỉ qua cổng.
-    if(Math.abs(fromZ)>=VILLAGE_WALL_LIMIT && Math.abs(z)<VILLAGE_WALL_LIMIT &&
-       Math.abs(x)<VILLAGE_WALL_LIMIT){
-      if(!isVillageGateLane(x)) z=Math.sign(fromZ||1)*VILLAGE_WALL_LIMIT;
-    }
+  if(isVillageGateLane(toX,toZ)||isVillageGateLane(fromX,fromZ)){
+    return {x:toX,z:toZ};
   }
-  return {x,z};
+
+  if(fromN<1){
+    return clampToEllipse(toX,toZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ,0.992);
+  }
+  return clampToEllipse(toX,toZ,VILLAGE_WALL_RX,VILLAGE_WALL_RZ,1.008);
 }
-
-// Đẩy quái ra khỏi khu an toàn nếu có actor cũ/teleport lọt vào.
 function ejectEnemyFromVillage(a){
-  if(!a || !isVillageSafe(a.x,a.z))return;
-  let dx=VILLAGE_SAFE_HALF-Math.abs(a.x);
-  let dz=VILLAGE_SAFE_HALF-Math.abs(a.z);
-  if(dx<dz){
-    a.x=(a.x>=0?1:-1)*(VILLAGE_WALL_HALF+2.5);
-  }else{
-    a.z=(a.z>=0?1:-1)*(VILLAGE_WALL_HALF+2.5);
-  }
+  if(!a||!isVillageSafe(a.x,a.z))return;
+  let x=a.x,z=a.z;
+  if(Math.abs(x)<0.01&&Math.abs(z)<0.01)z=1;
+  let p=clampToEllipse(x,z,VILLAGE_WALL_RX+3,VILLAGE_WALL_RZ+3,1.02);
+  a.x=p.x;a.z=p.z;
 }
 
 function realmName(){return S.realm===0?`Luyện Khí Tầng ${S.realmStage}`:`${realms[S.realm]} · ${periods[S.period||0]}`}
@@ -839,6 +767,41 @@ function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
   return p;
 }
 
+function spawnVillageCurvedWall(){
+  const wallDef={
+    file:'assets/maps/common/fences_gates/stone_wall_curve_01.png',
+    width:6.0,height:3.0
+  };
+  const rx=43.0,rz=40.0;
+  const count=48;
+
+  for(let i=0;i<count;i++){
+    let a=(i/count)*Math.PI*2;
+    let x=Math.cos(a)*rx;
+    let z=Math.sin(a)*rz;
+
+    // Chừa khe cổng Bắc/Nam rộng, không có tường che đường.
+    if(Math.abs(x)<7.0 && Math.abs(z)>rz-4.6)continue;
+
+    spawnMapProp('village_curve_wall_'+i,wallDef,x,z,0.015);
+  }
+
+  // Hai cổng chính bám theo biên oval.
+  spawnMapProp('village_gate_north',
+    {file:'assets/maps/common/fences_gates/gate_ornate_01.png',width:5.8,height:5.4},
+    0,-rz,0.01);
+  spawnMapProp('village_gate_south',
+    {file:'assets/maps/common/fences_gates/gate_wood_01.png',width:5.0,height:4.6},
+    0,rz,0.01);
+
+  // Đèn đánh dấu hai bên mỗi cổng.
+  const lamp={file:'assets/maps/common/lanterns/lantern_tall_wood_01.png',width:2.0,height:3.6};
+  spawnMapProp('gate_n_l',lamp,-6.2,-rz,0.01);
+  spawnMapProp('gate_n_r',lamp, 6.2,-rz,0.01);
+  spawnMapProp('gate_s_l',lamp,-6.2, rz,0.01);
+  spawnMapProp('gate_s_r',lamp, 6.2, rz,0.01);
+}
+
 function loadMap(regionIdx){
   decor.forEach(m=>{
     try{
@@ -928,6 +891,10 @@ function loadMap(regionIdx){
     cfg.villageProps.forEach((vp,i)=>{
       spawnMapProp('village_prop_'+i,vp,vp.x,vp.z,0.02);
     });
+  }
+
+  if(reg.id==='thanh_van_thon'){
+    spawnVillageCurvedWall();
   }
 }
 
@@ -1059,13 +1026,9 @@ function spawnPack(){
     let spawnZ=clamp(player.z+Math.sin(ang)*r+rnd(-3,3),-MAP_BOUND,MAP_BOUND);
     // Tuyệt đối không spawn trong khu an toàn Thanh Vân Thôn.
     if(isVillageSafe(spawnX,spawnZ)){
-      let side=Math.floor(Math.random()*4);
-      if(side===0){spawnX=rnd(-72,72);spawnZ=-rnd(46,72);}
-      else if(side===1){spawnX=rnd(-72,72);spawnZ=rnd(46,72);}
-      else if(side===2){spawnX=-rnd(46,72);spawnZ=rnd(-72,72);}
-      else {spawnX=rnd(46,72);spawnZ=rnd(-72,72);}
-      spawnX=clamp(spawnX,-MAP_BOUND,MAP_BOUND);
-      spawnZ=clamp(spawnZ,-MAP_BOUND,MAP_BOUND);
+      let a=rnd(0,Math.PI*2),rad=rnd(1.15,1.65);
+      spawnX=clamp(Math.cos(a)*VILLAGE_WALL_RX*rad,-MAP_BOUND,MAP_BOUND);
+      spawnZ=clamp(Math.sin(a)*VILLAGE_WALL_RZ*rad,-MAP_BOUND,MAP_BOUND);
     }
     makeActor(type,spawnX,spawnZ,Math.random()<.08);
   }
@@ -1078,7 +1041,7 @@ function spawnBoss(){
   if(isVillageSafe(bx,bz)){
     // Nếu player đang trong thôn, boss xuất hiện ngoài cổng Nam thay vì bên trong khu an toàn.
     bx=0;
-    bz=VILLAGE_WALL_HALF+12;
+    bz=VILLAGE_WALL_RZ+12;
   }
   boss=makeActor('shadow',bx,bz,true);
   boss.name='Xích Viêm Ma Lang';
