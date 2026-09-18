@@ -799,7 +799,7 @@ function drawProceduralCanvas(ctx, type, frame){
 function makeSpriteMaterial(url, key){
   if(spriteMats[key])return spriteMats[key];
   let m=new BABYLON.StandardMaterial('sm_'+key,scene);
-  let t=new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.BILINEAR_SAMPLINGMODE);
+  let t=new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
   t.hasAlpha=true;
   m.diffuseTexture=t;
   m.emissiveTexture=t;
@@ -853,7 +853,7 @@ function preloadPlayerMaterials(){
       let url = `assets/player/right/${state}/${s}.png?v=5`;
       let key = `player_right_${state}_${s}`;
       let m = new BABYLON.StandardMaterial('sm_'+key, scene);
-      let t = new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.BILINEAR_SAMPLINGMODE);
+      let t = new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
       t.hasAlpha = true;
       m.diffuseTexture = t;
       m.emissiveTexture = t;
@@ -905,7 +905,7 @@ function preloadEnemySprites(){
 
 function makeBillboard(name,type,size,x,z){
   let p=BABYLON.MeshBuilder.CreatePlane(name,{size},scene);
-  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_Y;
+  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
   p.position.set(x,size*.48,z);
   p.isPickable=false;
   if(type==='player'){
@@ -938,7 +938,7 @@ function getSoftShadowMaterial(){
 function getMapPropMaterial(url){
   if(mapPropMaterials[url])return mapPropMaterials[url];
   let m=new BABYLON.StandardMaterial('prop_'+url,scene);
-  let t=new BABYLON.Texture(url,scene,false,true,BABYLON.Texture.BILINEAR_SAMPLINGMODE);
+  let t=new BABYLON.Texture(url,scene,false,true,BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
   t.hasAlpha=true;
   m.diffuseTexture=t;
   m.emissiveTexture=t;
@@ -959,7 +959,7 @@ function spawnMapProp(name,propDef,x,z,sizeVariance=0.2){
   let p=BABYLON.MeshBuilder.CreatePlane(name,{width:w,height:h},scene);
   // PNG environment luôn quay thẳng vào camera giống player/enemy.
   // Nhờ vậy ảnh pre-render không bị méo thêm bởi góc nhìn 3D của plane.
-  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_Y;
+  p.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
 
   // Chuẩn chân asset: tâm theo X, đáy PNG chạm mặt đất Y=0.
   // Không dùng yRatio khác nhau nữa vì nó làm cây/đá/nhà có "camera" khác nhau.
@@ -1087,7 +1087,7 @@ async function loadMap(regionIdx){
       gt.vScale=gScale;
       gt.wrapU=BABYLON.Texture.WRAP_ADDRESSMODE;
       gt.wrapV=BABYLON.Texture.WRAP_ADDRESSMODE;
-      gt.anisotropicFilteringLevel=(window.PerformanceProfile&&window.PerformanceProfile.name==='HIGH')?16:(MOBILE_RUNTIME?4:8);
+      gt.anisotropicFilteringLevel=MOBILE_RUNTIME?2:4;
       gm.diffuseTexture=gt;
       gm.specularColor=BABYLON.Color3.Black();
       gm.backFaceCulling=false;
@@ -1166,14 +1166,6 @@ async function createWorld(){
   scene=new BABYLON.Scene(engine);
   scene.skipPointerMovePicking=true;
   scene.constantlyUpdateMeshUnderPointer=false;
-  // Native-sharp HIGH: sharpen nhẹ sau rasterization để phục hồi chi tiết PNG
-  // bị mất khi sprite/prop được thu nhỏ vào orthographic view. Không áp dụng
-  // cho LOW/MEDIUM để giữ hiệu năng.
-  if(window.PerformanceProfile&&window.PerformanceProfile.name==='HIGH'){
-    scene.imageProcessingConfiguration.sharpenEnabled=true;
-    scene.imageProcessingConfiguration.sharpenEdgeAmount=0.18;
-    scene.imageProcessingConfiguration.sharpenColorAmount=0.04;
-  }
   camera=new BABYLON.FreeCamera('cam',BABYLON.Vector3.Zero(),scene);
   camera.mode=BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
   camera.minZ=.1;
@@ -2135,17 +2127,10 @@ function updatePlayer(dt){
   const elev=CAMERA_STD.elevationDeg*Math.PI/180;
   const horizontal=Math.cos(elev)*CAMERA_STD.distance;
   const height=Math.sin(elev)*CAMERA_STD.distance;
-  // Pixel-stable camera: orthographic sprites shimmer when the camera moves by
-  // arbitrary sub-pixel amounts. Snap the camera target to the physical render
-  // pixel grid so map PNGs remain stable while the player moves.
-  const renderH=Math.max(1,engine.getRenderHeight());
-  const worldPerPixel=CAMERA_STD.viewHeight/renderH;
-  const camX=Math.round(player.x/worldPerPixel)*worldPerPixel;
-  const camZ=Math.round(player.z/worldPerPixel)*worldPerPixel;
-  camera.position.x=camX;
+  camera.position.x=player.x;
   camera.position.y=height;
-  camera.position.z=camZ-horizontal;
-  camera.setTarget(new BABYLON.Vector3(camX,0,camZ));
+  camera.position.z=player.z-horizontal;
+  camera.setTarget(new BABYLON.Vector3(player.x,0,player.z));
 
   // Update Companion Pet
   if(petActor&&petActor.mesh){
@@ -3106,7 +3091,7 @@ async function init(){
   engine=new BABYLON.Engine(canvas,true,{
     preserveDrawingBuffer:false,
     stencil:false,
-    antialias:true,
+    antialias:!MOBILE_RUNTIME,
     powerPreference:'high-performance',
     adaptToDeviceRatio:false
   });
@@ -3160,15 +3145,7 @@ async function init(){
     resume:()=>{paused=false;last=performance.now();},
     onResize:updateOrthoCameraBounds
   });
-  if(window.GameEvents)window.GameEvents.on('qualityChanged',()=>{
-    applyEngineScaling();engine.resize();updateOrthoCameraBounds();
-    if(scene&&scene.imageProcessingConfiguration){
-      const high=window.PerformanceProfile&&window.PerformanceProfile.name==='HIGH';
-      scene.imageProcessingConfiguration.sharpenEnabled=!!high;
-      scene.imageProcessingConfiguration.sharpenEdgeAmount=high?0.18:0;
-      scene.imageProcessingConfiguration.sharpenColorAmount=high?0.04:0;
-    }
-  });
+  if(window.GameEvents)window.GameEvents.on('qualityChanged',()=>{applyEngineScaling();engine.resize();updateOrthoCameraBounds();});
   engine.runRenderLoop(tick);
   if('serviceWorker'in navigator){
     navigator.serviceWorker.addEventListener('message',event=>{
@@ -3177,7 +3154,7 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-stable-motion-v5.7').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260918-visual-restore-v5.8').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
