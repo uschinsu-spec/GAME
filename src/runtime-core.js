@@ -3,7 +3,7 @@
 const deepFreeze=value=>{if(value&&typeof value==='object'&&!Object.isFrozen(value)){Object.freeze(value);Object.values(value).forEach(deepFreeze);}return value;};
 const C={
  SAVE_VERSION:5,
- BUILD_VERSION:'20260918-architecture-v5',
+ BUILD_VERSION:'20260918-mobile-clarity-v5.1',
  SAVE_KEY:'tutien_chilo_save_v2',
  REALMS:['Luyện Khí','Trúc Cơ','Kết Đan','Nguyên Anh','Hóa Thần'],
  REALM_STAGES:['Sơ Kỳ','Trung Kỳ','Hậu Kỳ','Đỉnh Phong'],
@@ -156,7 +156,7 @@ window.SaveService={configure(options={}){if(options.stateGetter)stateGetter=opt
 })();
 ;
 (()=>{'use strict';
-const PROFILES={LOW:{renderScale:.85,targetFps:30,enemyNearHz:20,enemyMidHz:8,enemyFarHz:2,maxVfx:36,particleScale:.45,shadowDistance:24},MEDIUM:{renderScale:1.15,targetFps:45,enemyNearHz:30,enemyMidHz:12,enemyFarHz:3,maxVfx:60,particleScale:.7,shadowDistance:40},HIGH:{renderScale:1.55,targetFps:60,enemyNearHz:60,enemyMidHz:20,enemyFarHz:6,maxVfx:100,particleScale:1,shadowDistance:65}};
+const PROFILES={LOW:{renderScale:1.25,targetFps:30,enemyNearHz:20,enemyMidHz:8,enemyFarHz:2,maxVfx:36,particleScale:.45,shadowDistance:24},MEDIUM:{renderScale:1.65,targetFps:45,enemyNearHz:30,enemyMidHz:12,enemyFarHz:3,maxVfx:60,particleScale:.7,shadowDistance:40},HIGH:{renderScale:2,targetFps:60,enemyNearHz:60,enemyMidHz:20,enemyFarHz:6,maxVfx:100,particleScale:1,shadowDistance:65}};
 function detect(){const mobile=(navigator.maxTouchPoints||0)>1||Math.min(screen.width,screen.height)<820;const memory=Number(navigator.deviceMemory)||0,cores=Number(navigator.hardwareConcurrency)||2;let name=mobile?'MEDIUM':'HIGH';if((memory&&memory<=4)||cores<=4)name='LOW';else if(!mobile&&cores>=8&&(memory===0||memory>=8))name='HIGH';return name;}
 let name=detect(),current={...PROFILES[name]},samples=[],lastEval=performance.now(),cooldownUntil=0;
 function sample(dt){if(!Number.isFinite(dt)||dt<=0)return current;samples.push(1/dt);if(samples.length>240)samples.shift();const now=performance.now();if(now-lastEval<5000||samples.length<60)return current;lastEval=now;const avg=samples.reduce((a,b)=>a+b,0)/samples.length;samples.length=0;if(now<cooldownUntil)return current;if(avg<current.targetFps*.72&&name!=='LOW'){name=name==='HIGH'?'MEDIUM':'LOW';current={...PROFILES[name]};cooldownUntil=now+12000;window.GameEvents&&window.GameEvents.emit('qualityChanged',{name,profile:current,reason:'fps-low'});}else if(avg>current.targetFps*.96&&name==='LOW'){name='MEDIUM';current={...PROFILES[name]};cooldownUntil=now+30000;window.GameEvents&&window.GameEvents.emit('qualityChanged',{name,profile:current,reason:'fps-stable'});}return current;}
