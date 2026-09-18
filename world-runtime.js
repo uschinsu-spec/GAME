@@ -1,6 +1,5 @@
 (()=>{'use strict';
-const PATCH_VERSION='20260918-world-v3';
-const LEGACY_REGION_IDS=['thanh_van_thon','linh_son_ngoai_vi','bach_ngoc_thanh','thanh_van_tong','van_dam_sa_mac','yeu_vuc','cam_dia_han_uyen','ma_vuc'];
+const PATCH_VERSION='20260918-world-v4';
 
 function patchOnce(src,needle,replacement,label){
   const before=src;
@@ -33,8 +32,9 @@ function applyWorldPatch(src){
     mapManifest={...root,maps:allMaps};
     regions=allMaps;
 
-    const legacyIndex=Number.isInteger(S.region)?clamp(S.region,0,LEGACY_REGION_IDS.length-1):0;
-    const legacyId=LEGACY_REGION_IDS[legacyIndex]||root.defaultMap||DEFAULT_MAP_ID;
+    const legacyRegionIds=['thanh_van_thon','linh_son_ngoai_vi','bach_ngoc_thanh','thanh_van_tong','van_dam_sa_mac','yeu_vuc','cam_dia_han_uyen','ma_vuc'];
+    const legacyIndex=Number.isInteger(S.region)?clamp(S.region,0,legacyRegionIds.length-1):0;
+    const legacyId=legacyRegionIds[legacyIndex]||root.defaultMap||DEFAULT_MAP_ID;
     const requestedId=(typeof S.regionId==='string'&&S.regionId)?S.regionId:legacyId;
     const resolvedId=regions.some(r=>r.id===requestedId)?requestedId:(root.defaultMap||DEFAULT_MAP_ID);
     const resolvedIndex=Math.max(0,regions.findIndex(r=>r.id===resolvedId));
