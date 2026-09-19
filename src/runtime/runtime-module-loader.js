@@ -34,6 +34,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/ui/mobile-input.js',
  'src/ui/panel-system.js',
  'src/npc/npc-skills.js',
+ 'src/npc/npc-sword-skill-runtime.js',
  'src/npc/npc-ai.js',
  'src/npc/npc-system.js',
  'src/npc/npc-combat-fallback.js',
