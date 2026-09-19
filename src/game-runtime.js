@@ -5,114 +5,9 @@ const canvas=$('#renderCanvas'), loading=$('#loading'), loadMsg=$('#loadMsg'), l
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), rnd=(a,b)=>a+Math.random()*(b-a), dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const SAVE='tutien_chilo_save_v2';
 
-// Web Audio API Synthesizer (Zero External Dependencies)
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
-function getAudio(){
-  if(!audioCtx){try{audioCtx=new AudioContext()}catch(e){}}
-  if(audioCtx&&audioCtx.state==='suspended'){audioCtx.resume()}
-  return audioCtx;
-}
-function sfx(type){
-  try{
-    const ctx=getAudio();if(!ctx)return;
-    const now=ctx.currentTime;
-    if(type==='slash'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='sawtooth';
-      osc.frequency.setValueAtTime(460,now);
-      osc.frequency.exponentialRampToValueAtTime(90,now+0.12);
-      g.gain.setValueAtTime(0.22,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.12);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.12);
-    }else if(type==='hit'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='triangle';
-      osc.frequency.setValueAtTime(150,now);
-      osc.frequency.exponentialRampToValueAtTime(35,now+0.1);
-      g.gain.setValueAtTime(0.28,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.1);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.1);
-    }else if(type==='skill1'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='square';
-      osc.frequency.setValueAtTime(580,now);
-      osc.frequency.exponentialRampToValueAtTime(180,now+0.18);
-      g.gain.setValueAtTime(0.18,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.18);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.18);
-    }else if(type==='skill2'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='sine';
-      osc.frequency.setValueAtTime(260,now);
-      osc.frequency.exponentialRampToValueAtTime(740,now+0.32);
-      g.gain.setValueAtTime(0.25,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.32);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.32);
-    }else if(type==='skill3'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='sawtooth';
-      osc.frequency.setValueAtTime(240,now);
-      osc.frequency.linearRampToValueAtTime(55,now+0.36);
-      g.gain.setValueAtTime(0.3,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.36);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.36);
-    }else if(type==='skill4'){
-      [392, 523, 659, 784].forEach((f,i)=>{
-        const osc=ctx.createOscillator(),g=ctx.createGain();
-        osc.type='sine';
-        osc.frequency.setValueAtTime(f,now+i*0.07);
-        g.gain.setValueAtTime(0.2,now+i*0.07);
-        g.gain.linearRampToValueAtTime(0.01,now+i*0.07+0.45);
-        osc.connect(g);g.connect(ctx.destination);
-        osc.start(now+i*0.07);osc.stop(now+i*0.07+0.45);
-      });
-    }else if(type==='dash'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='triangle';
-      osc.frequency.setValueAtTime(380,now);
-      osc.frequency.exponentialRampToValueAtTime(80,now+0.15);
-      g.gain.setValueAtTime(0.22,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.15);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.15);
-    }else if(type==='levelUp'){
-      [523, 659, 784, 1046].forEach((f,i)=>{
-        const osc=ctx.createOscillator(),g=ctx.createGain();
-        osc.type='triangle';
-        osc.frequency.setValueAtTime(f,now+i*0.09);
-        g.gain.setValueAtTime(0.25,now+i*0.09);
-        g.gain.linearRampToValueAtTime(0.01,now+i*0.09+0.35);
-        osc.connect(g);g.connect(ctx.destination);
-        osc.start(now+i*0.09);osc.stop(now+i*0.09+0.35);
-      });
-    }else if(type==='breakthrough'){
-      [261, 329, 392, 523, 659, 784, 1046].forEach((f,i)=>{
-        const osc=ctx.createOscillator(),g=ctx.createGain();
-        osc.type='sine';
-        osc.frequency.setValueAtTime(f,now+i*0.08);
-        g.gain.setValueAtTime(0.3,now+i*0.08);
-        g.gain.linearRampToValueAtTime(0.01,now+i*0.08+0.55);
-        osc.connect(g);g.connect(ctx.destination);
-        osc.start(now+i*0.08);osc.stop(now+i*0.08+0.55);
-      });
-    }else if(type==='item'){
-      const osc=ctx.createOscillator(),g=ctx.createGain();
-      osc.type='sine';
-      osc.frequency.setValueAtTime(880,now);
-      osc.frequency.setValueAtTime(1320,now+0.07);
-      g.gain.setValueAtTime(0.18,now);
-      g.gain.linearRampToValueAtTime(0.01,now+0.2);
-      osc.connect(g);g.connect(ctx.destination);
-      osc.start(now);osc.stop(now+0.2);
-    }
-  }catch(e){}
-}
+// Audio được quản lý bởi src/audio/audio-system.js
+function getAudio(){return window.AudioSystem?window.AudioSystem.getAudio():null;}
+function sfx(type){return window.AudioSystem?window.AudioSystem.sfx(type):undefined;}
 
 const realms=['Luyện Khí','Trúc Cơ','Kết Đan','Nguyên Anh','Hóa Thần'];
 const periods=['Sơ Kỳ','Trung Kỳ','Hậu Kỳ','Đỉnh Phong'];
@@ -1673,6 +1568,7 @@ function makeActor(type,x,z,elite=false){
   a.shadow.isPickable=false;
 
   actors.push(a);
+  if(window.EnemySystem)window.EnemySystem.bind(actors,boss);
   return a;
 }
 
@@ -1896,18 +1792,8 @@ function respawnFixedEnemy(a){
 // HỆ THỐNG ĐỒNG MINH / ĐỆ TỬ ĐỒNG MÔN NPC 1 (HÀNG TRĂM TIÊN NHÂN DIỆT QUÁI)
 // ============================================================================
 
-// 9 BÍ TỊCH HOÀNG CẤP HẠ PHẨM (ĐẠI DIỆN ĐẦY ĐỦ 9 HỆ TRONG GAME)
-const ALLIED_HOANG_HA_SKILLS = [
-  { elemKey: 'kiem',  elem: 'Kiếm',     name: 'Thanh Phong Kiếm Thức', faction: 'Kiếm Tông', color: '#7ceaff', sfx: 'slash',   mult: 1.35, shape: 'sword' },
-  { elemKey: 'dao',   elem: 'Đao',      name: 'Liệp Hổ Đao Pháp',     faction: 'Đao Tông',  color: '#ff776d', sfx: 'slash',   mult: 1.42, shape: 'blade' },
-  { elemKey: 'hoa',   elem: 'Hỏa',      name: 'Xích Viêm Hỏa Cầu',    faction: 'Hỏa Tông',  color: '#ff6b3d', sfx: 'fire',    mult: 1.45, shape: 'fireball' },
-  { elemKey: 'loi',   elem: 'Lôi',      name: 'Dẫn Lôi Châm',         faction: 'Lôi Tông',  color: '#9d8cff', sfx: 'thunder', mult: 1.40, shape: 'lightning' },
-  { elemKey: 'thuy',  elem: 'Thủy',     name: 'Hàn Băng Thứ',         faction: 'Thủy Tông', color: '#64cfff', sfx: 'hit',     mult: 1.36, shape: 'ice_spike' },
-  { elemKey: 'moc',   elem: 'Mộc',      name: 'Thanh Mộc Thứ',        faction: 'Mộc Tông',  color: '#68df8b', sfx: 'slash',   mult: 1.34, shape: 'wood_thorn' },
-  { elemKey: 'phong', elem: 'Phong',    name: 'Phong Nhận Thuật',     faction: 'Phong Tông',color: '#a7f3dc', sfx: 'slash',   mult: 1.38, shape: 'wind_blade' },
-  { elemKey: 'tho',   elem: 'Thổ',      name: 'Thạch Giáp Thuật',     faction: 'Thổ Tông',  color: '#c9a56b', sfx: 'hit',     mult: 1.37, shape: 'stone' },
-  { elemKey: 'kim',   elem: 'Kim',      name: 'Kim Cang Chỉ',         faction: 'Kim Tông',  color: '#ffd86b', sfx: 'slash',   mult: 1.44, shape: 'gold_beam' }
-];
+// Danh mục skill NPC nằm tại src/npc/npc-skills.js
+const ALLIED_HOANG_HA_SKILLS=(window.NpcSkillCatalog&&window.NpcSkillCatalog.all)||[];
 
 function launchAlliedNpcSkill(npc, target){
   if(!npc || !target || target.dead || !scene) return;
@@ -2033,9 +1919,9 @@ function initializeAlliedNpcs(){
     const gateTarget = gates[i % gates.length];
 
     // Gán 1 bí tịch Hoàng Cấp Hạ Phẩm cố định cho từng NPC (phân bố đều toàn bộ 9 hệ)
-    const assignedSkill = ALLIED_HOANG_HA_SKILLS[i % ALLIED_HOANG_HA_SKILLS.length];
+    const assignedSkill = window.NpcSkillCatalog?window.NpcSkillCatalog.get(i):ALLIED_HOANG_HA_SKILLS[i % ALLIED_HOANG_HA_SKILLS.length];
 
-    alliedNpcs.push({
+    const npcRecord={
       id: 'ally_' + i,
       name: `【Đồng Môn · ${assignedSkill.faction}】 Tiên Hiệp [Luyện Khí · Sơ Kỳ]`,
       realm: 'Luyện Khí · Sơ Kỳ',
@@ -2064,7 +1950,9 @@ function initializeAlliedNpcs(){
       patrolWait: rnd(0.5, 2.0),
       target: null,
       mesh, shadow
-    });
+    };
+    alliedNpcs.push(npcRecord);
+    if(window.NpcSystem)window.NpcSystem.register(npcRecord);
   }
   console.info(`[AlliedNPC] Khởi tạo ${alliedNpcs.length} Đệ Tử Đồng Môn [Luyện Khí · Sơ Kỳ] sử dụng toàn bộ 9 hệ kỹ năng Hoàng Cấp Hạ Phẩm.`);
 }
@@ -2116,9 +2004,8 @@ function updateAlliedNpcs(dt){
     const distToPlayer2 = pdx * pdx + pdz * pdz;
 
     // Tối ưu hóa culling: nếu gần người chơi thì hiển thị 3D & bóng
-    const isNearPlayer = distToPlayer2 < 32400; // 180m
-    if(npc.mesh) npc.mesh.setEnabled(isNearPlayer);
-    if(npc.shadow) npc.shadow.setEnabled(distToPlayer2 < 4900); // 70m
+    const isNearPlayer = window.CullingSystem?window.CullingSystem.setActorVisible(npc,player,180,70):(distToPlayer2 < 32400);
+    if(!window.CullingSystem){if(npc.mesh)npc.mesh.setEnabled(isNearPlayer);if(npc.shadow)npc.shadow.setEnabled(distToPlayer2<4900);}
 
     // TRƯỜNG HỢP 1: ĐANG CHẠY TỪ TRONG THÔN RA NGOÀI CỔNG LÀNG
     if(npc.exitingVillage){
@@ -2166,36 +2053,24 @@ function updateAlliedNpcs(dt){
         const dist = Math.max(0.01, Math.hypot(tdx, tdz));
         npc.facing = tdx < 0 ? 'left' : 'right';
 
-        npc.skillCd = (npc.skillCd || 0) - dt;
-        npc.attackCd = (npc.attackCd || 0) - dt;
-
-        // THI TRIỂN SKILL HOÀNG CẤP HẠ PHẨM (TẦM XA 3.5m - 14m)
-        if(dist <= 14.0 && dist >= 3.2 && npc.skillCd <= 0){
-          npc.skillCd = rnd(2.2, 4.0);
-          npc.state = 'attack';
-          npc.frame = 0;
-          npc.animTimer = 0;
-          launchAlliedNpcSkill(npc, bestTarget);
-        } else if(dist > 2.6){
-          // Di chuyển áp sát quái vật
-          const nx = tdx / dist, nz = tdz / dist;
-          npc.x = clamp(npc.x + nx * npc.speed * dt, -MAP_BOUND, MAP_BOUND);
-          npc.z = clamp(npc.z + nz * npc.speed * dt, -MAP_BOUND, MAP_BOUND);
-          npc.facing = nx < -0.05 ? 'left' : 'right';
-          npc.state = 'run';
-        } else {
-          // Trong tầm cận chiến: chém kiếm khí / đao khí
-          if(npc.attackCd <= 0){
-            npc.attackCd = 0.95 + rnd(-0.15, 0.2);
-            npc.state = 'attack';
-            npc.frame = 0;
-            npc.animTimer = 0;
-            const slashColor = (npc.assignedSkill && npc.assignedSkill.color) || '#7eeaff';
-            slash(bestTarget.x, bestTarget.z, slashColor);
-            sfx(npc.assignedSkill ? npc.assignedSkill.sfx : 'slash');
-            const isCrit = Math.random() < 0.22;
-            damage(bestTarget, npc.atk, isCrit, npc.assignedSkill ? npc.assignedSkill.elem : 'physical', false, 'npc');
-          }
+        if(window.NpcAI){
+          window.NpcAI.tickCombat(npc,bestTarget,dt,{
+            bound:MAP_BOUND,
+            skillCooldown:()=>rnd(1.6,2.8),
+            attackCooldown:()=>1.05+rnd(-0.12,0.18),
+            castSkill:launchAlliedNpcSkill,
+            basicAttack:(unit,target)=>{
+              const slashColor=(unit.assignedSkill&&unit.assignedSkill.color)||'#7eeaff';
+              slash(target.x,target.z,slashColor);
+              sfx(unit.assignedSkill?unit.assignedSkill.sfx:'slash');
+              damage(target,Math.round(unit.atk*.72),Math.random()<.22,unit.assignedSkill?unit.assignedSkill.elem:'physical',false,'npc');
+            }
+          });
+        }else if(dist>2.6){
+          const nx=tdx/dist,nz=tdz/dist;
+          npc.x=clamp(npc.x+nx*npc.speed*dt,-MAP_BOUND,MAP_BOUND);
+          npc.z=clamp(npc.z+nz*npc.speed*dt,-MAP_BOUND,MAP_BOUND);
+          npc.state='run';
         }
       } else {
         // CHẠY KHẮP MAP ĐI TÌM QUÁI VẬT (MAP-WIDE EXPLORATION)
@@ -2275,6 +2150,7 @@ function spawnBoss(){
   const bossRegion=region();
   const bossType=bossRegion.bossType||'shadow';
   boss=makeActor(bossType,bx,bz,true);
+  if(window.EnemySystem)window.EnemySystem.setBoss(boss);
   const baseBossName=bossRegion.boss||'Xích Viêm Ma Lang';
   boss.name='【Thống Lĩnh】 '+baseBossName+' ['+boss.realmInfo.displayName+']';
   boss.maxHp*=5.5;
@@ -2504,6 +2380,7 @@ function kill(a,source='player'){
       toast('🏆 Đã tiêu diệt Boss!');
       sfx('breakthrough');
       boss=null;
+      if(window.EnemySystem)window.EnemySystem.setBoss(null);
       if($('#bossBar')) $('#bossBar').hidden=true;
       S.questKills=0;
     }
@@ -4333,8 +4210,8 @@ function drawMini(){
     let dx=a.x-player.x, dz=a.z-player.z;
     let d=Math.hypot(dx,dz);
     if(d<=RADAR_RANGE){
-      let px=cx+(dx/RADAR_RANGE)*rx;
-      let py=cy-(dz/RADAR_RANGE)*ry;
+      let projected=window.MinimapSystem?window.MinimapSystem.project(dx,dz,RADAR_RANGE,cx,cy,rx,ry):{x:cx+(dx/RADAR_RANGE)*rx,y:cy-(dz/RADAR_RANGE)*ry};
+      let px=projected.x,py=projected.y;
       if(a===boss){
         x.fillStyle='#ffd700';
         x.shadowColor='#ffd700';
