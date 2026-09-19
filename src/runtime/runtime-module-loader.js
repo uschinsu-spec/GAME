@@ -22,6 +22,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/skills/projectile-system.js',
  'src/skills/skill-runtime.js',
  'src/runtime/runtime-context.js',
+ 'src/runtime/runtime-ownership.js',
  'src/runtime/game-loop-system.js',
  'src/runtime/runtime-coordinator.js',
  'src/ui/floating-text-system.js',
