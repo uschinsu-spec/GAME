@@ -1,0 +1,6 @@
+(()=>{'use strict';
+function updateBasic(effect,dt){if(!effect)return false;effect.t=(Number(effect.t)||0)-dt;if(effect.vx!=null&&effect.mesh){effect.mesh.position.x+=effect.vx*dt;effect.mesh.position.z+=(effect.vz||0)*dt;effect.mesh.position.y+=(effect.vy||0)*dt;effect.vy=(effect.vy||0)-3*dt;if(effect.onStep)effect.onStep(effect.mesh.position.x,effect.mesh.position.z,effect,dt);}if(effect.grow&&effect.mesh&&effect.max){const k=1+(1-effect.t/effect.max)*effect.grow;effect.mesh.scaling.setAll(k);}if(effect.t<=0){if(effect.onComplete)effect.onComplete();try{if(effect.light)effect.light.dispose();}catch(e){}try{if(effect.mesh)effect.mesh.dispose();}catch(e){}return false;}return true;}
+function compact(list,dt,custom){if(!Array.isArray(list))return 0;let w=0;for(let r=0;r<list.length;r++){const e=list[r];let keep;if(custom){const handled=custom(e,dt);keep=handled==null?updateBasic(e,dt):!!handled;}else keep=updateBasic(e,dt);if(keep)list[w++]=e;}list.length=w;return w;}
+function budget(profile){return profile&&Number(profile.maxVfx)||100;}
+window.VfxRuntime={updateBasic,compact,budget};
+})();
