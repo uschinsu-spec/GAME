@@ -7,11 +7,17 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/combat/damage-system.js',
  'src/player/player-progression.js',
  'src/player/player-combat.js',
+ 'src/player/player-controller.js',
  'src/world/world-system.js',
  'src/world/map-loader.js',
+ 'src/enemy/enemy-spawn-system.js',
  'src/enemy/enemy-system.js',
+ 'src/enemy/boss-system.js',
  'src/render/culling-system.js',
+ 'src/render/vfx-runtime.js',
+ 'src/skills/skill-runtime.js',
  'src/runtime/game-loop-system.js',
+ 'src/runtime/runtime-coordinator.js',
  'src/ui/floating-text-system.js',
  'src/ui/minimap-system.js',
  'src/ui/hud-system.js',
@@ -21,6 +27,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/npc-identity-system.js'
  ];
  for(const path of modules){try{await appendScript(`${path}?v=${v}`);}catch(error){console.warn('[RuntimeModules]',error);}}
+ if(window.RuntimeCoordinator)window.RuntimeCoordinator.start();
  return true;
 }
 window.RuntimeModuleLoader={load};
