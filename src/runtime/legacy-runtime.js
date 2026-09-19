@@ -462,7 +462,9 @@ const defaultState={
     'hoa_0_0':1,'hoa_0_1':1,'hoa_0_2':1,'hoa_0_3':1,
     'hoa_1_0':1,'hoa_1_1':1,'hoa_1_2':1,'hoa_1_3':1,
     'hoa_2_0':1,'hoa_2_1':1,'hoa_2_2':1,'hoa_2_3':1,
-    'hoa_3_0':1,'hoa_3_1':1,'hoa_3_2':1,'hoa_3_3':1
+    'hoa_3_0':1,'hoa_3_1':1,'hoa_3_2':1,'hoa_3_3':1,
+    'dao_0_0':1,'loi_0_0':1,'thuy_0_0':1,'moc_0_0':1,
+    'phong_0_0':1,'tho_0_0':1,'kim_0_0':1
   },
   skillTierTab:0,
   pills:{1:3,2:0,3:0,4:0,5:0},
@@ -481,13 +483,15 @@ try{
   if(!S.equipment||typeof S.equipment!=='object'){
     S.equipment={weapon:null,armor:null,ring:null};
   }
-  // Đảm bảo trang bị sẵn 4 skill Kiếm đầy đủ VFX cho người chơi test
-  S.skillElement='Kiếm';
-  S.equippedSkills=['kiem_0_0','kiem_0_1','kiem_0_2','kiem_0_3'];
+  // Save cũ thiếu thanh kỹ năng mới nhận bộ Kiếm mặc định; save hợp lệ luôn được giữ nguyên.
+  if(!Array.isArray(S.equippedSkills)||S.equippedSkills.length!==4){
+    S.equippedSkills=['kiem_0_0','kiem_0_1','kiem_0_2','kiem_0_3'];
+  }
+  if(!SKILL_MASTER.elements[S.skillElement])S.skillElement='Kiếm';
   if(!S.learnedSkills||typeof S.learnedSkills!=='object'||Array.isArray(S.learnedSkills)){
     S.learnedSkills={};
   }
-  ['kiem_0_0','kiem_0_1','kiem_0_2','kiem_0_3','kiem_1_0','kiem_1_1','kiem_1_2','kiem_1_3','kiem_2_0','kiem_2_1','kiem_2_2','kiem_2_3','kiem_3_0','kiem_3_1','kiem_3_2','kiem_3_3','hoa_0_0','hoa_0_1','hoa_0_2','hoa_0_3'].forEach(id=>{
+  ['kiem_0_0','kiem_0_1','kiem_0_2','kiem_0_3','kiem_1_0','kiem_1_1','kiem_1_2','kiem_1_3','kiem_2_0','kiem_2_1','kiem_2_2','kiem_2_3','kiem_3_0','kiem_3_1','kiem_3_2','kiem_3_3','hoa_0_0','hoa_0_1','hoa_0_2','hoa_0_3','dao_0_0','loi_0_0','thuy_0_0','moc_0_0','phong_0_0','tho_0_0','kim_0_0'].forEach(id=>{
     if(!S.learnedSkills[id])S.learnedSkills[id]=1;
   });
   if(S.mp<200) S.mp=500;
@@ -602,6 +606,7 @@ let worldGround=null,worldRiver=null;
 let last=performance.now(),spawnTimer=0,autoTimer=0,regenTimer=0,miniTimer=0,cooldownUiTimer=0,gameStarted=false,paused=false;
 const keys={}, joy={x:0,y:0,active:false,pid:null}, cooldown=[0,0,0,0,0], dashCd={t:0};
 const spriteMats={}, matCache={}, mapPropMaterials={}, skillVfxMats={};
+const cameraShake={t:0,max:0,strength:0};
 if(window.RuntimeTelemetry)window.RuntimeTelemetry.register('runtime',()=>({
  fps:engine?Math.round(engine.getFps()):0,frameMs:engine?Number((1000/Math.max(1,engine.getFps())).toFixed(1)):0,
  actors:actors.length,activeEnemy:actors.reduce((n,a)=>n+(!a.dead?1:0),0),activeVfx:effects.length,
@@ -1604,6 +1609,16 @@ function triggerPlayerAttack(){
   }
 }
 
+function triggerPlayerSkillCast(skill){
+  triggerPlayerAttack();
+  if(!player||!skill||skill.tierIdx!==0||skill.rankIdx!==0)return;
+  const cfg=window.HoangHaVfx&&window.HoangHaVfx.get(skill);
+  if(!cfg)return;
+  sfx(cfg.castSfx||'skill1');
+  createDaoistGroundRune(cfg.castRune||'bagua',player.x,player.z,cfg.castRadius||1.6,cfg.color||'#7ceaff',cfg.core||'#ffffff',.72,.95);
+  burst(player.x,player.z,cfg.core||cfg.color,8,.72);
+}
+
 function syncPet(){
   if(S.pet){
     if(!petActor){
@@ -2502,14 +2517,14 @@ function useSkill(n){
   if(S.mp<skill.mp){toast('Linh lực không đủ ('+Math.round(S.mp)+'/'+skill.mp+' MP)!');return;}
   S.mp=Math.max(0,S.mp-skill.mp);
   cooldown[n]=skill.cd/Math.max(0.35,(S.castSpeed||1)*getHeartMethodEffects().cast);
-  triggerPlayerAttack();
+  triggerPlayerSkillCast(skill);
   let lv=(S.learnedSkills&&S.learnedSkills[skillId])||1;
   let dmgMult=skill.mult*(1+(lv-1)*0.15),effect=skill.effect||{};
   if(effect.kind==='sword_ultimate'){
     const stacks=getSwordIntentStacks();
     if(stacks>0){dmgMult*=1+stacks*(effect.bonusPerStack||.08);consumeSwordIntent();toast('⚔ Kiếm Ý bộc phát ×'+stacks+'!');}
   }
-  let ec=getElementColorByName(skill.element);sfx('skill'+Math.min(4,skill.tierIdx+1));
+  if(!(skill.tierIdx===0&&skill.rankIdx===0))sfx('skill'+Math.min(4,skill.tierIdx+1));
 
   let t=skill.aoe===0?nearest(skill.targetRange||11):null;
   let range=skill.aoe||0;
@@ -2578,6 +2593,37 @@ function burst(x,z,color,count=18,r=5){
     let a=rnd(0,6.28),sp=rnd(2,r);
     effects.push({mesh:s,t:rnd(.3,.6),max:.6,vx:Math.cos(a)*sp,vz:Math.sin(a)*sp,vy:rnd(.3,1.8)});
   }
+}
+
+function addCameraShake(strength=.06,duration=.16){
+  const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce)return;
+  cameraShake.strength=Math.max(cameraShake.strength,Math.max(0,Number(strength)||0));
+  cameraShake.t=Math.max(cameraShake.t,Math.max(.04,Number(duration)||.16));
+  cameraShake.max=Math.max(cameraShake.max,cameraShake.t);
+}
+
+function createElementGroundMark(x,z,color,radius=1.2,duration=.55){
+  if(!scene)return null;
+  const profile=window.PerformanceProfile&&window.PerformanceProfile.current;
+  if(effects.length>=(profile?profile.maxVfx:100))return null;
+  const ringMesh=BABYLON.MeshBuilder.CreateTorus('skill_mark_'+Date.now(),{diameter:Math.max(.4,radius*1.45),thickness:Math.max(.035,radius*.055),tessellation:MOBILE_RUNTIME?18:28},scene);
+  ringMesh.position.set(x,.035,z);ringMesh.isPickable=false;
+  ringMesh.material=glowMat('skill_mark_'+color,color,.82,2.3,true);
+  ringMesh.scaling.setAll(.35);
+  effects.push({groundMark:ringMesh,t:duration,max:duration,baseScale:1});
+  return ringMesh;
+}
+
+function finishHoangHaImpact(skill,cfg,x,z,hit,isFinal){
+  const scale=isFinal?1.25:1;
+  burst(x,z,cfg.color,isFinal?cfg.burstFinal||14:cfg.burst||8,(cfg.impactRadius||1.1)*scale);
+  if(isFinal){
+    ring(x,z,cfg.core||cfg.color,cfg.impactRadius||1.1);
+    createElementGroundMark(x,z,cfg.color,(cfg.impactRadius||1.1)*1.1,cfg.groundMark?.72:.42);
+    addCameraShake(cfg.shake||.055,.14);
+  }
+  sfx(cfg.impactSfx||'hit');
 }
 
 function vfxDirectionCell(dx,dz,center=false){
@@ -2943,11 +2989,16 @@ function createVltkSpriteSheetEffect(config){
     cols:config.cols,
     rows:config.rows,
     totalFrames:config.totalFrames||(config.cols*config.rows),
+    startFrame:Math.max(0,Number(config.startFrame)||0),
+    frameCount:Math.max(1,Number(config.frameCount)||(config.totalFrames||(config.cols*config.rows))),
     t:config.duration,
     max:config.duration,
     vx:config.vx||0,
     vz:config.vz||0,
     vy:config.vy||0,
+    gravity:config.gravity||0,
+    rotationSpeed:config.rotationSpeed||0,
+    fadeOut:config.fadeOut!==false,
     targetX:config.targetX,
     targetZ:config.targetZ,
     hasTrail:!!config.hasTrail,
@@ -2967,6 +3018,7 @@ function createVltkSpriteSheetEffect(config){
 // 3. CHIÊU 1: THANH PHONG KIẾM THỨC (Tam Kiếm Xuất Khiếu - Dynamic 360° Tracking - 5x5 Sprite Sheet)
 function launchVltkThanhPhongKiem(skill, tx, tz, target, dmgMult, effect){
   const ec='#7ceaff';
+  const hoangCfg=window.HoangHaVfx&&window.HoangHaVfx.get(skill);
   
   // Pháp Trận Thái Cực tụ khí phong lôi dưới chân
   createDaoistGroundRune('bagua', player.x, player.z, 1.7, ec, '#ffffff', 1.4, 0.9);
@@ -3019,6 +3071,11 @@ function launchVltkThanhPhongKiem(skill, tx, tz, target, dmgMult, effect){
         hitRegistered = true;
         const isFinal = (i === 2);
         explodeVltkSwordImpact(skill, hx, hz, false, isFinal ? 2.2 : 1.6, ec);
+        sfx(hoangCfg&&hoangCfg.impactSfx||'swordImpact');
+        if(isFinal){
+          createElementGroundMark(hx,hz,ec,1.25,.48);
+          addCameraShake(hoangCfg&&hoangCfg.shake||.055,.13);
+        }
 
         // GÂY SÁT THƯƠNG VÀ NHẢY SỐ DAMAGE TỨC THÌ NGAY KHOẢNH KHẮC MŨI KIẾM CHẠM QUÁI
         if(target && !target.dead){
@@ -3236,66 +3293,107 @@ const ELEMENTAL_BASIC_FLIPBOOK = {
 };
 
 function launchVltkElementalBasic(skill, tx, tz, target, dmgMult, effect){
-  const cfg=ELEMENTAL_BASIC_FLIPBOOK[skill.id]||{color:getElementColorByName(skill.element),size:1.6,burst:7,radius:0.8};
+  const modern=window.HoangHaVfx&&window.HoangHaVfx.get(skill);
+  const legacy=ELEMENTAL_BASIC_FLIPBOOK[skill.id]||{};
+  const cfg=modern||{style:'seeking',color:legacy.color||getElementColorByName(skill.element),core:'#ffffff',projectileSize:legacy.size||1.6,speed:10,intervalMs:150,impactRadius:legacy.radius||.8,burst:legacy.burst||7,impactSfx:'hit'};
   const baseHit=(dmgMult||skill.mult)/2.4;
   let weights=[0.9,1.0,1.3];
   if(effect&&effect.kind==='bleed'&&Array.isArray(effect.hitWeights)) weights=effect.hitWeights;
+  const sheet=`assets/vfx/skills/${skill.elemKey}/hoang_ha/vfx_sheet.png`;
+  const liveTarget=()=>target&&!target.dead?{x:target.x,z:target.z}:{x:tx,z:tz};
+  const applyHit=(hit,hx,hz)=>{
+    const isFinal=hit===2;
+    finishHoangHaImpact(skill,cfg,hx,hz,hit,isFinal);
+    if(target&&!target.dead){
+      skillAttack(target,skill,baseHit*(weights[hit]||1),false,{hit,isFinal});
+      if(effect&&effect.kind==='pierce_secondary'&&isFinal){
+        const second=findWindPierceTarget(target,effect.maxDistance||6,effect.coneDot||.55);
+        if(second&&!second.dead){
+          finishHoangHaImpact(skill,cfg,second.x,second.z,hit,true);
+          skillAttack(second,skill,baseHit*(effect.secondaryRatio||.6),false,{hit,isSecondary:true,isFinal:true});
+        }
+      }
+    }
+  };
 
-  // Hạ Phẩm là liên kích 3 nhịp; cùng một flipbook được phát lại lệch nhịp, chạm quái là nổ damage ngay!
+  // Lôi từ trời giáng xuống; Thổ trồi từ mặt đất. Cả hai có vòng báo điểm ngắn để hình ảnh rõ mà không làm chậm damage.
+  if(cfg.style==='skyStrike'||cfg.style==='groundStrike'){
+    const first=liveTarget();
+    createElementGroundMark(first.x,first.z,cfg.color,cfg.impactRadius||1.3,.45);
+    for(let hit=0;hit<3;hit++){
+      setTimeout(()=>{
+        if(!scene)return;
+        const p=liveTarget(),side=(hit-1)*.42;
+        const sx=p.x+(cfg.style==='skyStrike'?side:-side*.55),sz=p.z+(cfg.style==='groundStrike'?side*.35:0);
+        let impacted=false;
+        createVltkSpriteSheetEffect({
+          texturePath:sheet,cols:5,rows:5,totalFrames:25,size:cfg.projectileSize||2.2,
+          x:sx,y:cfg.style==='skyStrike'?2.05:.92,z:sz,isBillboard:true,
+          duration:cfg.style==='skyStrike'?.42:.52,impactTime:cfg.impactDelay||.15,
+          rotationSpeed:cfg.style==='skyStrike'?(hit%2?-.8:.8):0,skill,color:cfg.color,
+          onImpact:()=>{if(impacted)return;impacted=true;applyHit(hit,p.x,p.z);}
+        });
+      },hit*(cfg.intervalMs||140));
+    }
+    return;
+  }
+
+  // Các hệ còn lại là liên kích 3 nhịp nhưng có đường bay riêng: đao quét hình quạt, hỏa cầu vòng cung,
+  // băng/kim hội tụ, mộc tự tìm mục tiêu và phong nhận lượn rồi xuyên mục tiêu thứ hai.
   for(let hit=0;hit<3;hit++){
     setTimeout(()=>{
       if(!scene||!player)return;
-      const curTx = target && !target.dead ? target.x : tx;
-      const curTz = target && !target.dead ? target.z : tz;
+      const live=liveTarget(),curTx=live.x,curTz=live.z;
       const dx=curTx-player.x,dz=curTz-player.z;
       const dist=Math.max(0.1,Math.hypot(dx,dz));
       const ndx=dx/dist,ndz=dz/dist;
-      const angle=Math.atan2(dz,dx);
-      const speed=skill.elemKey==='tho'?8.5:10.5;
+      const perpX=-ndz,perpZ=ndx;
+      const lane=hit-1,spread=Number(cfg.spread)||0;
+      const startSpread=(cfg.style==='converge'?lane*.54:lane*.22);
+      const aimSpread=(cfg.style==='fan'?lane*spread*dist:0);
+      const startX=player.x+ndx*.65+perpX*startSpread;
+      const startZ=player.z+ndz*.65+perpZ*startSpread;
+      const aimX=curTx+perpX*aimSpread,aimZ=curTz+perpZ*aimSpread;
+      const pdx=aimX-startX,pdz=aimZ-startZ,pdist=Math.max(.1,Math.hypot(pdx,pdz));
+      const pnx=pdx/pdist,pnz=pdz/pdist;
+      const angle=Math.atan2(pdz,pdx);
+      const speed=cfg.speed||10.5;
       const travelTime=Math.max(0.24,dist/speed);
-
       let hitRegistered=false;
       const triggerHit=(hx,hz)=>{
         if(hitRegistered)return;
         hitRegistered=true;
-        burst(hx,hz,cfg.color,cfg.burst,cfg.radius);
-        if(hit===2) ring(hx,hz,cfg.color,1.0);
-        sfx('hit');
-
-        // Gây sát thương và trừ máu quái NGAY LẬP TỨC khi chạm đích
-        if(target && !target.dead){
-          skillAttack(target, skill, baseHit*(weights[hit]||1), false, { hit, isFinal: hit===2 });
-        }
+        applyHit(hit,hx,hz);
       };
-
       createVltkSpriteSheetEffect({
-        texturePath:`assets/vfx/skills/${skill.elemKey}/hoang_ha/vfx_sheet.png`,
+        texturePath:sheet,
         cols:5, rows:5, totalFrames:25,
-        size:cfg.size,
-        x:player.x+ndx*0.65,
-        y:1.35,
-        z:player.z+ndz*0.65,
+        size:cfg.projectileSize||1.65,
+        x:startX,y:cfg.style==='arc'?1.18+hit*.13:1.35,z:startZ,
         isBillboard:true,
         rotZ:angle,
-        vx:ndx*speed,
-        vz:ndz*speed,
+        vx:pnx*speed,vz:pnz*speed,vy:cfg.style==='arc'?(cfg.arcHeight||.65):0,
+        gravity:cfg.style==='arc'?-1.5:0,
         duration:travelTime,
-        skill,
-        color:cfg.color,
-        hasTrail:true,
-        onStep:(curX, curZ)=>{
+        skill,color:cfg.color,hasTrail:true,
+        rotationSpeed:cfg.style==='wave'?(lane*.7):0,
+        onStep:(curX,curZ,eff,dt)=>{
+          if((cfg.style==='seeking'||cfg.style==='wave')&&target&&!target.dead){
+            const tdx=target.x-curX,tdz=target.z-curZ,tl=Math.hypot(tdx,tdz)||1;
+            const steer=Math.min(1,(cfg.curve||.45)*dt*8);
+            eff.vx=(eff.vx*(1-steer)+(tdx/tl)*speed*steer);
+            eff.vz=(eff.vz*(1-steer)+(tdz/tl)*speed*steer);
+          }
           if(!hitRegistered && target && !target.dead){
             const tdx=curX-target.x, tdz=curZ-target.z;
-            if(tdx*tdx + tdz*tdz <= 1.44){
+            if(tdx*tdx+tdz*tdz<=1.55){
               triggerHit(target.x, target.z);
             }
           }
         },
-        onComplete:()=>{
-          triggerHit(curTx, curTz);
-        }
+        onComplete:()=>{const p=liveTarget();triggerHit(p.x,p.z);}
       });
-    },hit*150);
+    },hit*(cfg.intervalMs||150));
   }
 }
 
@@ -3577,6 +3675,13 @@ function updatePlayer(dt){
   camera.position.x=player.x;
   camera.position.y=height;
   camera.position.z=player.z-horizontal;
+  if(cameraShake.t>0){
+    cameraShake.t=Math.max(0,cameraShake.t-dt);
+    const fade=cameraShake.max>0?cameraShake.t/cameraShake.max:0;
+    camera.position.x+=rnd(-cameraShake.strength,cameraShake.strength)*fade;
+    camera.position.z+=rnd(-cameraShake.strength,cameraShake.strength)*fade;
+    if(cameraShake.t<=0){cameraShake.strength=0;cameraShake.max=0;}
+  }
   camera.setTarget(new BABYLON.Vector3(player.x,0,player.z));
 
   // Kiểm tra khu vực Thanh Vân Thôn: Tự động bước vào toàn cảnh thôn khi tiến vào vùng hào quang trận pháp
@@ -3652,19 +3757,31 @@ function updateEffects(dt){
       continue;
     }
 
+    if(e.groundMark&&e.groundMark){
+      const p=clamp(1-e.t/(e.max||.5),0,1);
+      const scale=.35+p*.9;
+      e.groundMark.scaling.setAll(scale*(e.baseScale||1));
+      e.groundMark.visibility=clamp(1-p,0,1);
+      if(e.t<=0){try{e.groundMark.dispose();}catch(err){}}
+      continue;
+    }
+
     // --- VLTK Sprite Sheet Flipbook Animation (Khung hình hoạt họa 4x4, 5x5, 6x6) ---
     if(e.vltkSheet){
       const p = clamp(1.0 - (e.t / (e.max || 0.5)), 0, 0.999);
-      const frame = Math.floor(p * e.totalFrames);
+      const frame = Math.min(e.totalFrames-1,(e.startFrame||0)+Math.floor(p*(e.frameCount||e.totalFrames)));
       const col = frame % e.cols;
       const row = Math.floor(frame / e.cols);
       e.tex.uOffset = col / e.cols;
       e.tex.vOffset = 1.0 - (row + 1) / e.rows;
+      if(e.rotationSpeed&&e.plane)e.plane.rotation.z+=e.rotationSpeed*dt;
+      if(e.fadeOut&&e.plane)e.plane.visibility=p<.78?1:clamp(1-(p-.78)/.22,0,1);
 
       if(e.vx || e.vz || e.vy){
         e.vltkSheet.position.x += (e.vx || 0) * dt;
         e.vltkSheet.position.y += (e.vy || 0) * dt;
         e.vltkSheet.position.z += (e.vz || 0) * dt;
+        if(e.gravity)e.vy+=e.gravity*dt;
 
         if(e.hasTrail){
           e.trailTimer = (e.trailTimer || 0) - dt;
