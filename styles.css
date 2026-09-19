@@ -134,9 +134,11 @@ html,body,#gameWrap,#renderCanvas{width:100%;height:100%;margin:0;overflow:hidde
 .tier-border-dia{border:2px solid #805ad5;box-shadow:0 0 10px rgba(128,90,213,.4)}
 .tier-border-thien{border:2px solid #dd6b20;box-shadow:0 0 12px rgba(221,107,32,.5)}
 
-#floatLayer{position:absolute;inset:0;pointer-events:none;z-index:50}
-.float{position:absolute;color:#ffd27a;font-weight:900;font-size:16px;text-shadow:0 2px 4px #000,0 0 8px rgba(0,0,0,.8);animation:float 1s forwards;transform:translate(-50%,-50%)}
-@keyframes float{0%{opacity:0;transform:translate(-50%,-20%) scale(.8)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-160%) scale(1)}}
+#floatLayer{position:absolute;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+.float{position:absolute;color:#ffd27a;font-family:'Cinzel','Arial Black',Impact,sans-serif;font-weight:900;font-size:18px;letter-spacing:0.5px;text-shadow:-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 2px 6px rgba(0,0,0,0.95);animation:vltkFloat 0.85s cubic-bezier(0.18,0.89,0.32,1.28) forwards;transform:translate(-50%,-50%);user-select:none;pointer-events:none;white-space:nowrap}
+.float.crit{color:#fff275;font-size:26px;text-shadow:-2px -2px 0 #8b0000, 2px -2px 0 #8b0000, -2px 2px 0 #8b0000, 2px 2px 0 #8b0000, 0 0 14px #ff4500, 0 3px 8px rgba(0,0,0,1);animation:vltkCritFloat 1.05s cubic-bezier(0.18,0.89,0.32,1.28) forwards;z-index:70}
+@keyframes vltkFloat{0%{opacity:0;transform:translate(-50%,4px) scale(0.6)}20%{opacity:1;transform:translate(-50%,-16px) scale(1.22)}45%{transform:translate(-50%,-24px) scale(1.0)}100%{opacity:0;transform:translate(-50%,-65px) scale(0.92)}}
+@keyframes vltkCritFloat{0%{opacity:0;transform:translate(-50%,6px) scale(0.4)}18%{opacity:1;transform:translate(-50%,-22px) scale(1.45)}40%{transform:translate(-50%,-32px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-85px) scale(0.95)}}
 
 @media(max-width:768px){
   .minimap{transform:scale(.76);transform-origin:top right}

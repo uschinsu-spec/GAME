@@ -6,12 +6,178 @@
 <meta name="theme-color" content="#101820">
 <title>Tu Tiên Chi Lộ · Map Editor</title>
 <style>
-:root{color-scheme:dark;--bg:#0b1117;--panel:#111c25;--panel2:#172633;--line:#29404e;--gold:#e7c66b;--text:#eef6f4;--muted:#8ea7ad;--danger:#ff6b72;--ok:#6de0a0;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button{border:1px solid var(--line);background:#1b2d39;color:var(--text);border-radius:9px;min-height:38px;padding:7px 11px;cursor:pointer}button:hover{border-color:#527080}button:active{transform:translateY(1px)}button.primary{background:#6d5420;border-color:#c49a37;color:#fff6cf}button.danger{color:#ffc4c6;border-color:#81434b}button.active{background:#274b56;border-color:#6fc3cf}.iconBtn{width:40px;padding:0;font-size:18px}.app{display:grid;grid-template-rows:auto 1fr auto;height:100dvh;padding-top:var(--safe-top)}
-.topbar{display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--line);background:rgba(12,23,30,.98);z-index:30;min-width:0}.brand{display:flex;align-items:center;gap:9px;margin-right:4px;white-space:nowrap}.brandMark{display:grid;place-items:center;width:34px;height:34px;border:1px solid #c6a655;border-radius:10px;color:var(--gold);font-size:20px;background:#2b2515}.brand b{font-size:14px}.brand small{display:block;color:var(--muted);font-size:10px}.toolbar{display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none}.toolbar::-webkit-scrollbar{display:none}.toolbar button{white-space:nowrap}.main{display:grid;grid-template-columns:270px minmax(300px,1fr) 290px;min-height:0}.side{background:var(--panel);min-height:0;display:flex;flex-direction:column}.left{border-right:1px solid var(--line)}.right{border-left:1px solid var(--line)}.sideHead{padding:10px;border-bottom:1px solid var(--line);display:grid;gap:8px}.sideHead h2,.inspector h2{font-size:13px;margin:0;color:var(--gold);text-transform:uppercase;letter-spacing:.08em}.search{width:100%;height:38px;border:1px solid var(--line);border-radius:9px;background:#0b151c;color:#fff;padding:0 11px;outline:none}.search:focus{border-color:#6a96a6}.categoryTabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none}.categoryTabs button{min-height:32px;padding:5px 8px;font-size:12px;white-space:nowrap}.assetGrid{padding:8px;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;align-content:start}.assetCard{min-width:0;padding:6px;height:116px;display:flex;flex-direction:column;gap:4px;align-items:center;background:#0d1820}.assetCard img{width:78px;height:78px;object-fit:contain;pointer-events:none}.assetCard span{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;color:#b8c9cd}.workspace{position:relative;overflow:hidden;background:#071015;touch-action:none}.stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:default}.world{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;background-color:#78937c;background-image:url('assets/maps/common/grounds/ground_village_01.png');background-repeat:repeat;background-size:280px 280px}.world:before{content:"";position:absolute;inset:-3000px;background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:var(--grid-size,35px) var(--grid-y,27px);background-position:var(--grid-x,0) var(--grid-pos-y,0);pointer-events:none}.axisX,.axisZ{position:absolute;pointer-events:none;opacity:.7}.axisX{height:1px;background:#e9c65c;left:-5000px;width:10000px}.axisZ{width:1px;background:#6fc9dd;top:-5000px;height:10000px}.mapObj{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%;user-select:none;-webkit-user-drag:none;touch-action:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.26))}.mapObj.selected{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 7px #ffd55d)}.mapObj.locked{opacity:.72}.selectionBox{position:absolute;border:1px dashed #ffe17f;background:rgba(255,222,99,.08);pointer-events:none}.emptyHint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 18px;border:1px dashed #55717b;border-radius:12px;background:rgba(7,16,21,.75);color:#adc0c5;text-align:center;pointer-events:none}.viewTools{position:absolute;left:10px;top:10px;display:flex;gap:6px;z-index:12}.zoomBox{position:absolute;right:10px;top:10px;display:flex;gap:5px;z-index:12}.zoomBox button,.viewTools button{background:rgba(13,26,34,.94)}.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#10232b;border:1px solid #477080;border-radius:10px;padding:9px 14px;z-index:50;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}.inspector{padding:11px;overflow:auto}.inspector h2{margin-bottom:10px}.emptyInspector{color:var(--muted);padding:20px 5px;text-align:center}.fieldGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field{display:grid;gap:4px;margin-bottom:8px}.field.full{grid-column:1/-1}.field label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.field input,.field select{height:36px;width:100%;border:1px solid var(--line);border-radius:8px;background:#0b151c;color:#fff;padding:0 9px;outline:none}.field input:focus,.field select:focus{border-color:#6a96a6}.preview{height:128px;border:1px solid var(--line);border-radius:10px;background:repeating-conic-gradient(#27343a 0 25%,#34454b 0 50%) 50%/24px 24px;display:grid;place-items:center;margin-bottom:10px;overflow:hidden}.preview img{max-width:92%;max-height:92%;object-fit:contain}.row{display:flex;gap:7px}.row>*{flex:1}.check{display:flex;align-items:center;gap:7px;margin:8px 0;color:#c3d0d3}.check input{width:18px;height:18px}.objectList{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}.objectList h3{font-size:11px;color:var(--muted);margin:0 0 7px;text-transform:uppercase}.objRows{display:grid;gap:4px;max-height:180px;overflow:auto}.objRow{display:flex;align-items:center;gap:6px;text-align:left;min-height:34px;padding:5px 7px;background:#0d1820}.objRow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.objRow em{margin-left:auto;color:var(--muted);font-style:normal;font-size:10px}.statusbar{height:28px;border-top:1px solid var(--line);background:#0b151c;color:var(--muted);display:flex;align-items:center;gap:14px;padding:0 10px calc(var(--safe-bottom)*.15);font-size:11px;white-space:nowrap;overflow:hidden}.statusbar .ok{color:var(--ok)}.mobileToggle{display:none}.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;display:grid;place-items:center;padding:16px}.modal[hidden]{display:none}.modalBox{width:min(560px,100%);max-height:88dvh;overflow:auto;background:var(--panel);border:1px solid #47606c;border-radius:14px;padding:14px}.modalBox h2{margin:0 0 12px;color:var(--gold);font-size:17px}.modalBox textarea{width:100%;height:260px;background:#071015;color:#d9f0e9;border:1px solid var(--line);border-radius:9px;padding:10px;font:12px/1.45 ui-monospace,monospace;resize:vertical}.modalActions{display:flex;justify-content:flex-end;gap:7px;margin-top:10px}
+:root{
+  color-scheme:dark;
+  --bg:#0b1117;
+  --panel:#111c25;
+  --panel2:#172633;
+  --line:#29404e;
+  --gold:#e7c66b;
+  --text:#eef6f4;
+  --muted:#8ea7ad;
+  --danger:#ff6b72;
+  --ok:#6de0a0;
+  --left-width:340px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit}
+button{border:1px solid var(--line);background:#1b2d39;color:var(--text);border-radius:9px;min-height:36px;padding:6px 11px;cursor:pointer;transition:background .15s,border-color .15s}
+button:hover{border-color:#527080;background:#243c4c}
+button:active{transform:translateY(1px)}
+button.primary{background:#6d5420;border-color:#c49a37;color:#fff6cf}
+button.primary:hover{background:#846727;border-color:#e0b54e}
+button.danger{color:#ffc4c6;border-color:#81434b;background:#441a1e}
+button.danger:hover{background:#5c242a;border-color:#a8535d}
+button.active{background:#274b56;border-color:#6fc3cf}
+.iconBtn{width:38px;padding:0;font-size:16px}
+.app{display:grid;grid-template-rows:auto 1fr auto;height:100dvh;padding-top:var(--safe-top)}
+.topbar{display:flex;align-items:center;gap:7px;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(12,23,30,.98);z-index:30;min-width:0}
+.brand{display:flex;align-items:center;gap:9px;margin-right:4px;white-space:nowrap}
+.brandMark{display:grid;place-items:center;width:34px;height:34px;border:1px solid #c6a655;border-radius:10px;color:var(--gold);font-size:20px;background:#2b2515}
+.brand b{font-size:14px}
+.brand small{display:block;color:var(--muted);font-size:10px}
+.toolbar{display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none}
+.toolbar::-webkit-scrollbar{display:none}
+.toolbar button{white-space:nowrap}
+.mapSelectBox{display:flex;align-items:center;gap:5px;background:#14222c;padding:3px 6px;border-radius:8px;border:1px solid var(--line)}
+.mapSelectBox label{font-size:11px;color:var(--gold);font-weight:bold;white-space:nowrap}
+.mapSelectBox select{height:30px;border:1px solid #3c596b;background:#0b151c;color:#fff6cf;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;max-width:180px;outline:none;cursor:pointer}
+.main{display:grid;grid-template-columns:var(--left-width) minmax(200px,1fr) 290px;min-height:0;position:relative}
+.side{background:var(--panel);min-height:0;display:flex;flex-direction:column;position:relative}
+.left{border-right:1px solid var(--line)}
+.right{border-left:1px solid var(--line)}
+.resizerLeft{position:absolute;top:0;bottom:0;right:-4px;width:8px;cursor:col-resize;z-index:35;background:transparent;transition:background .15s}
+.resizerLeft:hover,.resizerLeft.dragging{background:var(--gold);box-shadow:0 0 10px var(--gold)}
+.sideHead{padding:10px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.sideHeadTitle{display:flex;align-items:center;justify-content:space-between}
+.sideHead h2,.inspector h2{font-size:13px;margin:0;color:var(--gold);text-transform:uppercase;letter-spacing:.08em}
+.widthPresets{display:flex;gap:4px}
+.widthPresets button{min-height:24px;padding:1px 6px;font-size:10px;border-radius:5px;background:#14232c}
+.search{width:100%;height:36px;border:1px solid var(--line);border-radius:8px;background:#0b151c;color:#fff;padding:0 10px;outline:none}
+.search:focus{border-color:#6a96a6}
+.categoryTabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none}
+.categoryTabs button{min-height:30px;padding:4px 8px;font-size:11px;white-space:nowrap}
+.groundControlsBox{display:grid;gap:6px;padding:8px;background:#0b151c;border-radius:9px;border:1px solid var(--line)}
+.groundModeBar{display:flex;gap:4px}
+.groundModeBar button{flex:1;font-size:11px;min-height:28px;padding:3px 6px;white-space:nowrap}
+.groundShapeBar{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.groundShapeBar select{height:26px;border-radius:5px;background:#14222c;color:#fff;border:1px solid var(--line);padding:0 5px;font-size:11px;flex:1}
+.assetGrid{padding:8px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;align-content:start}
+.assetCard{min-width:0;padding:6px 4px;height:120px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;background:#0d1820;position:relative;border:1px solid var(--line);border-radius:8px;transition:transform .1s,border-color .15s}
+.assetCard:hover{border-color:#5d8396;transform:translateY(-2px)}
+.assetCard img{width:74px;height:74px;object-fit:contain;pointer-events:none}
+.assetCard.groundCard img{object-fit:cover;border-radius:6px;width:74px;height:74px}
+.assetCard span{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;color:#b8c9cd}
+.assetCard.activeGroundCard{border-color:#ffd55d;background:#283944;box-shadow:0 0 8px rgba(255,213,93,0.3)}
+.assetCard.currentGround:after{content:"✓ Nền chính";position:absolute;top:3px;right:3px;background:#c49a37;color:#000;font-size:8.5px;font-weight:bold;padding:1px 4px;border-radius:3px}
+.workspace{position:relative;overflow:hidden;background:#071015;touch-action:none}
+.stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:default}
+.stage.mode-drawGround{cursor:crosshair}
+.stage.mode-eraseGround{cursor:no-drop}
+.world{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;background-color:#78937c;background-image:url('assets/maps/common/grounds/ground_village_01.png');background-repeat:repeat;background-size:280px 280px}
+.world:before{content:"";position:absolute;inset:-3000px;background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:var(--grid-size,35px) var(--grid-y,27px);background-position:var(--grid-x,0) var(--grid-pos-y,0);pointer-events:none}
+.axisX,.axisZ{position:absolute;pointer-events:none;opacity:.7}
+.axisX{height:1px;background:#e9c65c;left:-5000px;width:10000px}
+.axisZ{width:1px;background:#6fc9dd;top:-5000px;height:10000px}
+.mapObj{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%;user-select:none;-webkit-user-drag:none;touch-action:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.26));transition:outline .1s}
+.mapObj.groundPatch{transform:translate(-50%,-50%);transform-origin:50% 50%;background-size:cover;background-position:center;box-shadow:0 0 12px rgba(0,0,0,0.3);filter:none}
+.mapObj.selected{outline:2px solid #ffd55d;outline-offset:1px;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 8px #ffd55d)}
+.mapObj.groundPatch.selected{outline:2.5px solid #ffd55d;outline-offset:2px;box-shadow:0 0 15px rgba(255,213,93,0.4)}
+.mapObj.locked{opacity:.72}
+.selectionBox{position:absolute;border:1.5px dashed #ffe17f;background:rgba(255,222,99,.15);box-shadow:0 0 10px rgba(255,213,93,.25);pointer-events:none;z-index:999999}
+.selectionBox.eraseBox{border-color:#ff6b72;background:rgba(255,107,114,.22);box-shadow:0 0 10px rgba(255,107,114,.35)}
+.selectionBox.drawGroundBox{border-color:#6de0a0;background:rgba(109,224,160,.22);box-shadow:0 0 10px rgba(109,224,160,.35)}
+.selectionBox.drawVoidBox{border-color:#ca85ff;background:rgba(202,133,255,.24);box-shadow:0 0 10px rgba(202,133,255,.4)}
+.mapObj.groundPatch.voidPatch{background:#091217!important;border:1px dashed rgba(255,255,255,0.14);box-shadow:inset 0 0 22px rgba(0,0,0,.92),0 0 8px rgba(0,0,0,.6)!important;filter:none}
+.emptyHint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 18px;border:1px dashed #55717b;border-radius:12px;background:rgba(7,16,21,.75);color:#adc0c5;text-align:center;pointer-events:none}
+.transformGizmo{position:absolute;border:1.5px solid #ffd55d;box-shadow:0 0 0 1px rgba(0,0,0,0.6),0 0 12px rgba(255,213,93,0.35);pointer-events:none;z-index:99999;box-sizing:border-box}
+.transformGizmo .gizmoHandle{position:absolute;width:10px;height:10px;background:#ffffff;border:2px solid #ffd55d;box-shadow:0 0 4px rgba(0,0,0,0.8);border-radius:2px;pointer-events:auto;cursor:pointer;box-sizing:border-box;transform:translate(-50%,-50%);transition:transform .1s,background .1s}
+.transformGizmo .gizmoHandle:hover{transform:translate(-50%,-50%) scale(1.4);background:#ffd55d}
+.transformGizmo .handle-nw{top:0%;left:0%;cursor:nwse-resize}
+.transformGizmo .handle-n{top:0%;left:50%;cursor:ns-resize}
+.transformGizmo .handle-ne{top:0%;left:100%;cursor:nesw-resize}
+.transformGizmo .handle-e{top:50%;left:100%;cursor:ew-resize}
+.transformGizmo .handle-se{top:100%;left:100%;cursor:nwse-resize}
+.transformGizmo .handle-s{top:100%;left:50%;cursor:ns-resize}
+.transformGizmo .handle-sw{top:100%;left:0%;cursor:nesw-resize}
+.transformGizmo .handle-w{top:50%;left:0%;cursor:ew-resize}
+.transformGizmo .gizmoToolbar{position:absolute;top:-36px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(13,26,34,.96);padding:3px 6px;border-radius:7px;border:1px solid #4a6d7c;box-shadow:0 4px 14px rgba(0,0,0,.6);pointer-events:auto;white-space:nowrap;z-index:100000}
+.transformGizmo .gizmoToolbar button{min-height:24px;padding:2px 7px;font-size:11px;font-weight:600;border-radius:5px;background:#192a36;border:1px solid #3c596b;color:#d8edf2;cursor:pointer}
+.transformGizmo .gizmoToolbar button:hover{background:#2b4557;border-color:#ffd55d;color:#ffd55d}
+.transformGizmo .gizmoSizeTag{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:bold;color:#ffe17f;background:rgba(10,18,24,.92);padding:2px 7px;border-radius:4px;border:1px solid rgba(255,225,127,.4);pointer-events:none;white-space:nowrap}
+.assetCard{position:relative}
+.assetCard .deleteCustomAssetBtn{position:absolute;top:2px;right:2px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;line-height:18px;text-align:center;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:5;padding:0}
+.assetCard:hover .deleteCustomAssetBtn{display:flex}
+.assetCard.customAssetCard{border-color:#e0a838;background:#1b2832}
+.assetCard.activeFenceCard{border-color:#ffd55d;background:#283944;box-shadow:0 0 8px rgba(255,213,93,0.35)}
+.fencePreviewObj{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%;pointer-events:none;opacity:0.85;filter:drop-shadow(0 0 8px #ffd55d);outline:1.5px dashed #ffd55d;border-radius:4px}
+.viewTools{position:absolute;left:10px;top:10px;display:flex;gap:6px;z-index:12;flex-wrap:wrap;max-width:calc(100% - 150px)}
+.zoomBox{position:absolute;right:10px;top:10px;display:flex;gap:5px;z-index:12}
+.zoomBox button,.viewTools button{background:rgba(13,26,34,.94)}
+.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#10232b;border:1px solid #477080;border-radius:10px;padding:9px 14px;z-index:50;opacity:0;pointer-events:none;transition:.2s}
+.toast.show{opacity:1}
+.inspector{padding:11px;overflow:auto}
+.inspector h2{margin-bottom:10px}
+.emptyInspector{color:var(--muted);padding:14px 5px;text-align:center;background:#0d1820;border-radius:8px;margin-bottom:12px;font-size:12px}
+.fieldGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field{display:grid;gap:4px;margin-bottom:8px}
+.field.full{grid-column:1/-1}
+.field label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.field input,.field select{height:34px;width:100%;border:1px solid var(--line);border-radius:8px;background:#0b151c;color:#fff;padding:0 9px;outline:none}
+.field input:focus,.field select:focus{border-color:#6a96a6}
+.preview{height:128px;border:1px solid var(--line);border-radius:10px;background:repeating-conic-gradient(#27343a 0 25%,#34454b 0 50%) 50%/24px 24px;display:grid;place-items:center;margin-bottom:10px;overflow:hidden}
+.preview img{max-width:92%;max-height:92%;object-fit:contain}
+.row{display:flex;gap:7px}
+.row>*{flex:1}
+.check{display:flex;align-items:center;gap:7px;margin:8px 0;color:#c3d0d3}
+.check input{width:18px;height:18px}
+.objectList{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+.objectList h3{font-size:11px;color:var(--muted);margin:0 0 7px;text-transform:uppercase}
+.objRows{display:grid;gap:4px;max-height:180px;overflow:auto}
+.objRow{display:flex;align-items:center;gap:6px;text-align:left;min-height:34px;padding:5px 7px;background:#0d1820}
+.objRow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.objRow em{margin-left:auto;color:var(--muted);font-style:normal;font-size:10px}
+.statusbar{height:28px;border-top:1px solid var(--line);background:#0b151c;color:var(--muted);display:flex;align-items:center;gap:14px;padding:0 10px calc(var(--safe-bottom)*.15);font-size:11px;white-space:nowrap;overflow:hidden}
+.statusbar .ok{color:var(--ok)}
+.mobileToggle{display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;display:grid;place-items:center;padding:16px}
+.modal[hidden]{display:none}
+.modalBox{width:min(560px,100%);max-height:88dvh;overflow:auto;background:var(--panel);border:1px solid #47606c;border-radius:14px;padding:14px}
+.modalBox h2{margin:0 0 12px;color:var(--gold);font-size:17px}
+.modalBox textarea{width:100%;height:260px;background:#071015;color:#d9f0e9;border:1px solid var(--line);border-radius:9px;padding:10px;font:12px/1.45 ui-monospace,monospace;resize:vertical}
+.modalActions{display:flex;justify-content:flex-end;gap:7px;margin-top:10px}
 .world.noGrid:before{display:none}
-@media(max-width:900px){.main{grid-template-columns:1fr}.side{position:fixed;top:calc(50px + var(--safe-top));bottom:28px;width:min(88vw,330px);z-index:40;box-shadow:0 12px 30px #000;transition:transform .22s}.left{left:0;transform:translateX(-105%)}.right{right:0;transform:translateX(105%)}.side.open{transform:translateX(0)}.mobileToggle{display:inline-grid;place-items:center}.brand small{display:none}.brand b{font-size:12px}.brandMark{width:30px;height:30px}.topbar{height:50px;padding:5px 7px}.toolbar button:not(.keepMobile){display:none}.workspace{grid-column:1}.assetGrid{grid-template-columns:repeat(3,minmax(0,1fr))}.assetCard{height:104px}.assetCard img{width:66px;height:66px}.statusbar{gap:8px}.statusbar span:nth-child(n+4){display:none}}
-@media(max-width:430px){.assetGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.topbar{gap:4px}.toolbar{gap:4px}.iconBtn{width:37px}.brand{margin-right:0}}
+.multiSelectBadge{display:inline-block;padding:2px 7px;background:#2b3e4a;border:1px solid #5a7d90;border-radius:6px;font-size:11px;color:var(--gold);margin-bottom:8px}
+@media(max-width:900px){
+  .main{grid-template-columns:1fr}
+  .side{position:fixed;top:calc(50px + var(--safe-top));bottom:28px;width:min(88vw,330px);z-index:40;box-shadow:0 12px 30px #000;transition:transform .22s}
+  .left{left:0;transform:translateX(-105%)}
+  .right{right:0;transform:translateX(105%)}
+  .side.open{transform:translateX(0)}
+  .mobileToggle{display:inline-grid;place-items:center}
+  .brand small{display:none}
+  .brand b{font-size:12px}
+  .brandMark{width:30px;height:30px}
+  .topbar{height:50px;padding:5px 7px}
+  .toolbar button:not(.keepMobile),.mapSelectBox label{display:none}
+  .workspace{grid-column:1}
+  .resizerLeft{display:none}
+  .assetGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .assetCard{height:104px}
+  .assetCard img{width:62px;height:62px}
+  .statusbar{gap:8px}
+  .statusbar span:nth-child(n+4){display:none}
+}
+@media(max-width:430px){
+  .assetGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .topbar{gap:4px}
+  .toolbar{gap:4px}
+  .iconBtn{width:34px}
+  .brand{margin-right:0}
+}
 </style>
 </head>
 <body>
@@ -19,26 +185,119 @@
   <header class="topbar">
     <button id="assetsToggle" class="iconBtn mobileToggle" title="Kho asset">☰</button>
     <div class="brand"><span class="brandMark">◇</span><span><b>MAP EDITOR</b><small>Tu Tiên Chi Lộ</small></span></div>
+    
+    <div class="mapSelectBox">
+      <label for="gameMapSelect">Map:</label>
+      <select id="gameMapSelect" title="Chọn bản đồ trong game"></select>
+      <button id="loadGameBtn" class="primary keepMobile" title="Tải bản đồ đã chọn">Nạp map</button>
+      <button id="resetMapBtn" class="danger keepMobile" style="display:none;font-size:11px;padding:3px 7px;" title="Khôi phục map về file gốc ban đầu">Khôi phục gốc</button>
+    </div>
+
     <nav class="toolbar">
-      <button id="loadGameBtn" class="keepMobile">Nạp map GAME</button>
       <button id="newBtn">Map mới</button>
-      <button id="undoBtn" class="iconBtn keepMobile" title="Hoàn tác">↶</button>
-      <button id="redoBtn" class="iconBtn keepMobile" title="Làm lại">↷</button>
-      <button id="saveBtn">Lưu máy</button>
-      <button id="exportBtn" class="primary keepMobile">Xuất JSON</button>
+      <button id="undoBtn" class="iconBtn keepMobile" title="Hoàn tác (Ctrl+Z)">↶</button>
+      <button id="redoBtn" class="iconBtn keepMobile" title="Làm lại (Ctrl+Y)">↷</button>
+      <button id="saveBtn" class="primary keepMobile" title="Lưu trực tiếp vào map đang chọn trên máy (Game sẽ dùng ngay)">💾 Lưu map</button>
+      <button id="btnConnectFolder" class="keepMobile" style="background:#1d3342;border-color:#48a8e0;color:#cceeff;font-size:12px;" title="Cấp quyền chọn thư mục GAME để mỗi lần ấn Lưu là ghi đè thẳng file .json trên ổ cứng">📁 Chọn thư mục GAME</button>
+      <button id="exportBtn" class="keepMobile" title="Tải file JSON về máy">Xuất JSON</button>
       <button id="importBtn">Nhập JSON</button>
-      <button id="copyBtn">Sao chép JSON map</button>
+      <button id="copyBtn">Sao chép JSON</button>
     </nav>
     <button id="inspectorToggle" class="iconBtn mobileToggle" title="Thuộc tính">⚙</button>
     <input id="fileInput" type="file" accept="application/json,.json" hidden>
   </header>
 
-  <main class="main">
+  <main class="main" id="mainLayout">
     <aside id="assetPanel" class="side left">
+      <div id="resizerLeft" class="resizerLeft" title="Kéo để mở rộng / thu hẹp kho asset"></div>
       <div class="sideHead">
-        <h2>Kho asset map</h2>
-        <input id="assetSearch" class="search" placeholder="Tìm cây, nhà, đá, cổng…">
+        <div class="sideHeadTitle" style="display:flex;align-items:center;justify-content:space-between;">
+          <h2>Kho asset map</h2>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <button id="btnReloadAssets" class="primary" style="font-size:11px;padding:3px 8px;font-weight:bold;white-space:nowrap;background:#183648;border-color:#3ca9e2;color:#cceeff;" title="Quét và cập nhật toàn bộ ảnh asset vừa thả vào thư mục assets/maps/common">🔄 Cập nhật Asset</button>
+            <button id="importAssetBtn" class="primary" style="font-size:11px;padding:3px 8px;font-weight:bold;white-space:nowrap;background:#204a37;border-color:#5bd491;color:#bdf7d7;" title="Nạp thêm ảnh asset mới từ máy tính hoặc đường dẫn">➕ Nạp Asset</button>
+            <div class="widthPresets">
+              <button data-w="280" title="Độ rộng hẹp">Nhỏ</button>
+              <button data-w="420" title="Độ rộng vừa (3-4 cột)">Vừa</button>
+              <button data-w="580" title="Độ rộng lớn (5-6 cột)">Lớn</button>
+            </div>
+          </div>
+        </div>
+        <input id="assetFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" multiple hidden>
+        <input id="folderScanInput" type="file" webkitdirectory directory multiple hidden>
+        <input id="assetSearch" class="search" placeholder="Tìm cây, nhà, đá, cổng, nền đất…">
         <div id="categoryTabs" class="categoryTabs"></div>
+        <div id="groundModeContainer" style="display:none;">
+          <div class="groundControlsBox">
+            <div class="groundModeBar">
+              <button id="modePatchBtn" class="active primary" title="Quét chuột trên map để vẽ mảng nền cục bộ">🖌️ Vẽ nền</button>
+              <button id="modeVoidBtn" style="border-color:#8e48d4;background:#231433;color:#e8c6ff;" title="Quét chuột trên map để khoét rỗng / xóa nền mặc định một khu vực">🕳️ Khoét rỗng</button>
+              <button id="modeEraseBtn" class="danger" title="Quét chuột hoặc bấm vào mảng nền để xóa">🧹 Tẩy nền</button>
+              <button id="modeGlobalBtn" title="Đặt làm nền chung cho toàn map">🌐 Nền toàn map</button>
+            </div>
+            <div class="groundShapeBar">
+              <span>Cách phủ nền:</span>
+              <select id="groundFillTypeSelect">
+                <option value="tiled" selected>Lát lặp nhiều ô nhỏ (Sắc nét)</option>
+                <option value="grid">Ghép nhiều mảng nhỏ rời</option>
+                <option value="single">1 Mảng đơn co giãn (Cover)</option>
+              </select>
+            </div>
+            <div class="groundShapeBar">
+              <span>Cỡ ô nhỏ:</span>
+              <select id="groundTileSizeSelect">
+                <option value="2.5">2.5 × 2.5 (Siêu mịn)</option>
+                <option value="4" selected>4 × 4 (Chuẩn nét)</option>
+                <option value="6">6 × 6 (Vừa)</option>
+                <option value="8">8 × 8 (Lớn)</option>
+              </select>
+            </div>
+            <div class="groundShapeBar">
+              <span>Hình dạng:</span>
+              <select id="activeGroundShapeSelect">
+                <option value="soft">Bo tròn mềm (Tự nhiên)</option>
+                <option value="circle">Hình Elip / Tròn</option>
+                <option value="square">Hình Chữ nhật / Vuông</option>
+              </select>
+            </div>
+            <div class="row" style="margin-top:4px;display:flex;gap:4px;">
+              <button id="btnExitDrawGround" style="display:none;font-size:11px;min-height:28px;padding:3px 6px;flex:1;background:#234a36;border-color:#5bd491;color:#bdf7d7;font-weight:bold;" title="Bỏ chọn vẽ nền, trở về chế độ chọn / thao tác (Phím Esc)">✓ Thoát vẽ nền (Esc)</button>
+              <button id="btnRemoveDefaultGround" class="danger" style="font-size:11px;min-height:28px;padding:3px 6px;flex:1" title="Xóa nền chính toàn map để map hoàn toàn rỗng">🗑️ Xóa nền mặc định</button>
+            </div>
+          </div>
+        </div>
+        <div id="fenceModeContainer" style="display:none;">
+          <div class="fenceControlsBox" style="display:grid;gap:6px;padding:8px;background:#0b151c;border-radius:9px;border:1px solid var(--line);">
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--gold);font-weight:bold;">
+              <span>🧱 Vẽ trải dài tường rào</span>
+              <span id="activeFenceName" style="color:var(--text);font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Tường đá 50°</span>
+            </div>
+            <div class="row" style="display:flex;gap:4px;">
+              <button id="btnFenceModeLine" class="active primary" style="font-size:11px;min-height:26px;padding:3px 6px;flex:1" title="Kéo chuột từ điểm A đến điểm B để tạo hàng rào thẳng">📏 Kéo thẳng hàng</button>
+              <button id="btnFenceModeFree" style="font-size:11px;min-height:26px;padding:3px 6px;flex:1" title="Rê chuột tự do trên map để vẽ hàng rào uốn lượn">🖌️ Vẽ tự do</button>
+            </div>
+            <div class="groundShapeBar">
+              <span>Kiểu góc:</span>
+              <select id="fenceAngleModeSelect">
+                <option value="fixed" selected>📌 Giữ nguyên mẫu đã chọn</option>
+                <option value="auto">🔄 Tự động xoay góc theo hướng kéo</option>
+              </select>
+            </div>
+            <div class="groundShapeBar">
+              <span>Độ xếp chồng:</span>
+              <select id="fenceSpacingSelect">
+                <option value="0.32" selected>🧱 Siêu khít / Đè lớp kín mít (0.32x - Chuẩn tường đá)</option>
+                <option value="0.45">🧱 Xếp chồng khít liền mạch (0.45x)</option>
+                <option value="0.60">🔗 Nối tiếp vừa vặn (0.60x)</option>
+                <option value="0.75">🪵 Khít hàng rào gỗ (0.75x)</option>
+                <option value="1.0">🪚 Khoảng cách thưa (1.0x)</option>
+              </select>
+            </div>
+            <div class="row" style="margin-top:2px;display:flex;gap:4px;">
+              <button id="btnExitDrawFence" style="display:none;font-size:11px;min-height:28px;padding:3px 6px;flex:1;background:#234a36;border-color:#5bd491;color:#bdf7d7;font-weight:bold;" title="Bỏ chọn vẽ rào, trở về chế độ chọn / thao tác (Phím Esc)">✓ Thoát vẽ rào (Esc)</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div id="assetGrid" class="assetGrid"></div>
     </aside>
@@ -48,13 +307,23 @@
         <div id="world" class="world">
           <div id="axisX" class="axisX"></div><div id="axisZ" class="axisZ"></div>
           <div id="objectsLayer"></div>
+          <div id="fencePreviewLayer" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:900000;"></div>
         </div>
-        <div id="emptyHint" class="emptyHint">Chọn một asset ở bên trái để thêm vào map<br><small>Kéo asset để di chuyển · chạm để chọn</small></div>
+        <div id="emptyHint" class="emptyHint">Chọn asset để thêm vào map · Quét chuột để chọn nhiều asset xóa / di chuyển<br><small>Kéo asset để di chuyển · Shift + Click hoặc kéo chuột quét khối để chọn nhiều</small></div>
+        <div id="selectionBox" class="selectionBox" style="display:none"></div>
+        <div id="transformGizmo" class="transformGizmo" style="display:none"></div>
         <div class="viewTools">
-          <button id="selectMode" class="active">Chọn</button>
-          <button id="panMode">Di chuyển màn hình</button>
+          <button id="selectMode" class="active" title="Chế độ chọn asset hoặc kéo chuột quét khối (Phím Esc hoặc Q)">Chọn / Quét khối (Esc)</button>
+          <button id="drawFenceMode" style="border-color:#e09c3d;background:#2b1d0e;color:#ffe6c2;" title="Kéo đè chuột trái trên map để vẽ hàng rào trải dài liên tục (Phím F)">🧱 Kéo vẽ rào (F)</button>
+          <button id="drawGroundMode" title="Chế độ quét chuột trên map để vẽ mảng nền cục bộ (Phím G)">🖌️ Quét đặt nền</button>
+          <button id="drawVoidMode" style="border-color:#9f5be6;background:#26133a;color:#ebd1ff;" title="Chế độ quét chuột để khoét rỗng / xóa nền mặc định tại một khu vực (Phím V)">🕳️ Quét khoét rỗng</button>
+          <button id="eraseGroundMode" class="danger" title="Chế độ quét chuột để tẩy xóa các mảng nền (Phím E)">🧹 Tẩy xóa nền</button>
+          <button id="exitGroundModeBtn" class="primary" style="display:none;background:#234a36;border-color:#5bd491;color:#bdf7d7;font-weight:bold;" title="Bỏ chọn vẽ, hoàn tất và trở về chế độ chọn / thao tác (Phím Esc)">✓ Thoát vẽ (Esc)</button>
+          <button id="clearDefaultGroundBtn" class="danger" title="Xóa bỏ nền mặc định toàn map để map hoàn toàn rỗng">🗑️ Xóa nền mặc định</button>
+          <button id="panMode" title="Di chuyển màn hình xem (Phím H hoặc giữ Chuột phải / Space)">Di chuyển màn hình</button>
           <button id="gridBtn" class="active">Lưới</button>
           <button id="wallBtn">+ Vòng tường 9 góc</button>
+          <button id="deleteBatchBtn" class="danger" style="display:none" title="Xóa các asset đang được chọn (Delete)">Xóa đã chọn</button>
         </div>
         <div class="zoomBox"><button id="zoomOut">−</button><button id="resetView">100%</button><button id="zoomIn">+</button></div>
         <div id="toast" class="toast"></div>
@@ -67,7 +336,7 @@
   </main>
 
   <footer class="statusbar">
-    <span id="saveStatus" class="ok">Đã lưu</span><span id="objectCount">0 asset</span><span id="cursorPos">X 0 · Z 0</span><span id="zoomStatus">Zoom 100%</span><span>Phím: Delete · Ctrl+Z/Y · Ctrl+D · ←↑↓→</span>
+    <span id="saveStatus" class="ok">Đã lưu</span><span id="objectCount">0 asset</span><span id="selectStatus">0 đã chọn</span><span id="cursorPos">X 0 · Z 0</span><span id="zoomStatus">Zoom 100%</span><span>Phím: Chuột phải / Space kéo map · WASD · V: Khoét rỗng · G: Nền · E: Tẩy · Del</span>
   </footer>
 </div>
 
@@ -79,12 +348,139 @@
   </div>
 </div>
 
+<div id="assetModal" class="modal" hidden>
+  <div class="modalBox" style="max-width:490px;">
+    <h2 id="assetModalTitle">➕ Nạp Asset mới vào Map Editor</h2>
+    <div style="display:grid;gap:12px;margin:12px 0;">
+      <div>
+        <label style="display:block;font-size:12px;color:var(--gold);margin-bottom:4px;font-weight:bold;">1. Phân loại Category cho Asset:</label>
+        <select id="importCategorySelect" style="width:100%;height:34px;padding:0 9px;background:#0b151c;border:1px solid var(--line);color:#fff;border-radius:8px;font-size:12px;">
+          <option value="trees">🌳 Cây cối (trees)</option>
+          <option value="buildings">🏠 Nhà cửa & Công trình (buildings)</option>
+          <option value="rocks">🪨 Đá & Núi (rocks)</option>
+          <option value="plants">🌿 Cỏ hoa & Bụi rậm (plants)</option>
+          <option value="props">📦 Đạo cụ & Trang trí (props)</option>
+          <option value="fences_gates">🧱 Hàng rào & Cổng (fences_gates)</option>
+          <option value="grounds">🌾 Mặt đất / Nền (grounds)</option>
+          <option value="lanterns">🏮 Đèn lồng (lanterns)</option>
+          <option value="bridges_water">🌉 Cầu & Mặt nước (bridges_water)</option>
+          <option value="signs">🪧 Biển chỉ dẫn (signs)</option>
+          <option value="magical">✨ Pháp bảo & Hiệu ứng (magical)</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;color:var(--gold);margin-bottom:4px;font-weight:bold;">2. Chọn ảnh từ máy tính (.png, .jpg, .webp, .svg):</label>
+        <button id="modalPickFilesBtn" class="primary" style="width:100%;padding:9px;font-size:13px;font-weight:bold;cursor:pointer;background:#204a37;border-color:#5bd491;color:#bdf7d7;">📂 Chọn file ảnh từ máy (Chọn 1 hoặc nhiều ảnh)</button>
+      </div>
+      <div style="text-align:center;color:var(--muted);font-size:11px;">— HOẶC NHẬP ĐƯỜNG DẪN / URL —</div>
+      <div>
+        <label style="display:block;font-size:12px;color:var(--gold);margin-bottom:4px;font-weight:bold;">3. Đường dẫn file hoặc URL ảnh:</label>
+        <div style="display:flex;gap:6px;">
+          <input id="importUrlInput" type="text" placeholder="Ví dụ: assets/maps/custom/my_house.png hoặc link ảnh online" style="flex:1;height:34px;padding:0 9px;background:#0b151c;border:1px solid var(--line);color:#fff;border-radius:8px;font-size:12px;">
+          <button id="modalAddUrlBtn" class="primary" style="padding:0 14px;height:34px;white-space:nowrap;font-size:12px;font-weight:bold;">Thêm</button>
+        </div>
+      </div>
+    </div>
+    <div class="modalActions">
+      <button id="assetModalClose">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (()=>{'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const STORAGE='tutien_map_editor_v1', PROJ=Math.sin(50*Math.PI/180);
-const CATEGORY_LABELS={all:'Tất cả',buildings:'Nhà',trees:'Cây',rocks:'Đá',plants:'Cỏ hoa',props:'Đạo cụ',fences_gates:'Tường/Cổng',lanterns:'Đèn',bridges_water:'Cầu/Nước',signs:'Biển',magical:'Pháp thuật'};
+const STORAGE='tutien_map_editor_v1', STORAGE_LEFT_W='tutien_map_editor_left_w', PROJ=Math.sin(50*Math.PI/180);
+
+const GAME_MAPS = [
+  {id:'thanh_van_thon', name:'Thanh Vân Thôn', zone:'Thanh Mộc Châu'},
+  {id:'thanh_van_tong', name:'Thanh Vân Tông', zone:'Thanh Mộc Châu'},
+  {id:'linh_son_ngoai_vi', name:'Linh Sơn Ngoại Vi', zone:'Thanh Mộc Châu'},
+  {id:'bach_thao_coc', name:'Bách Thảo Cốc', zone:'Thanh Mộc Châu'},
+
+  {id:'xich_viem_tong', name:'Xích Viêm Tông', zone:'Nam Viêm Châu'},
+  {id:'xich_viem_ngoai_son', name:'Xích Viêm Ngoại Sơn', zone:'Nam Viêm Châu'},
+  {id:'dung_nham_co_dong', name:'Dung Nham Cổ Động', zone:'Nam Viêm Châu'},
+  {id:'hoa_van_phuong', name:'Hỏa Vân Phường', zone:'Nam Viêm Châu'},
+
+  {id:'bach_ngoc_thanh', name:'Bạch Ngọc Thành', zone:'Bắc Hàn Châu'},
+  {id:'han_suong_binh_nguyen', name:'Hàn Sương Bình Nguyên', zone:'Bắc Hàn Châu'},
+  {id:'bang_ho_linh_canh', name:'Băng Hồ Linh Cảnh', zone:'Bắc Hàn Châu'},
+  {id:'cam_dia_han_uyen', name:'Cấm Địa Hàn Uyên', zone:'Bắc Hàn Châu'},
+
+  {id:'thai_bach_kim_tong', name:'Thái Bạch Kim Tông', zone:'Tây Cực Châu'},
+  {id:'thai_bach_khoang_mach', name:'Thái Bạch Khoáng Mạch', zone:'Tây Cực Châu'},
+  {id:'kim_thach_hoang_nguyen', name:'Kim Thạch Hoang Nguyên', zone:'Tây Cực Châu'},
+  {id:'kiem_mo', name:'Kiếm Mộ', zone:'Tây Cực Châu'},
+
+  {id:'hau_tho_dien', name:'Hậu Thổ Điện', zone:'Hậu Thổ Hoang Vực'},
+  {id:'hoang_tho_co_thanh', name:'Hoàng Thổ Cổ Thành', zone:'Hậu Thổ Hoang Vực'},
+  {id:'van_dam_sa_mac', name:'Vạn Dặm Sa Mạc', zone:'Hậu Thổ Hoang Vực'},
+  {id:'dia_mach_me_cung', name:'Địa Mạch Mê Cung', zone:'Hậu Thổ Hoang Vực'},
+
+  {id:'cuu_tieu_mon', name:'Cửu Tiêu Môn', zone:'Cửu Tiêu Phong Vực'},
+  {id:'phong_van_cao_nguyen', name:'Phong Vân Cao Nguyên', zone:'Cửu Tiêu Phong Vực'},
+  {id:'cuu_tieu_hiep_coc', name:'Cửu Tiêu Hiệp Cốc', zone:'Cửu Tiêu Phong Vực'},
+  {id:'tu_tieu_son', name:'Tử Tiêu Sơn', zone:'Cửu Tiêu Phong Vực'},
+
+  {id:'than_tieu_loi_tong', name:'Thần Tiêu Lôi Tông', zone:'Thiên Lôi Vực'},
+  {id:'loi_tri', name:'Lôi Trì', zone:'Thiên Lôi Vực'},
+  {id:'phi_van_thien_lo', name:'Phi Vân Thiên Lộ', zone:'Thiên Lôi Vực'},
+  {id:'thien_kiep_co_dia', name:'Thiên Kiếp Cổ Địa', zone:'Thiên Lôi Vực'},
+
+  {id:'van_kiem_tong', name:'Vạn Kiếm Tông', zone:'Vạn Kiếm Vực'},
+  {id:'van_kiem_son_mach', name:'Vạn Kiếm Sơn Mạch', zone:'Vạn Kiếm Vực'},
+  {id:'tuyet_son_co_dao', name:'Tuyết Sơn Cổ Đạo', zone:'Vạn Kiếm Vực'},
+  {id:'ba_dao_coc', name:'Bá Đao Cốc', zone:'Vạn Kiếm Vực'},
+
+  {id:'trung_chau_de_do', name:'Trung Châu Đế Đô', zone:'Trung Châu'},
+  {id:'van_bao_thanh', name:'Vạn Bảo Thành', zone:'Trung Châu'},
+  {id:'van_kim_thanh', name:'Vạn Kim Thành', zone:'Trung Châu'},
+  {id:'trung_chau_ngoai_vuc', name:'Trung Châu Ngoại Vực', zone:'Trung Châu'},
+
+  {id:'yeu_dinh_thanh', name:'Yêu Đình Thành', zone:'Yêu Vực'},
+  {id:'yeu_hoang_coc', name:'Yêu Hoàng Cốc', zone:'Yêu Vực'},
+  {id:'van_thu_son', name:'Vạn Thú Sơn', zone:'Yêu Vực'},
+  {id:'yeu_vuc', name:'Yêu Vực', zone:'Yêu Vực'},
+
+  {id:'thien_ma_dien', name:'Thiên Ma Điện', zone:'Ma Vực'},
+  {id:'ma_uyen', name:'Ma Uyên', zone:'Ma Vực'},
+  {id:'huyet_sat_chien_truong', name:'Huyết Sát Chiến Trường', zone:'Ma Vực'},
+  {id:'ma_vuc', name:'Ma Vực', zone:'Ma Vực'}
+];
+
+const CATEGORY_LABELS={
+  all:'Tất cả',
+  MAP:'🗺️ Map Lớn / Toàn cảnh',
+  grounds:'Mặt đất (Nền)',
+  buildings:'Nhà',
+  trees:'Cây',
+  rocks:'Đá',
+  plants:'Cỏ hoa',
+  props:'Đạo cụ',
+  fences_gates:'Tường/Cổng',
+  lanterns:'Đèn',
+  bridges_water:'Cầu/Nước',
+  signs:'Biển',
+  magical:'Pháp thuật',
+  custom:'⭐ Tự nạp'
+};
 const FILES={
+  MAP:[
+    'THANH VAN THON.png', 'THANH VAN THON.webp'
+  ],
+  grounds:[
+    'ground_village_01.png','ground_forest_01.png','ground_forest_02.png','ground_sacred_01.png',
+    'ground_snow_01.png','ground_desert_01.png','ground_mountain_01.png','ground_swamp_01.png',
+    'ground_dark_01.png','ground_wasteland_01.png','ground_meadow_spirit_01.png','ground_riverbank_01.png',
+    'ground_terrain_01.png','ground_terrain_02.png','ground_terrain_03.png','ground_terrain_04.png',
+    'ground_terrain_05.png','ground_terrain_06.png','ground_terrain_07.png','ground_terrain_08.png',
+    'ground_terrain_09.png','ground_terrain_10.png','ground_terrain_11.png','ground_terrain_12.png',
+    'ground_terrain_13.png','ground_terrain_14.png','ground_terrain_15.png','ground_terrain_16.png',
+    'ground_terrain_17.png','ground_terrain_18.png','ground_terrain_19.png','ground_terrain_20.png',
+    'ground_terrain_21.png','ground_terrain_22.png','ground_terrain_23.png','ground_terrain_24.png',
+    'ground_terrain_25.png','ground_terrain_26.png','ground_terrain_27.png','ground_terrain_28.png','ground_terrain_29.png'
+  ],
   buildings:['house_herbal_01.png','house_sakura_01.png','house_thatch_01.png','house_tile_01.png','pavilion_shrine_01.png','pavilion_water_01.png','shop_house_01.png','shrine_buddha_01.png','shrine_small_01.png','smithy_01.png','warehouse_thatch_01.png'],
   trees:['tree_01.png','tree_02.png','tree_03.png','tree_ancient_green_01.png','tree_autumn_01.png','tree_lantern_01.png','tree_magic_wisp_01.png','tree_pine_01.png','tree_pink_blossom_02.png','tree_sakura_01.png','tree_white_blossom_01.png','tree_willow_01.png'],
   rocks:['rock_01.png','rock_02.png','rock_03.png','rock_04.png','rock_05.png','rock_cliff_cluster_01.png','rock_cluster_flower_01.png','rock_flat_steps_01.png','rock_flower_mound_01.png','rock_flower_patch_01.png','rock_lantern_cluster_01.png','rock_large_vine_01.png','rock_tall_vine_01.png','rock_tall_vine_02.png','rock_waterfall_01.png'],
@@ -96,58 +492,1998 @@ const FILES={
   signs:['notice_board_01.png','sign_banner_01.png','sign_direction_01.png','sign_magic_stone_01.png','sign_stone_lantern_01.png','sign_stone_sakura_01.png','sign_stone_yinyang_01.png'],
   magical:['crystal_blue_01.png','loot_beam_gold_01.png']
 };
-const ASSETS=Object.entries(FILES).flatMap(([category,files])=>files.map(file=>({category,file,path:`assets/maps/common/${category}/${file}`})));
-const DEFAULT_SIZE={buildings:[5.4,5.2],trees:[4.4,5.7],rocks:[3.1,3.2],plants:[1.9,1.9],props:[2.5,2.3],fences_gates:[3.3,3.3],lanterns:[2.1,3.3],bridges_water:[5.5,3.8],signs:[2.4,3.2],magical:[2.4,3.2]};
+
+// Nạp cache danh sách file đã quét tự động trước đó
+try {
+  let cachedFiles = localStorage.getItem('tutien_scanned_files_v1');
+  if(cachedFiles){
+    let parsed = JSON.parse(cachedFiles);
+    if(parsed && typeof parsed === 'object'){
+      Object.keys(parsed).forEach(k => {
+        if(Array.isArray(parsed[k])) FILES[k] = parsed[k];
+      });
+    }
+  }
+} catch(e){}
+
+const STORAGE_CUSTOM_ASSETS = 'tutien_custom_assets_v1';
+function loadCustomAssets(){
+  try {
+    let saved = localStorage.getItem(STORAGE_CUSTOM_ASSETS);
+    if(saved){
+      let list = JSON.parse(saved);
+      if(Array.isArray(list)) return list;
+    }
+  } catch(e){}
+  return [];
+}
+let customAssets = loadCustomAssets();
+
+function getAllAssets(){
+  let base = [];
+  Object.entries(FILES).forEach(([category, files]) => {
+    if(!Array.isArray(files)) return;
+    files.forEach(item => {
+      if(typeof item === 'string'){
+        let p = item.startsWith('assets/') ? item : (category === 'MAP' ? `assets/MAP/${item}` : `assets/maps/common/${category}/${item}`);
+        let fName = item.split('/').pop();
+        base.push({ category, file: fName, path: p, isCustom: false });
+      } else if(item && typeof item === 'object'){
+        base.push({
+          category: item.category || category,
+          file: item.file || (item.path ? item.path.split('/').pop() : 'asset.png'),
+          path: item.path,
+          isCustom: false
+        });
+      }
+    });
+  });
+  return [...base, ...customAssets];
+}
+let ASSETS = getAllAssets();
+
+async function reloadAssetsFromDisk(notify = true){
+  let success = false;
+
+  // 1. Thử gọi API từ server Node.js (/api/scan-assets)
+  try {
+    let res = await fetch('/api/scan-assets?t=' + Date.now());
+    if(res.ok){
+      let data = await res.json();
+      if(data.ok && data.files){
+        Object.keys(data.files).forEach(cat => {
+          FILES[cat] = data.files[cat];
+        });
+        localStorage.setItem('tutien_scanned_files_v1', JSON.stringify(FILES));
+        success = true;
+      }
+    }
+  } catch(e){}
+
+  // 2. Thử quét qua File System Directory Handle (nếu đã kết nối thư mục)
+  if(!success && projectDirectoryHandle){
+    try {
+      let commonDir = await projectDirectoryHandle.getDirectoryHandle('assets').then(d => d.getDirectoryHandle('maps')).then(d => d.getDirectoryHandle('common'));
+      for await (const [catName, handle] of commonDir.entries()){
+        if(handle.kind === 'directory'){
+          let list = [];
+          for await (const [fileName, fileHandle] of handle.entries()){
+            if(fileHandle.kind === 'file' && /\.(png|webp|jpg|jpeg|svg)$/i.test(fileName)){
+              list.push(fileName);
+            }
+          }
+          if(list.length > 0){
+            FILES[catName] = list;
+          }
+        }
+      }
+      localStorage.setItem('tutien_scanned_files_v1', JSON.stringify(FILES));
+      success = true;
+    } catch(e){
+      console.warn('[FileSystem Scan] Lỗi:', e);
+    }
+  }
+
+  ASSETS = getAllAssets();
+  renderCategories();
+  renderAssets();
+
+  if(notify){
+    if(success){
+      toast(`🔄 Đã quét và cập nhật xong toàn bộ ${ASSETS.length} asset từ thư mục!`);
+    } else {
+      if($('#folderScanInput')){
+        $('#folderScanInput').click();
+      } else {
+        toast(`⚠️ Không kết nối được server. Đang dùng ${ASSETS.length} asset hiện tại.`);
+      }
+    }
+  }
+}
+
+function addCustomAsset(fileOrUrl, category = 'props', fileName = ''){
+  let name = fileName || (typeof fileOrUrl === 'string' && !fileOrUrl.startsWith('data:') ? fileOrUrl.split('/').pop() : 'asset_nap_them.png');
+  let assetObj = {
+    category: category || 'props',
+    file: name,
+    path: fileOrUrl,
+    isCustom: true,
+    id: 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)
+  };
+  customAssets.push(assetObj);
+  try {
+    localStorage.setItem(STORAGE_CUSTOM_ASSETS, JSON.stringify(customAssets));
+  } catch(e){
+    console.warn('Không thể lưu asset vào localStorage:', e);
+  }
+  ASSETS = getAllAssets();
+  renderCategories();
+  renderAssets();
+  toast(`✅ Đã nạp: ${niceName(assetObj.file)} vào nhóm ${CATEGORY_LABELS[category] || category}`);
+}
+
+window.deleteCustomAsset = function(assetId, e){
+  if(e) e.stopPropagation();
+  let idx = customAssets.findIndex(a => a.id === assetId);
+  if(idx === -1) return;
+  let item = customAssets[idx];
+  if(!confirm(`Xóa asset "${niceName(item.file)}" khỏi kho asset?`)) return;
+  customAssets.splice(idx, 1);
+  try {
+    localStorage.setItem(STORAGE_CUSTOM_ASSETS, JSON.stringify(customAssets));
+  } catch(e){}
+  ASSETS = getAllAssets();
+  renderCategories();
+  renderAssets();
+  toast(`Đã xóa asset: ${niceName(item.file)}`);
+};
+
+const DEFAULT_SIZE={buildings:[5.4,5.2],trees:[4.4,5.7],rocks:[3.1,3.2],plants:[1.9,1.9],props:[2.5,2.3],fences_gates:[3.3,3.3],lanterns:[2.1,3.3],bridges_water:[5.5,3.8],signs:[2.4,3.2],magical:[2.4,3.2],grounds:[12,12],custom:[3.3,3.3]};
+
 let state={version:1,mapId:'thanh_van_thon',mapName:'Thanh Vân Thôn',ground:'assets/maps/common/grounds/ground_village_01.png',objects:[]};
-let view={zoom:7,panX:0,panY:0,grid:true,mode:'select'}, selectedId=null, history=[],future=[],drag=null,category='all',dirty=false,loadedMapConfig=null;
+let view={zoom:7,panX:0,panY:0,grid:true,mode:'select'}, selectedIds=new Set(), history=[],future=[],drag=null,category='all',groundApplyMode='patch',dirty=false,loadedMapConfig=null,isSpaceDown=false;
+let activeGroundPath = 'assets/maps/common/grounds/ground_forest_01.png', activeGroundShape = 'soft', activeTileMode = 'repeat', activeTileSize = 4, groundFillType = 'tiled';
+let activeFenceAsset = { path: 'assets/maps/common/fences_gates/stone_wall_50deg_00.png', category: 'fences_gates' };
+let fenceDrawMode = 'line';
+let fenceAngleMode = 'fixed';
+let fenceSpacingRatio = 0.32;
+
+function getFenceStep(assetPath, customRatio){
+  let ratio = num(customRatio, fenceSpacingRatio);
+  let isStoneWall = assetPath && (assetPath.includes('stone_wall') || assetPath.includes('wall_50deg'));
+  let assetWidth = (DEFAULT_SIZE.fences_gates ? DEFAULT_SIZE.fences_gates[0] : 3.3);
+  // stone_wall assets have ~50% transparent padding inside their 256x256 sprite
+  let contentFactor = isStoneWall ? 0.65 : 1.0;
+  return Math.max(0.35, assetWidth * ratio * contentFactor);
+}
+
+function getFenceFileForAngle(basePath, dx, dz){
+  if(fenceAngleMode === 'auto' && basePath && basePath.includes('stone_wall_50deg')){
+    let deg = Math.atan2(dz, dx) * 180 / Math.PI;
+    while(deg > 90) deg -= 180;
+    while(deg < -90) deg += 180;
+    const order = [6, 5, 2, 1, 4, 0, 7, 3, 8];
+    let logical = Math.max(0, Math.min(8, Math.round((deg + 90) / 22.5)));
+    let fi = order[logical];
+    return `assets/maps/common/fences_gates/stone_wall_50deg_${String(fi).padStart(2, '0')}.png`;
+  }
+  return basePath;
+}
+
 const uid=()=>`obj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;
 const clone=v=>JSON.parse(JSON.stringify(v));
 const num=(v,d=0)=>Number.isFinite(+v)?+v:d;
-const niceName=p=>(p.split('/').pop()||p).replace(/\.png$/,'').replaceAll('_',' ');
-function categoryOf(path){let m=path.match(/common\/([^/]+)\//);return m?m[1]:'props'}
-function newObject(asset,x=0,z=0,overrides={}){let cat=categoryOf(asset.path),sz=DEFAULT_SIZE[cat]||[3,3];return {id:uid(),name:niceName(asset.path),file:asset.path,x:+x.toFixed(2),z:+z.toFixed(2),width:sz[0],height:sz[1],layer:0,opacity:1,flipX:false,locked:false,...overrides}}
+const niceName=p=>(p.split('/').pop()||p).replace(/\.(png|jpg|jpeg|webp|svg)$/i,'').replaceAll('_',' ').slice(0,30);
+function categoryOf(path){
+  let found = ASSETS.find(a => a.path === path);
+  if(found && found.category) return found.category;
+  let m=path.match(/common\/([^/]+)\//);
+  return m?m[1]:'props';
+}
+function newObject(asset,x=0,z=0,overrides={}){
+  let cat=categoryOf(asset.path),sz=DEFAULT_SIZE[cat]||[3,3];
+  let isGroundPatch = cat==='grounds' || !!overrides.isGroundPatch || asset.path==='__void__';
+  return {
+    id:uid(),
+    name:niceName(asset.path),
+    file:asset.path,
+    x:+x.toFixed(2),
+    z:+z.toFixed(2),
+    width:sz[0],
+    height:sz[1],
+    layer: isGroundPatch ? -100 : 0,
+    opacity:1,
+    flipX:false,
+    locked:false,
+    isGroundPatch,
+    shape: isGroundPatch ? (overrides.shape || activeGroundShape || 'soft') : undefined,
+    tileMode: isGroundPatch ? (overrides.tileMode || activeTileMode || 'repeat') : undefined,
+    tileSize: isGroundPatch ? (overrides.tileSize || activeTileSize || 4) : undefined,
+    ...overrides
+  };
+}
 function snapshot(){history.push(JSON.stringify(state));if(history.length>60)history.shift();future=[]}
 function markDirty(){dirty=true;$('#saveStatus').textContent='Chưa lưu';$('#saveStatus').classList.remove('ok');scheduleSave();}
-let saveTimer;function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveLocal,700)}
-function saveLocal(){localStorage.setItem(STORAGE,JSON.stringify(state));dirty=false;$('#saveStatus').textContent='Đã tự lưu';$('#saveStatus').classList.add('ok')}
+let saveTimer;
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveLocal(false),700)}
+let projectDirectoryHandle = null;
+
+async function saveToFileSystem(mapId, code){
+  if(!projectDirectoryHandle) return false;
+  try {
+    let mapsDir = await projectDirectoryHandle.getDirectoryHandle('maps', {create: false});
+    let fileHandle = await mapsDir.getFileHandle(mapId + '.json', {create: true});
+    let writable = await fileHandle.createWritable();
+    await writable.write(code);
+    await writable.close();
+    console.log('[FileSystem] Đã ghi đè file maps/' + mapId + '.json thành công');
+    return true;
+  } catch(err){
+    console.warn('[FileSystem] Không thể ghi file:', err);
+    return false;
+  }
+}
+
+async function saveLocal(notify = false){
+  let mapId = state.mapId || 'thanh_van_thon';
+  localStorage.setItem('tutien_map_editor_' + mapId, JSON.stringify(state));
+  let code = '';
+  try {
+    code = gameCode();
+    localStorage.setItem('tutien_custom_map_' + mapId, code);
+  } catch(e){}
+  localStorage.setItem('tutien_map_editor_last_mapId', mapId);
+  dirty = false;
+  $('#saveStatus').textContent = `Đã lưu: ${state.mapName || mapId}`;
+  $('#saveStatus').classList.add('ok');
+  initMapSelector();
+  updateResetMapBtn();
+
+  let savedToServer = false;
+  let savedToDisk = false;
+
+  // 1. Thử ghi đè trực tiếp qua File System Handle nếu đã cấp quyền
+  if(projectDirectoryHandle && code){
+    savedToDisk = await saveToFileSystem(mapId, code);
+  }
+
+  // 2. Thử gửi API lưu file về server (nếu chạy qua node server.js)
+  if(code){
+    try {
+      let res = await fetch('/api/save-map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mapId, content: code })
+      });
+      if(res.ok){
+        let json = await res.json();
+        if(json.ok) savedToServer = true;
+      }
+    } catch(e){}
+  }
+
+  if(notify){
+    if(savedToServer || savedToDisk){
+      toast(`💾 ĐÃ LƯU & GHI ĐÈ FILE maps/${mapId}.json (Điện thoại & PC đều nhận ngay!)`);
+    } else {
+      toast(`💾 Đã lưu vào trình duyệt máy tính. (Mẹo: Chạy 'node server.js' hoặc xuất JSON vào thư mục maps để điện thoại nhận ngay)`);
+    }
+  }
+}
 function toast(msg){let t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),1800)}
 function stageCenterWorld(){let r=$('#stage').getBoundingClientRect();return screenToWorld(r.width/2,r.height/2)}
 function worldToScreen(x,z){let r=$('#stage').getBoundingClientRect();return {x:r.width/2+view.panX+x*view.zoom,y:r.height/2+view.panY-z*view.zoom*PROJ}}
 function screenToWorld(x,y){let r=$('#stage').getBoundingClientRect();return {x:(x-r.width/2-view.panX)/view.zoom,z:-(y-r.height/2-view.panY)/(view.zoom*PROJ)}}
 function snap(v){let step=$('#snapSize')?num($('#snapSize').value,1):1;return step>0?Math.round(v/step)*step:v}
-function renderAssets(){let q=$('#assetSearch').value.trim().toLowerCase();let list=ASSETS.filter(a=>(category==='all'||a.category===category)&&(!q||a.file.toLowerCase().includes(q)));$('#assetGrid').innerHTML=list.map(a=>`<button class="assetCard" data-path="${a.path}" title="Thêm ${niceName(a.path)}"><img loading="lazy" src="${a.path}"><span>${niceName(a.path)}</span></button>`).join('');$$('.assetCard').forEach(b=>b.onclick=()=>{let a=ASSETS.find(x=>x.path===b.dataset.path),p=stageCenterWorld();snapshot();let o=newObject(a,snap(p.x),snap(p.z));state.objects.push(o);selectedId=o.id;markDirty();render();closeMobilePanels();toast('Đã thêm '+o.name)})}
-function renderCategories(){let cats=['all',...Object.keys(FILES)];$('#categoryTabs').innerHTML=cats.map(c=>`<button class="${c===category?'active':''}" data-cat="${c}">${CATEGORY_LABELS[c]}</button>`).join('');$$('[data-cat]').forEach(b=>b.onclick=()=>{category=b.dataset.cat;renderCategories();renderAssets()})}
-function renderWorld(){let layer=$('#objectsLayer'),origin=worldToScreen(0,0);$('#axisX').style.top=origin.y+'px';$('#axisZ').style.left=origin.x+'px';let gs=Math.max(7,view.zoom*5),gy=gs*PROJ,w=$('#world');w.style.setProperty('--grid-size',gs+'px');w.style.setProperty('--grid-y',gy+'px');w.style.setProperty('--grid-x',(origin.x%gs)+'px');w.style.setProperty('--grid-pos-y',(origin.y%gy)+'px');w.classList.toggle('noGrid',!view.grid);w.style.backgroundImage=`url('${state.ground}')`;layer.innerHTML=state.objects.map(o=>{let p=worldToScreen(o.x,o.z),sel=o.id===selectedId?' selected':'',lock=o.locked?' locked':'',zi=100000-Math.round(o.z*100)+num(o.layer);return `<img class="mapObj${sel}${lock}" data-id="${o.id}" src="${o.file}" draggable="false" style="left:${p.x}px;top:${p.y}px;width:${o.width*view.zoom}px;height:${o.height*view.zoom}px;opacity:${o.opacity};z-index:${zi};transform:translate(-50%,-100%) scaleX(${o.flipX?-1:1})">`}).join('');$$('.mapObj').forEach(el=>el.addEventListener('pointerdown',objectPointerDown));$('#emptyHint').hidden=state.objects.length>0;$('#objectCount').textContent=`${state.objects.length} asset`;$('#zoomStatus').textContent=`Zoom ${Math.round(view.zoom/7*100)}%`;$('#resetView').textContent=Math.round(view.zoom/7*100)+'%'}
-function renderInspector(){let box=$('#inspector'),o=state.objects.find(x=>x.id===selectedId);if(!o){box.innerHTML='<h2>Thuộc tính asset</h2><div class="emptyInspector">Chạm một asset trên map để chỉnh vị trí và kích thước.</div>';return}box.innerHTML=`<h2>Thuộc tính asset</h2><div class="preview"><img src="${o.file}"></div><div class="field full"><label>Tên</label><input data-prop="name" value="${escapeHtml(o.name)}"></div><div class="fieldGrid"><div class="field"><label>X</label><input data-prop="x" type="number" step="0.25" value="${o.x}"></div><div class="field"><label>Z</label><input data-prop="z" type="number" step="0.25" value="${o.z}"></div><div class="field"><label>Rộng</label><input data-prop="width" type="number" min="0.1" step="0.1" value="${o.width}"></div><div class="field"><label>Cao</label><input data-prop="height" type="number" min="0.1" step="0.1" value="${o.height}"></div><div class="field"><label>Lớp</label><input data-prop="layer" type="number" step="1" value="${o.layer}"></div><div class="field"><label>Độ mờ</label><input data-prop="opacity" type="number" min="0" max="1" step="0.05" value="${o.opacity}"></div></div><label class="check"><input data-check="flipX" type="checkbox" ${o.flipX?'checked':''}> Lật ngang</label><label class="check"><input data-check="locked" type="checkbox" ${o.locked?'checked':''}> Khóa vị trí</label><div class="row"><button id="duplicateObj">Nhân bản</button><button id="deleteObj" class="danger">Xóa</button></div><div class="objectList"><h3>Danh sách asset</h3><div class="objRows">${state.objects.slice().sort((a,b)=>a.z-b.z).map(x=>`<button class="objRow ${x.id===selectedId?'active':''}" data-select="${x.id}"><span>${escapeHtml(x.name)}</span><em>${x.x}, ${x.z}</em></button>`).join('')}</div></div>`;$$('[data-prop]').forEach(i=>i.onchange=()=>updateProp(i.dataset.prop,i.value));$$('[data-check]').forEach(i=>i.onchange=()=>updateProp(i.dataset.check,i.checked));$('#duplicateObj').onclick=duplicateSelected;$('#deleteObj').onclick=deleteSelected;$$('[data-select]').forEach(b=>b.onclick=()=>{selectedId=b.dataset.select;render()})}
+
+function setSidebarWidth(widthPx){
+  let w = Math.max(240, Math.min(800, widthPx));
+  document.documentElement.style.setProperty('--left-width', w + 'px');
+  localStorage.setItem(STORAGE_LEFT_W, String(w));
+}
+
+function initSidebarResizer(){
+  let savedW = localStorage.getItem(STORAGE_LEFT_W);
+  if(savedW) setSidebarWidth(parseInt(savedW, 10));
+
+  let resizer = $('#resizerLeft');
+  if(!resizer) return;
+  let isDragging = false, startX = 0, startWidth = 0;
+
+  resizer.addEventListener('pointerdown', e => {
+    isDragging = true;
+    startX = e.clientX;
+    startWidth = $('#assetPanel').getBoundingClientRect().width;
+    resizer.classList.add('dragging');
+    resizer.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  window.addEventListener('pointermove', e => {
+    if(!isDragging) return;
+    let newWidth = startWidth + (e.clientX - startX);
+    setSidebarWidth(newWidth);
+  });
+
+  window.addEventListener('pointerup', e => {
+    if(isDragging){
+      isDragging = false;
+      resizer.classList.remove('dragging');
+      renderWorld();
+    }
+  });
+
+  $$('.widthPresets button').forEach(btn => {
+    btn.onclick = () => {
+      let w = num(btn.dataset.w, 340);
+      setSidebarWidth(w);
+      renderWorld();
+    };
+  });
+}
+
+function initMapSelector(){
+  let select = $('#gameMapSelect');
+  if(!select) return;
+
+  let zones = {};
+  GAME_MAPS.forEach(m => {
+    if(!zones[m.zone]) zones[m.zone] = [];
+    zones[m.zone].push(m);
+  });
+
+  let curVal = state.mapId || select.value || 'thanh_van_thon';
+  let html = '';
+  for(let [zone, maps] of Object.entries(zones)){
+    html += `<optgroup label="📍 ${zone}">`;
+    maps.forEach(m => {
+      let isCustom = !!localStorage.getItem('tutien_custom_map_' + m.id) || !!localStorage.getItem('tutien_map_editor_' + m.id);
+      let sel = m.id === curVal ? 'selected' : '';
+      let tag = isCustom ? ' ⭐ [Đã sửa]' : '';
+      html += `<option value="${m.id}" ${sel}>${m.name} (${m.id})${tag}</option>`;
+    });
+    html += `</optgroup>`;
+  }
+  select.innerHTML = html;
+
+  select.onchange = () => {
+    loadGameMap(select.value);
+  };
+  updateResetMapBtn();
+}
+
+function updateResetMapBtn(){
+  let resetBtn = $('#resetMapBtn');
+  if(!resetBtn) return;
+  let isCustom = !!localStorage.getItem('tutien_custom_map_' + state.mapId) || !!localStorage.getItem('tutien_map_editor_' + state.mapId);
+  resetBtn.style.display = isCustom ? 'inline-block' : 'none';
+}
+
+function resetCurrentMapToDefault(){
+  let mapId = state.mapId || 'thanh_van_thon';
+  if(!confirm(`Khôi phục bản đồ "${state.mapName || mapId}" về file gốc ban đầu?\nCác chỉnh sửa đã lưu trên máy của map này sẽ bị xóa.`)) return;
+  localStorage.removeItem('tutien_map_editor_' + mapId);
+  localStorage.removeItem('tutien_custom_map_' + mapId);
+  initMapSelector();
+  loadGameMap(mapId, true);
+  toast(`Đã khôi phục ${state.mapName || mapId} về file gốc`);
+}
+
+function setGround(groundPath){
+  snapshot();
+  state.ground = groundPath || '';
+  markDirty();
+  renderWorld();
+  if(selectedIds.size===0)renderInspector();
+  renderAssets();
+  if(!state.ground){
+    toast('Đã xóa bỏ nền mặc định toàn map (Nền rỗng)');
+  }else{
+    toast('Đã đổi nền chính thành: '+niceName(groundPath));
+  }
+}
+
+function renderAssets(){
+  let q=$('#assetSearch').value.trim().toLowerCase();
+  let list=ASSETS.filter(a=>{
+    if(category === 'custom') return a.isCustom === true;
+    return (category==='all'||a.category===category)&&(!q||a.file.toLowerCase().includes(q));
+  });
+  
+  let groundModeBox = $('#groundModeContainer');
+  if(groundModeBox){
+    groundModeBox.style.display = (category === 'grounds' || (category === 'all' && view.mode==='drawGround')) ? 'block' : 'none';
+  }
+  let fenceModeBox = $('#fenceModeContainer');
+  if(fenceModeBox){
+    fenceModeBox.style.display = (category === 'fences_gates' || (category === 'all' && view.mode==='drawFence')) ? 'block' : 'none';
+  }
+
+  let html = '';
+  if((category === 'grounds' || category === 'all') && !q){
+    let isNoGround = !state.ground;
+    html += `<button class="assetCard groundCard${isNoGround?' currentGround':''}" data-path="" data-cat="grounds" title="Xóa bỏ nền mặc định toàn map (Để trống nền)">
+      <div style="width:74px;height:74px;display:grid;place-items:center;background:#101a22;border-radius:6px;font-size:24px;border:1px dashed #ff6b72;">🚫</div>
+      <span style="color:#ff8d92;font-weight:bold;">Không nền (Xóa)</span>
+    </button>`;
+    let isVoidActive = activeGroundPath === '__void__';
+    html += `<button class="assetCard groundCard${isVoidActive?' activeGroundCard':''}" data-path="__void__" data-cat="grounds" title="Quét khoét rỗng / xóa nền mặc định một khu vực cụ thể (Tạo hố/vực)">
+      <div style="width:74px;height:74px;display:grid;place-items:center;background:#150b20;border-radius:6px;font-size:24px;border:1.5px dashed #ca85ff;box-shadow:inset 0 0 12px rgba(0,0,0,0.85);">🕳️</div>
+      <span style="color:#ebd1ff;font-weight:bold;">Khoét rỗng vùng</span>
+    </button>`;
+  }
+
+  html += list.map(a=>{
+    let isGround = a.category === 'grounds';
+    let isFence = a.category === 'fences_gates';
+    let isCurGround = isGround && (state.ground === a.path || (state.ground && state.ground.endsWith(a.file)));
+    let isActiveGround = isGround && (activeGroundPath === a.path || (activeGroundPath && activeGroundPath.endsWith(a.file)));
+    let isActiveFence = isFence && (activeFenceAsset && (activeFenceAsset.path === a.path || (activeFenceAsset.path && activeFenceAsset.path.endsWith(a.file))));
+    let extraCls = (isGround ? ' groundCard' : '') + (isCurGround ? ' currentGround' : '') + (isActiveGround ? ' activeGroundCard' : '') + (isActiveFence ? ' activeFenceCard' : '') + (a.isCustom ? ' customAssetCard' : '');
+    let titleText = isGround 
+      ? (groundApplyMode === 'patch' ? `Chọn nền này để quét vẽ mảng nền: ${niceName(a.path)}` : `Đặt làm nền toàn map: ${niceName(a.path)}`) 
+      : (isFence ? `Chọn tường rào: ${niceName(a.path)} (Bấm đè chuột trái kéo trên map để trải dài)` : `Thêm ${niceName(a.path)}`);
+    let deleteBtn = a.isCustom ? `<button class="deleteCustomAssetBtn" title="Xóa asset này khỏi kho" onclick="deleteCustomAsset('${a.id}', event)">✕</button>` : '';
+    return `<button class="assetCard${extraCls}" data-path="${a.path}" data-cat="${a.category}" title="${titleText}">${deleteBtn}<img loading="lazy" src="${a.path}"><span>${niceName(a.path)}</span></button>`;
+  }).join('');
+
+  if(category === 'custom' && list.length === 0){
+    html = `<div style="grid-column:1/-1;text-align:center;padding:30px 10px;color:var(--muted);font-size:12px;">Chưa có asset tự nạp nào.<br><br><button onclick="$('#importAssetBtn').click()" class="primary" style="padding:6px 12px;font-size:12px;">➕ Bấm vào đây để nạp asset mới</button></div>`;
+  }
+
+  $('#assetGrid').innerHTML = html;
+
+  $$('.assetCard').forEach(b=>{
+    b.onclick=(e)=>{
+      if(e.target.closest('.deleteCustomAssetBtn')) return;
+      let path=b.dataset.path, cat=b.dataset.cat;
+      if(cat==='grounds'){
+        if(path===''){
+          setGround('');
+          return;
+        }
+        activeGroundPath = path;
+        if(path==='__void__'){
+          setMode('drawVoid');
+          renderAssets();
+          toast('Đã chọn: Khoét rỗng vùng ➔ Kéo chuột trên map để khoét rỗng khu vực');
+          return;
+        }
+        if(groundApplyMode==='global'){
+          setGround(path);
+          return;
+        }
+        setMode('drawGround');
+        renderAssets();
+        toast('Đã chọn: ' + niceName(path) + ' ➔ Kéo chuột trên map để vẽ mảng nền');
+        return;
+      }
+      if(cat==='fences_gates'){
+        let a = ASSETS.find(x => x.path === path);
+        if(a){
+          activeFenceAsset = a;
+          if($('#activeFenceName')) $('#activeFenceName').textContent = niceName(a.path);
+          setMode('drawFence');
+          renderAssets();
+          toast(`🧱 Đã chọn tường rào: ${niceName(a.path)} ➔ Bấm đè chuột trái kéo trên map để trải dài hàng rào (Bấm Esc khi xong)`);
+          return;
+        }
+      }
+      let a=ASSETS.find(x=>x.path===path),p=stageCenterWorld();
+      snapshot();
+      let o=newObject(a,snap(p.x),snap(p.z));
+      state.objects.push(o);
+      selectedIds=new Set([o.id]);
+      markDirty();
+      render();
+      closeMobilePanels();
+      toast('Đã thêm '+o.name);
+    };
+  });
+}
+
+function renderCategories(){
+  let cats=['all', 'custom', ...Object.keys(FILES)];
+  $('#categoryTabs').innerHTML=cats.map(c=>`<button class="${c===category?'active':''}" data-cat="${c}">${CATEGORY_LABELS[c] || c}</button>`).join('');
+  $$('[data-cat]').forEach(b=>b.onclick=()=>{
+    category=b.dataset.cat;
+    renderCategories();
+    renderAssets();
+  });
+}
+
+function getSelectedObjects(){return state.objects.filter(o=>selectedIds.has(o.id))}
+
+function renderWorld(){
+  let layer=$('#objectsLayer'),origin=worldToScreen(0,0);
+  $('#axisX').style.top=origin.y+'px';$('#axisZ').style.left=origin.x+'px';
+  let gs=Math.max(7,view.zoom*5),gy=gs*PROJ,w=$('#world');
+  w.style.setProperty('--grid-size',gs+'px');
+  w.style.setProperty('--grid-y',gy+'px');
+  w.style.setProperty('--grid-x',(origin.x%gs)+'px');
+  w.style.setProperty('--grid-pos-y',(origin.y%gy)+'px');
+  w.classList.toggle('noGrid',!view.grid);
+  if(!state.ground || state.ground==='none'){
+    w.style.backgroundImage='none';
+    w.style.backgroundColor='#0b1419';
+  }else{
+    w.style.backgroundImage=`url('${state.ground}')`;
+    w.style.backgroundColor='#78937c';
+  }
+  
+  layer.innerHTML=state.objects.map(o=>{
+    let p=worldToScreen(o.x,o.z),sel=selectedIds.has(o.id)?' selected':'',lock=o.locked?' locked':'';
+    let isPatch = o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file==='__void__'));
+    
+    if(isPatch){
+      let isVoid = o.isVoid || o.file === '__void__';
+      let zi = 5000 + num(o.layer, isVoid ? -95 : -100);
+      let wPx = o.width * view.zoom;
+      let hPx = o.height * view.zoom * PROJ;
+      let radius = o.shape === 'circle' ? '50%' : (o.shape === 'square' ? '4px' : '22px');
+      let isRepeat = (o.tileMode || 'repeat') === 'repeat';
+      let tSize = num(o.tileSize, 4);
+      let tW = tSize * view.zoom;
+      let tH = tW * PROJ;
+      let repeatCss = (isRepeat && !isVoid) ? `background-repeat:repeat;background-size:${tW}px ${tH}px;` : `background-size:cover;`;
+      let bgStyle = isVoid 
+        ? `background:#091217;box-shadow:inset 0 0 22px rgba(0,0,0,.92),0 0 8px rgba(0,0,0,.6);border:1px dashed rgba(255,255,255,0.14);` 
+        : `background-image:url('${o.file}');${repeatCss}`;
+      return `<div class="mapObj groundPatch${isVoid?' voidPatch':''}${sel}${lock}" data-id="${o.id}" style="left:${p.x}px;top:${p.y}px;width:${wPx}px;height:${hPx}px;opacity:${o.opacity};z-index:${zi};transform:translate(-50%,-50%) scaleX(${o.flipX?-1:1});${bgStyle}border-radius:${radius};"></div>`;
+    }
+
+    let zi=100000-Math.round(o.z*100)+num(o.layer);
+    return `<img class="mapObj${sel}${lock}" data-id="${o.id}" src="${o.file}" draggable="false" style="left:${p.x}px;top:${p.y}px;width:${o.width*view.zoom}px;height:${o.height*view.zoom}px;opacity:${o.opacity};z-index:${zi};transform:translate(-50%,-100%) scaleX(${o.flipX?-1:1})">`;
+  }).join('');
+
+  $$('.mapObj').forEach(el=>el.addEventListener('pointerdown',objectPointerDown));
+  $('#emptyHint').hidden=state.objects.length>0;
+  $('#objectCount').textContent=`${state.objects.length} asset`;
+  $('#selectStatus').textContent=`${selectedIds.size} đã chọn`;
+  let delBatch=$('#deleteBatchBtn');
+  if(delBatch){
+    if(selectedIds.size>0){
+      delBatch.style.display='inline-block';
+      delBatch.textContent=`Xóa (${selectedIds.size})`;
+    }else{
+      delBatch.style.display='none';
+    }
+  }
+  $('#zoomStatus').textContent=`Zoom ${Math.round(view.zoom/7*100)}%`;
+  $('#resetView').textContent=Math.round(view.zoom/7*100)+'%';
+  renderGizmo();
+}
+
+function renderInspector(){
+  let box=$('#inspector'),selObjs=getSelectedObjects();
+  if(selObjs.length===0){
+    let groundOptions=`<option value="" ${!state.ground?'selected':''}>🚫 Không dùng nền mặc định (Nền rỗng / Đen)</option>` + FILES.grounds.map(g=>{
+      let path=`assets/maps/common/grounds/${g}`;
+      let selected=(state.ground===path||(state.ground&&state.ground.endsWith(g)))?'selected':'';
+      return `<option value="${path}" ${selected}>${niceName(g)}</option>`;
+    }).join('');
+
+    let groundPatches = state.objects.filter(o => o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file==='__void__')));
+    let prevStyle = state.ground 
+      ? `height:100px;background-image:url('${state.ground}');background-size:cover;background-position:center;border-radius:8px;border:1px solid var(--line);` 
+      : `height:70px;background:#091217;display:grid;place-items:center;border-radius:8px;border:1px dashed #4b6a78;color:#8ba3ab;font-size:12px;`;
+    let prevContent = state.ground ? '' : '<span>🚫 Đang để trống nền mặc định (Nền rỗng)</span>';
+
+    box.innerHTML=`<h2>Cài đặt bản đồ</h2>
+      <div class="emptyInspector">Chạm asset hoặc kéo chuột quét khối trên map để chọn sửa/xóa.</div>
+      <div class="field full"><label>Tên bản đồ</label><input id="mapNameInput" value="${escapeHtml(state.mapName)}"></div>
+      <div class="field full"><label>Mã ID bản đồ</label><input id="mapIdInput" value="${escapeHtml(state.mapId)}"></div>
+      <div class="field full">
+        <label>Mặt đất chính (Nền toàn map)</label>
+        <select id="groundSelect">${groundOptions}</select>
+      </div>
+      <div class="row" style="margin-bottom:6px">
+        <button id="clearGroundBtn" class="danger" style="flex:1" title="Xóa bỏ nền mặc định toàn map">🗑️ Xóa nền mặc định</button>
+        <button id="resetDefaultGroundBtn" style="flex:1" title="Đặt lại nền làng mặc định">🔄 Đặt nền làng</button>
+      </div>
+      <div class="preview" style="${prevStyle}">${prevContent}</div>
+      
+      <div class="row" style="margin-bottom:8px">
+        <button id="quickDrawGroundBtn" class="primary">🖌️ Quét đặt nền</button>
+        <button id="quickDrawVoidBtn" style="border-color:#8e48d4;background:#231433;color:#e8c6ff;">🕳️ Quét khoét rỗng</button>
+        <button id="quickEraseGroundBtn" class="danger">🧹 Tẩy nền</button>
+      </div>
+
+      <div class="objectList">
+        <h3>Mảng nền cục bộ (${groundPatches.length}) · Tổng asset (${state.objects.length})</h3>
+        <div class="objRows">${state.objects.slice().sort((a,b)=>a.z-b.z).map(x=>`<button class="objRow" data-select="${x.id}"><span>${x.isGroundPatch?(x.isVoid?'🕳️ ':'🧩 '):''}${escapeHtml(x.name)}</span><em>${x.x}, ${x.z}</em></button>`).join('')}</div>
+      </div>`;
+    
+    $('#mapNameInput').onchange=e=>{snapshot();state.mapName=e.target.value.trim()||'Map';markDirty()};
+    $('#mapIdInput').onchange=e=>{snapshot();state.mapId=e.target.value.trim()||'map';markDirty()};
+    $('#groundSelect').onchange=e=>setGround(e.target.value);
+    $('#clearGroundBtn').onclick=()=>setGround('');
+    $('#resetDefaultGroundBtn').onclick=()=>setGround('assets/maps/common/grounds/ground_village_01.png');
+    $('#quickDrawGroundBtn').onclick=()=>{ category='grounds'; renderCategories(); renderAssets(); setMode('drawGround'); toast('Kéo chuột trên bản đồ để đặt mảng nền'); };
+    $('#quickDrawVoidBtn').onclick=()=>{ setMode('drawVoid'); toast('Kéo chuột trên bản đồ để khoét rỗng khu vực'); };
+    $('#quickEraseGroundBtn').onclick=()=>{ setMode('eraseGround'); toast('Kéo chuột qua khu vực nền cần xóa hoặc bấm vào mảng nền'); };
+    $$('[data-select]').forEach(b=>b.onclick=()=>{selectedIds=new Set([b.dataset.select]);render()});
+    return;
+  }
+  if(selObjs.length>1){
+    let hasPatches = selObjs.some(o => o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file==='__void__')));
+    box.innerHTML=`<h2>Thuộc tính nhiều asset</h2>
+      <div class="multiSelectBadge">Đang chọn ${selObjs.length} asset</div>
+      <div class="row" style="margin-bottom:8px"><button id="duplicateObj">Nhân bản tất cả</button><button id="deleteObj" class="danger">Xóa tất cả (${selObjs.length})</button></div>
+      ${hasPatches ? '<div class="row" style="margin-bottom:8px"><button id="deleteOnlyPatchesBtn" class="danger">Chỉ xóa mảng nền đã chọn</button></div>' : ''}
+      <div class="row" style="margin-bottom:12px"><button id="lockAllBtn">Khóa tất cả</button><button id="unlockAllBtn">Mở khóa</button></div>
+      <div class="objectList">
+        <h3>Danh sách đã chọn (${selObjs.length})</h3>
+        <div class="objRows">${selObjs.map(x=>`<button class="objRow active" data-select="${x.id}"><span>${x.isGroundPatch?(x.isVoid?'🕳️ ':'🧩 '):''}${escapeHtml(x.name)}</span><em>${x.x}, ${x.z}</em></button>`).join('')}</div>
+      </div>`;
+    $('#duplicateObj').onclick=duplicateSelected;
+    $('#deleteObj').onclick=deleteSelected;
+    if(hasPatches){
+      $('#deleteOnlyPatchesBtn').onclick=()=>{
+        snapshot();
+        let patchIds = new Set(selObjs.filter(o => o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file==='__void__'))).map(o => o.id));
+        state.objects = state.objects.filter(o => !patchIds.has(o.id));
+        selectedIds = new Set([...selectedIds].filter(id => !patchIds.has(id)));
+        markDirty();
+        render();
+        toast(`Đã xóa ${patchIds.size} mảng nền`);
+      };
+    }
+    $('#lockAllBtn').onclick=()=>{snapshot();selObjs.forEach(o=>o.locked=true);markDirty();render();toast('Đã khóa các asset đã chọn')};
+    $('#unlockAllBtn').onclick=()=>{snapshot();selObjs.forEach(o=>o.locked=false);markDirty();render();toast('Đã mở khóa các asset')};
+    $$('[data-select]').forEach(b=>b.onclick=()=>{selectedIds=new Set([b.dataset.select]);render()});
+    return;
+  }
+  let o=selObjs[0];
+  let isPatch = o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file==='__void__'));
+  let isVoid = o.isVoid || o.file === '__void__';
+  let shapeField = isPatch ? `
+    <div class="field full">
+      <label>Hình dạng mảng ${isVoid?'khoét rỗng':'nền'}</label>
+      <select data-prop="shape">
+        <option value="soft" ${o.shape==='soft'?'selected':''}>Bo tròn mềm (Tự nhiên)</option>
+        <option value="circle" ${o.shape==='circle'?'selected':''}>Hình Elip / Tròn</option>
+        <option value="square" ${o.shape==='square'?'selected':''}>Hình chữ nhật / Vuông</option>
+      </select>
+    </div>
+  ` : '';
+
+  let tileField = (isPatch && !isVoid) ? `
+    <div class="fieldGrid">
+      <div class="field">
+        <label>Kiểu lát ảnh</label>
+        <select data-prop="tileMode">
+          <option value="repeat" ${(o.tileMode||'repeat')==='repeat'?'selected':''}>Lát lặp ô nhỏ (Sắc nét)</option>
+          <option value="cover" ${o.tileMode==='cover'?'selected':''}>Kéo dãn 1 ảnh (Cover)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Cỡ 1 ô nhỏ</label>
+        <input data-prop="tileSize" type="number" min="1" max="20" step="0.5" value="${o.tileSize||4}">
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:8px">
+      <button id="btnSplitPatch" style="flex:1;font-size:11px;" title="Tách mảng nền lớn này thành nhiều ô nền nhỏ ghép lại">🧩 Tách thành các ô nhỏ riêng</button>
+    </div>
+  ` : '';
+
+  let previewContent = isVoid 
+    ? `<div style="width:100%;height:100%;display:grid;place-items:center;background:#091217;box-shadow:inset 0 0 20px rgba(0,0,0,0.9);color:#ebd1ff;font-size:32px;">🕳️</div>`
+    : `<img src="${o.file}">`;
+
+  box.innerHTML=`<h2>${isVoid ? 'Mảng khoét rỗng (Hố/Vực)' : (isPatch ? 'Mảng nền cục bộ' : 'Thuộc tính asset')}</h2>
+    <div class="preview">${previewContent}</div>
+    <div class="field full"><label>Tên</label><input data-prop="name" value="${escapeHtml(o.name)}"></div>
+    ${shapeField}
+    ${tileField}
+    <div class="fieldGrid">
+      <div class="field"><label>X</label><input data-prop="x" type="number" step="0.25" value="${o.x}"></div>
+      <div class="field"><label>Z</label><input data-prop="z" type="number" step="0.25" value="${o.z}"></div>
+      <div class="field"><label>Rộng (X)</label><input data-prop="width" type="number" min="0.5" step="0.5" value="${o.width}"></div>
+      <div class="field"><label>Dài/Cao (Z)</label><input data-prop="height" type="number" min="0.5" step="0.5" value="${o.height}"></div>
+      <div class="field"><label>Lớp (Layer)</label><input data-prop="layer" type="number" step="1" value="${o.layer}"></div>
+      <div class="field"><label>Độ mờ (Opacity)</label><input data-prop="opacity" type="number" min="0.05" max="1" step="0.05" value="${o.opacity}"></div>
+    </div>
+    <label class="check"><input data-check="flipX" type="checkbox" ${o.flipX?'checked':''}> Lật ngang</label>
+    <label class="check"><input data-check="locked" type="checkbox" ${o.locked?'checked':''}> Khóa vị trí</label>
+    <div class="row"><button id="duplicateObj">Nhân bản</button><button id="deleteObj" class="danger">Xóa ${isVoid?'mảng khoét rỗng':(isPatch?'mảng nền':'asset')}</button></div>
+    <div class="objectList">
+      <h3>Tất cả asset (${state.objects.length})</h3>
+      <div class="objRows">${state.objects.slice().sort((a,b)=>a.z-b.z).map(x=>`<button class="objRow ${selectedIds.has(x.id)?'active':''}" data-select="${x.id}"><span>${x.isGroundPatch?(x.isVoid?'🕳️ ':'🧩 '):''}${escapeHtml(x.name)}</span><em>${x.x}, ${x.z}</em></button>`).join('')}</div>
+    </div>`;
+  $$('[data-prop]').forEach(i=>i.onchange=()=>updateProp(i.dataset.prop,i.value));
+  $$('[data-check]').forEach(i=>i.onchange=()=>updateProp(i.dataset.check,i.checked));
+  $('#duplicateObj').onclick=duplicateSelected;
+  $('#deleteObj').onclick=deleteSelected;
+  if($('#btnSplitPatch')){
+    $('#btnSplitPatch').onclick=()=>{
+      snapshot();
+      let ts = Math.max(1.5, num(o.tileSize, 4));
+      let minX = o.x - o.width/2, maxX = o.x + o.width/2;
+      let minZ = o.z - o.height/2, maxZ = o.z + o.height/2;
+      let createdIds = [];
+      for(let gx = minX + ts/2; gx <= maxX + ts/4; gx += ts){
+        for(let gz = minZ + ts/2; gz <= maxZ + ts/4; gz += ts){
+          let curW = Math.min(ts, maxX - (gx - ts/2));
+          let curH = Math.min(ts, maxZ - (gz - ts/2));
+          let obj = newObject({path: o.file, category: 'grounds'}, snap(gx), snap(gz), {
+            isGroundPatch: true,
+            isVoid: false,
+            name: o.name,
+            file: o.file,
+            width: +curW.toFixed(2),
+            height: +curH.toFixed(2),
+            layer: o.layer,
+            opacity: o.opacity,
+            shape: o.shape || 'soft',
+            tileMode: 'cover'
+          });
+          state.objects.push(obj);
+          createdIds.push(obj.id);
+        }
+      }
+      state.objects = state.objects.filter(x => x.id !== o.id);
+      selectedIds = new Set(createdIds);
+      markDirty();
+      render();
+      toast(`Đã tách thành ${createdIds.length} ô nhỏ riêng`);
+    };
+  }
+  $$('[data-select]').forEach(b=>b.onclick=()=>{selectedIds=new Set([b.dataset.select]);render()});
+}
+
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function updateProp(prop,value){let o=state.objects.find(x=>x.id===selectedId);if(!o)return;snapshot();if(['x','z','width','height','layer','opacity'].includes(prop))value=num(value,o[prop]);if(prop==='width'||prop==='height')value=Math.max(.1,value);if(prop==='opacity')value=Math.max(0,Math.min(1,value));o[prop]=value;markDirty();render()}
-function render(){renderWorld();renderInspector()}
-function objectPointerDown(e){e.stopPropagation();let o=state.objects.find(x=>x.id===e.currentTarget.dataset.id);if(!o)return;selectedId=o.id;renderInspector();if(view.mode==='pan'||o.locked)return;e.currentTarget.setPointerCapture(e.pointerId);snapshot();drag={kind:'object',id:o.id,pid:e.pointerId,startX:e.clientX,startY:e.clientY,ox:o.x,oz:o.z,moved:false}}
-function stagePointerDown(e){if(e.target.closest('.viewTools,.zoomBox,.mapObj'))return;if(view.mode==='pan'||e.button===1||e.altKey){e.currentTarget.setPointerCapture(e.pointerId);drag={kind:'pan',pid:e.pointerId,startX:e.clientX,startY:e.clientY,px:view.panX,py:view.panY};return}selectedId=null;render()}
-function pointerMove(e){let r=$('#stage').getBoundingClientRect(),p=screenToWorld(e.clientX-r.left,e.clientY-r.top);$('#cursorPos').textContent=`X ${p.x.toFixed(1)} · Z ${p.z.toFixed(1)}`;if(!drag||e.pointerId!==drag.pid)return;if(drag.kind==='pan'){view.panX=drag.px+e.clientX-drag.startX;view.panY=drag.py+e.clientY-drag.startY;renderWorld()}else{let o=state.objects.find(x=>x.id===drag.id);if(!o)return;o.x=snap(drag.ox+(e.clientX-drag.startX)/view.zoom);o.z=snap(drag.oz-(e.clientY-drag.startY)/(view.zoom*PROJ));drag.moved=true;markDirty();renderWorld();renderInspector()}}
-function pointerUp(e){if(drag&&e.pointerId===drag.pid)drag=null}
-function deleteSelected(){if(!selectedId)return;snapshot();state.objects=state.objects.filter(o=>o.id!==selectedId);selectedId=null;markDirty();render();toast('Đã xóa asset')}
-function duplicateSelected(){let o=state.objects.find(x=>x.id===selectedId);if(!o)return;snapshot();let n={...clone(o),id:uid(),name:o.name+' copy',x:+(o.x+1).toFixed(2),z:+(o.z+1).toFixed(2)};state.objects.push(n);selectedId=n.id;markDirty();render();toast('Đã nhân bản')}
-function undo(){if(!history.length)return;future.push(JSON.stringify(state));state=JSON.parse(history.pop());selectedId=null;markDirty();render()}
-function redo(){if(!future.length)return;history.push(JSON.stringify(state));state=JSON.parse(future.pop());selectedId=null;markDirty();render()}
+
+function updateProp(prop,value){
+  let selObjs=getSelectedObjects();
+  if(!selObjs.length)return;
+  snapshot();
+  selObjs.forEach(o=>{
+    let val=value;
+    if(['x','z','width','height','layer','opacity'].includes(prop))val=num(val,o[prop]);
+    if(prop==='width'||prop==='height')val=Math.max(.1,val);
+    if(prop==='opacity')val=Math.max(0,Math.min(1,val));
+    o[prop]=val;
+  });
+  markDirty();
+  render();
+}
+
+function render(){
+  renderWorld();
+  renderInspector();
+}
+
+function scaleSelected(factor){
+  let selObjs = getSelectedObjects();
+  if(!selObjs.length) return;
+  snapshot();
+  selObjs.forEach(o => {
+    if(o.locked) return;
+    o.width = Math.max(0.2, Math.round(o.width * factor * 10) / 10);
+    o.height = Math.max(0.2, Math.round(o.height * factor * 10) / 10);
+  });
+  markDirty();
+  render();
+  let first = selObjs[0];
+  toast(`Kích thước: ${first.width} × ${first.height}`);
+}
+
+function handlePointerDown(e, handleDir){
+  e.stopPropagation();
+  e.preventDefault();
+  let selObjs = getSelectedObjects();
+  if(!selObjs.length) return;
+  let o = selObjs[0];
+  if(o.locked){
+    toast('Asset đang bị khóa vị trí');
+    return;
+  }
+  let stage = $('#stage');
+  stage.setPointerCapture(e.pointerId);
+  snapshot();
+  let isPatch = o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file === '__void__'));
+  drag = {
+    kind: 'resize',
+    handle: handleDir,
+    pid: e.pointerId,
+    startX: e.clientX,
+    startY: e.clientY,
+    startW: o.width,
+    startH: o.height,
+    startObjX: o.x,
+    startObjZ: o.z,
+    isPatch: isPatch,
+    ratio: Math.max(0.1, o.width / o.height),
+    objId: o.id,
+    moved: false
+  };
+}
+
+function renderGizmo(){
+  let gizmo = $('#transformGizmo');
+  if(!gizmo) return;
+  if(selectedIds.size !== 1 || view.mode === 'drawGround' || view.mode === 'drawVoid' || view.mode === 'eraseGround' || view.mode === 'pan'){
+    gizmo.style.display = 'none';
+    return;
+  }
+  let o = state.objects.find(x => selectedIds.has(x.id));
+  if(!o){
+    gizmo.style.display = 'none';
+    return;
+  }
+  let isPatch = o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file === '__void__'));
+  let p = worldToScreen(o.x, o.z);
+  let wPx = o.width * view.zoom;
+  let hPx = isPatch ? (o.height * view.zoom * PROJ) : (o.height * view.zoom);
+  let left = p.x - wPx / 2;
+  let top = isPatch ? (p.y - hPx / 2) : (p.y - hPx);
+
+  gizmo.style.display = 'block';
+  gizmo.style.left = left + 'px';
+  gizmo.style.top = top + 'px';
+  gizmo.style.width = wPx + 'px';
+  gizmo.style.height = hPx + 'px';
+
+  gizmo.innerHTML = `
+    <div class="gizmoToolbar">
+      <button id="gizmoScaleUp" title="Phóng to 20% (Kéo lớn)">🔍 ➕</button>
+      <button id="gizmoScaleDown" title="Thu nhỏ 20% (Kéo nhỏ)">🔍 ➖</button>
+      <button id="gizmoFlip" title="Lật ngang asset">↔️ Lật</button>
+      <button id="gizmoDup" title="Nhân bản asset (Ctrl+D)">📋</button>
+      <button id="gizmoDel" style="color:#ff8d92;border-color:#81434b;" title="Xóa asset này (Delete)">🗑️</button>
+    </div>
+    <div class="gizmoHandle handle-nw" data-handle="nw" title="Kéo để chỉnh kích thước góc trên-trái"></div>
+    <div class="gizmoHandle handle-n"  data-handle="n"  title="Kéo để chỉnh chiều cao"></div>
+    <div class="gizmoHandle handle-ne" data-handle="ne" title="Kéo để chỉnh kích thước góc trên-phải"></div>
+    <div class="gizmoHandle handle-e"  data-handle="e"  title="Kéo để chỉnh chiều rộng"></div>
+    <div class="gizmoHandle handle-se" data-handle="se" title="Kéo để chỉnh kích thước góc dưới-phải"></div>
+    <div class="gizmoHandle handle-s"  data-handle="s"  title="Kéo để chỉnh chiều cao"></div>
+    <div class="gizmoHandle handle-sw" data-handle="sw" title="Kéo để chỉnh kích thước góc dưới-trái"></div>
+    <div class="gizmoHandle handle-w"  data-handle="w"  title="Kéo để chỉnh chiều rộng"></div>
+    <div class="gizmoSizeTag">${o.width} × ${o.height}</div>
+  `;
+
+  $('#gizmoScaleUp').onclick = (e) => { e.stopPropagation(); scaleSelected(1.2); };
+  $('#gizmoScaleDown').onclick = (e) => { e.stopPropagation(); scaleSelected(0.833); };
+  $('#gizmoFlip').onclick = (e) => { e.stopPropagation(); snapshot(); o.flipX = !o.flipX; markDirty(); render(); };
+  $('#gizmoDup').onclick = (e) => { e.stopPropagation(); duplicateSelected(); };
+  $('#gizmoDel').onclick = (e) => { e.stopPropagation(); deleteSelected(); };
+
+  $$('.gizmoHandle').forEach(h => {
+    h.addEventListener('pointerdown', (e) => handlePointerDown(e, h.dataset.handle));
+  });
+}
+
+function objectPointerDown(e){
+  // If Right Click (button 2), Middle Click (button 1), Alt key, Spacebar held, or Pan Mode -> PAN THE MAP
+  if(e.button === 2 || e.button === 1 || e.altKey || isSpaceDown || view.mode === 'pan'){
+    let stage = $('#stage');
+    stage.setPointerCapture(e.pointerId);
+    drag = { kind: 'pan', pid: e.pointerId, startX: e.clientX, startY: e.clientY, px: view.panX, py: view.panY };
+    e.stopPropagation();
+    return;
+  }
+
+  e.stopPropagation();
+  let id = e.currentTarget.dataset.id;
+  let o = state.objects.find(x => x.id === id);
+  if(!o) return;
+
+  // If in erase ground mode and clicked on ground patch
+  if(view.mode === 'eraseGround' && (o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file === '__void__')))){
+    snapshot();
+    state.objects = state.objects.filter(x => x.id !== id);
+    selectedIds.delete(id);
+    markDirty();
+    render();
+    toast('Đã xóa mảng nền: ' + o.name);
+    return;
+  }
+
+  if(view.mode === 'drawGround' || view.mode === 'drawVoid' || view.mode === 'drawFence') return;
+
+  if(e.shiftKey || e.ctrlKey || e.metaKey){
+    if(selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    render();
+    return;
+  }
+
+  if(!selectedIds.has(id)){
+    selectedIds = new Set([id]);
+  }
+
+  let stage = $('#stage');
+  stage.setPointerCapture(e.pointerId);
+
+  if(!o.locked){
+    snapshot();
+    let selectedItems = state.objects.filter(x => selectedIds.has(x.id) && !x.locked);
+    drag = {
+      kind: 'objects',
+      pid: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+      items: selectedItems.map(it => ({ id: it.id, ox: it.x, oz: it.z }))
+    };
+  }
+
+  render();
+}
+
+function stagePointerDown(e){
+  let stage = $('#stage'), r = stage.getBoundingClientRect();
+  if(view.mode === 'pan' || e.button === 1 || e.button === 2 || e.altKey || isSpaceDown){
+    stage.setPointerCapture(e.pointerId);
+    drag = { kind: 'pan', pid: e.pointerId, startX: e.clientX, startY: e.clientY, px: view.panX, py: view.panY };
+    return;
+  }
+
+  if(e.target.closest('.viewTools,.zoomBox,.transformGizmo')) return;
+
+  stage.setPointerCapture(e.pointerId);
+  let startScreenX = e.clientX - r.left, startScreenY = e.clientY - r.top;
+  let startWorld = screenToWorld(startScreenX, startScreenY);
+
+  if(view.mode === 'drawFence'){
+    drag = {
+      kind: 'drawFence',
+      pid: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startScreenX,
+      startScreenY,
+      startWorldX: startWorld.x,
+      startWorldZ: startWorld.z,
+      freehandPoints: [{ x: snap(startWorld.x), z: snap(startWorld.z) }],
+      moved: false
+    };
+    return;
+  }
+
+  if(view.mode === 'drawGround' || view.mode === 'drawVoid'){
+    drag = {
+      kind: view.mode === 'drawVoid' ? 'drawVoid' : 'drawGround',
+      pid: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startScreenX,
+      startScreenY,
+      startWorldX: startWorld.x,
+      startWorldZ: startWorld.z,
+      moved: false
+    };
+    return;
+  }
+
+  if(view.mode === 'eraseGround'){
+    drag = {
+      kind: 'eraseGround',
+      pid: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startScreenX,
+      startScreenY,
+      startWorldX: startWorld.x,
+      startWorldZ: startWorld.z,
+      moved: false
+    };
+    return;
+  }
+
+  // Marquee box selection
+  let baseSelected = (e.shiftKey || e.ctrlKey || e.metaKey) ? new Set(selectedIds) : new Set();
+  drag = {
+    kind: 'box',
+    pid: e.pointerId,
+    startX: e.clientX,
+    startY: e.clientY,
+    startScreenX,
+    startScreenY,
+    baseSelected,
+    moved: false
+  };
+  if(!e.shiftKey && !e.ctrlKey && !e.metaKey){
+    selectedIds = new Set();
+    render();
+  }
+}
+
+function pointerMove(e){
+  let stage = $('#stage'), r = stage.getBoundingClientRect(), p = screenToWorld(e.clientX - r.left, e.clientY - r.top);
+  $('#cursorPos').textContent = `X ${p.x.toFixed(1)} · Z ${p.z.toFixed(1)}`;
+  if(!drag || e.pointerId !== drag.pid) return;
+  
+  if(drag.kind === 'pan'){
+    view.panX = drag.px + e.clientX - drag.startX;
+    view.panY = drag.py + e.clientY - drag.startY;
+    renderWorld();
+  }else if(drag.kind === 'objects'){
+    let dx = (e.clientX - drag.startX) / view.zoom;
+    let dz = -(e.clientY - drag.startY) / (view.zoom * PROJ);
+    drag.items.forEach(it => {
+      let obj = state.objects.find(x => x.id === it.id);
+      if(obj){
+        obj.x = snap(it.ox + dx);
+        obj.z = snap(it.oz + dz);
+      }
+    });
+    drag.moved = true;
+    markDirty();
+    renderWorld();
+    if(selectedIds.size === 1) renderInspector();
+  }else if(drag.kind === 'drawFence'){
+    drag.moved = true;
+    let curScreenX = e.clientX - r.left, curScreenY = e.clientY - r.top;
+    let curWorld = screenToWorld(curScreenX, curScreenY);
+    let previewLayer = $('#fencePreviewLayer');
+    if(!previewLayer) return;
+    
+    let asset = activeFenceAsset || ASSETS.find(a => a.category === 'fences_gates') || { path: 'assets/maps/common/fences_gates/stone_wall_50deg_00.png', category: 'fences_gates' };
+    let assetWidth = (DEFAULT_SIZE.fences_gates ? DEFAULT_SIZE.fences_gates[0] : 3.3);
+    let step = getFenceStep(asset.path);
+    
+    let segments = [];
+    if(fenceDrawMode === 'free'){
+      let lastPt = drag.freehandPoints[drag.freehandPoints.length - 1];
+      let dist = Math.hypot(curWorld.x - lastPt.x, curWorld.z - lastPt.z);
+      if(dist >= step){
+        drag.freehandPoints.push({ x: snap(curWorld.x), z: snap(curWorld.z) });
+      }
+      for(let i = 0; i < drag.freehandPoints.length; i++){
+        let pt = drag.freehandPoints[i];
+        let nextPt = drag.freehandPoints[i + 1] || (i > 0 ? pt : curWorld);
+        let dx = nextPt.x - pt.x, dz = nextPt.z - pt.z;
+        let file = getFenceFileForAngle(asset.path, dx, dz);
+        segments.push({ x: pt.x, z: pt.z, file, width: assetWidth, height: assetWidth });
+      }
+    } else {
+      let dx = curWorld.x - drag.startWorldX;
+      let dz = curWorld.z - drag.startWorldZ;
+      let totalDist = Math.hypot(dx, dz);
+      if(totalDist < 0.35){
+        segments.push({ x: snap(drag.startWorldX), z: snap(drag.startWorldZ), file: asset.path, width: assetWidth, height: assetWidth });
+      } else {
+        let count = Math.max(1, Math.round(totalDist / step));
+        let file = getFenceFileForAngle(asset.path, dx, dz);
+        for(let i = 0; i <= count; i++){
+          let t = count > 0 ? (i / count) : 0;
+          let sx = snap(drag.startWorldX + dx * t);
+          let sz = snap(drag.startWorldZ + dz * t);
+          segments.push({ x: sx, z: sz, file, width: assetWidth, height: assetWidth });
+        }
+      }
+    }
+    
+    previewLayer.innerHTML = segments.map(seg => {
+      let sc = worldToScreen(seg.x, seg.z);
+      let zi = 100000 - Math.round(seg.z * 100) + 10;
+      let wPx = seg.width * view.zoom;
+      let hPx = seg.height * view.zoom;
+      return `<img class="fencePreviewObj" src="${seg.file}" style="left:${sc.x}px;top:${sc.y}px;width:${wPx}px;height:${hPx}px;z-index:${zi};">`;
+    }).join('');
+  }else if(drag.kind === 'resize'){
+    drag.moved = true;
+    let obj = state.objects.find(x => x.id === drag.objId);
+    if(obj){
+      let dsx = e.clientX - drag.startX;
+      let dsy = e.clientY - drag.startY;
+      let hDir = drag.handle;
+      let startW_px = drag.startW * view.zoom;
+      let startH_px = drag.startH * view.zoom * (drag.isPatch ? PROJ : 1);
+      
+      let newW_px = startW_px;
+      let newH_px = startH_px;
+      
+      if(hDir.includes('e')){
+        newW_px = Math.max(10, startW_px + dsx * 2);
+      } else if(hDir.includes('w')){
+        newW_px = Math.max(10, startW_px - dsx * 2);
+      }
+      
+      if(drag.isPatch){
+        if(hDir.includes('s')){
+          newH_px = Math.max(10, startH_px + dsy * 2);
+        } else if(hDir.includes('n')){
+          newH_px = Math.max(10, startH_px - dsy * 2);
+        }
+      } else {
+        if(hDir.includes('n')){
+          newH_px = Math.max(10, startH_px - dsy);
+        } else if(hDir.includes('s')){
+          newH_px = Math.max(10, startH_px + dsy);
+        }
+      }
+      
+      let newW = newW_px / view.zoom;
+      let newH = newH_px / (view.zoom * (drag.isPatch ? PROJ : 1));
+      
+      // Proportional scale on corner drag if regular prop or shift held
+      if((e.shiftKey || (!drag.isPatch && ['nw','ne','se','sw'].includes(hDir))) && hDir.length === 2){
+        let scaleRatio = Math.max(0.05, newW / drag.startW);
+        newH = drag.startH * scaleRatio;
+      }
+      
+      obj.width = Math.max(0.2, Math.round(newW * 10) / 10);
+      obj.height = Math.max(0.2, Math.round(newH * 10) / 10);
+      markDirty();
+      renderWorld();
+      if(selectedIds.size === 1) renderInspector();
+    }
+  }else if(drag.kind === 'box'){
+    drag.moved = true;
+    let curScreenX = e.clientX - r.left, curScreenY = e.clientY - r.top;
+    let left = Math.min(drag.startScreenX, curScreenX), right = Math.max(drag.startScreenX, curScreenX);
+    let top = Math.min(drag.startScreenY, curScreenY), bottom = Math.max(drag.startScreenY, curScreenY);
+    let boxEl = $('#selectionBox');
+    boxEl.className = 'selectionBox';
+    boxEl.style.display = 'block';
+    boxEl.style.left = left + 'px';
+    boxEl.style.top = top + 'px';
+    boxEl.style.width = (right - left) + 'px';
+    boxEl.style.height = (bottom - top) + 'px';
+    
+    let newSelected = new Set(drag.baseSelected);
+    state.objects.forEach(o => {
+      let sc = worldToScreen(o.x, o.z);
+      let isPatch = o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file === '__void__'));
+      let objW = o.width * view.zoom;
+      let objH = isPatch ? (o.height * view.zoom * PROJ) : (o.height * view.zoom);
+      let oLeft = sc.x - objW / 2, oRight = sc.x + objW / 2;
+      let oTop = isPatch ? (sc.y - objH / 2) : (sc.y - objH);
+      let oBottom = isPatch ? (sc.y + objH / 2) : sc.y;
+      let intersect = !(right < oLeft || left > oRight || bottom < oTop || top > oBottom);
+      if(intersect){
+        newSelected.add(o.id);
+      }
+    });
+    selectedIds = newSelected;
+    renderWorld();
+  }else if(drag.kind === 'drawGround' || drag.kind === 'drawVoid'){
+    drag.moved = true;
+    let curScreenX = e.clientX - r.left, curScreenY = e.clientY - r.top;
+    let left = Math.min(drag.startScreenX, curScreenX), right = Math.max(drag.startScreenX, curScreenX);
+    let top = Math.min(drag.startScreenY, curScreenY), bottom = Math.max(drag.startScreenY, curScreenY);
+    let boxEl = $('#selectionBox');
+    boxEl.className = 'selectionBox ' + (drag.kind === 'drawVoid' ? 'drawVoidBox' : 'drawGroundBox');
+    boxEl.style.display = 'block';
+    boxEl.style.left = left + 'px';
+    boxEl.style.top = top + 'px';
+    boxEl.style.width = (right - left) + 'px';
+    boxEl.style.height = (bottom - top) + 'px';
+  }else if(drag.kind === 'eraseGround'){
+    drag.moved = true;
+    let curScreenX = e.clientX - r.left, curScreenY = e.clientY - r.top;
+    let left = Math.min(drag.startScreenX, curScreenX), right = Math.max(drag.startScreenX, curScreenX);
+    let top = Math.min(drag.startScreenY, curScreenY), bottom = Math.max(drag.startScreenY, curScreenY);
+    let boxEl = $('#selectionBox');
+    boxEl.className = 'selectionBox eraseBox';
+    boxEl.style.display = 'block';
+    boxEl.style.left = left + 'px';
+    boxEl.style.top = top + 'px';
+    boxEl.style.width = (right - left) + 'px';
+    boxEl.style.height = (bottom - top) + 'px';
+  }
+}
+
+function pointerUp(e){
+  if(drag && e.pointerId === drag.pid){
+    let stage = $('#stage'), r = stage.getBoundingClientRect();
+    $('#selectionBox').style.display = 'none';
+    
+    if(drag.kind === 'objects' && drag.moved){
+      let count = drag.items ? drag.items.length : 1;
+      toast(`Đã di chuyển ${count} asset`);
+    }else if(drag.kind === 'drawFence'){
+      let previewLayer = $('#fencePreviewLayer');
+      if(previewLayer) previewLayer.innerHTML = '';
+      
+      let curScreenX = e.clientX - r.left, curScreenY = e.clientY - r.top;
+      let curWorld = screenToWorld(curScreenX, curScreenY);
+      let asset = activeFenceAsset || ASSETS.find(a => a.category === 'fences_gates') || { path: 'assets/maps/common/fences_gates/stone_wall_50deg_00.png', category: 'fences_gates' };
+      let assetWidth = (DEFAULT_SIZE.fences_gates ? DEFAULT_SIZE.fences_gates[0] : 3.3);
+      let step = getFenceStep(asset.path);
+      
+      let segments = [];
+      if(fenceDrawMode === 'free'){
+        for(let i = 0; i < drag.freehandPoints.length; i++){
+          let pt = drag.freehandPoints[i];
+          let nextPt = drag.freehandPoints[i + 1] || (i > 0 ? pt : curWorld);
+          let dx = nextPt.x - pt.x, dz = nextPt.z - pt.z;
+          let file = getFenceFileForAngle(asset.path, dx, dz);
+          segments.push({ x: pt.x, z: pt.z, file, width: assetWidth, height: assetWidth });
+        }
+      } else {
+        let dx = curWorld.x - drag.startWorldX;
+        let dz = curWorld.z - drag.startWorldZ;
+        let totalDist = Math.hypot(dx, dz);
+        if(totalDist < 0.35){
+          segments.push({ x: snap(drag.startWorldX), z: snap(drag.startWorldZ), file: asset.path, width: assetWidth, height: assetWidth });
+        } else {
+          let count = Math.max(1, Math.round(totalDist / step));
+          let file = getFenceFileForAngle(asset.path, dx, dz);
+          for(let i = 0; i <= count; i++){
+            let t = count > 0 ? (i / count) : 0;
+            let sx = snap(drag.startWorldX + dx * t);
+            let sz = snap(drag.startWorldZ + dz * t);
+            segments.push({ x: sx, z: sz, file, width: assetWidth, height: assetWidth });
+          }
+        }
+      }
+      
+      if(segments.length > 0){
+        snapshot();
+        let newIds = [];
+        segments.forEach(seg => {
+          let o = newObject({ path: seg.file, category: 'fences_gates' }, seg.x, seg.z, {
+            width: seg.width,
+            height: seg.height,
+            name: niceName(seg.file),
+            layer: -5
+          });
+          state.objects.push(o);
+          newIds.push(o.id);
+        });
+        selectedIds = new Set(newIds);
+        markDirty();
+        render();
+        toast(`Đã kéo dài ${segments.length} đoạn hàng rào · Bấm Esc hoặc [✓ Thoát] khi xong`);
+      }
+    }else if(drag.kind === 'resize' && drag.moved){
+      let obj = state.objects.find(x => x.id === drag.objId);
+      if(obj){
+        toast(`Kích thước: ${obj.width} × ${obj.height}`);
+      }
+    }else if(drag.kind === 'drawGround' || drag.kind === 'drawVoid'){
+      let curScreenX = e.clientX - r.left, curScreenY = e.clientY - r.top;
+      let curWorld = screenToWorld(curScreenX, curScreenY);
+      let minX = Math.min(drag.startWorldX, curWorld.x), maxX = Math.max(drag.startWorldX, curWorld.x);
+      let minZ = Math.min(drag.startWorldZ, curWorld.z), maxZ = Math.max(drag.startWorldZ, curWorld.z);
+      let w = maxX - minX, h = maxZ - minZ;
+      let centerX = (minX + maxX) / 2, centerZ = (minZ + maxZ) / 2;
+      
+      // If user clicked without dragging, use default size
+      if(w < 1 && h < 1){
+        w = 12; h = 12;
+        centerX = curWorld.x; centerZ = curWorld.z;
+        minX = centerX - 6; maxX = centerX + 6;
+        minZ = centerZ - 6; maxZ = centerZ + 6;
+      }
+      
+      let isVoid = (drag.kind === 'drawVoid') || (activeGroundPath === '__void__');
+      let targetAsset = isVoid ? {path:'__void__', category:'grounds'} : (ASSETS.find(a => a.path === activeGroundPath) || ASSETS.find(a => a.category === 'grounds') || {path: state.ground});
+      snapshot();
+
+      if(!isVoid && groundFillType === 'grid' && w >= 2.5 && h >= 2.5){
+        let ts = Math.max(1.5, num(activeTileSize, 4));
+        let createdIds = [];
+        for(let gx = minX + ts / 2; gx <= maxX + ts / 4; gx += ts){
+          for(let gz = minZ + ts / 2; gz <= maxZ + ts / 4; gz += ts){
+            let curW = Math.min(ts, maxX - (gx - ts / 2));
+            let curH = Math.min(ts, maxZ - (gz - ts / 2));
+            let obj = newObject(targetAsset, snap(gx), snap(gz), {
+              isGroundPatch: true,
+              isVoid: false,
+              name: niceName(targetAsset.path),
+              file: targetAsset.path,
+              width: +curW.toFixed(2),
+              height: +curH.toFixed(2),
+              layer: -100,
+              shape: activeGroundShape || 'soft',
+              tileMode: 'cover'
+            });
+            state.objects.push(obj);
+            createdIds.push(obj.id);
+          }
+        }
+        selectedIds = new Set(createdIds);
+        markDirty();
+        render();
+        toast(`Đã ghép ${createdIds.length} ô nền nhỏ (${w.toFixed(1)} × ${h.toFixed(1)}) · Bấm Esc hoặc [✓ Thoát vẽ nền] khi xong`);
+      } else {
+        let o = newObject(targetAsset, snap(centerX), snap(centerZ), {
+          isGroundPatch: true,
+          isVoid: isVoid,
+          name: isVoid ? 'Khoét rỗng nền' : niceName(targetAsset.path),
+          file: isVoid ? '__void__' : targetAsset.path,
+          width: Math.max(1, +w.toFixed(2)),
+          height: Math.max(1, +h.toFixed(2)),
+          layer: isVoid ? -95 : -100,
+          shape: activeGroundShape || 'soft',
+          tileMode: activeTileMode || 'repeat',
+          tileSize: num(activeTileSize, 4)
+        });
+        state.objects.push(o);
+        selectedIds = new Set([o.id]);
+        markDirty();
+        render();
+        toast(isVoid ? `Đã khoét rỗng vùng (${o.width} × ${o.height}) · Bấm Esc hoặc [✓ Thoát vẽ nền] khi xong` : `Đã đặt mảng nền ${o.name} (${o.width} × ${o.height}) · Bấm Esc hoặc [✓ Thoát vẽ nền] khi xong`);
+      }
+    }else if(drag.kind === 'eraseGround'){
+      let curScreenX = e.clientX - r.left, curScreenY = e.clientY - r.top;
+      let left = Math.min(drag.startScreenX, curScreenX), right = Math.max(drag.startScreenX, curScreenX);
+      let top = Math.min(drag.startScreenY, curScreenY), bottom = Math.max(drag.startScreenY, curScreenY);
+      
+      let toDelete = [];
+      state.objects.forEach(o => {
+        let isPatch = o.isGroundPatch || (o.file && (o.file.includes('/grounds/') || o.file === '__void__'));
+        if(!isPatch) return;
+        let sc = worldToScreen(o.x, o.z);
+        let objW = o.width * view.zoom;
+        let objH = o.height * view.zoom * PROJ;
+        let oLeft = sc.x - objW / 2, oRight = sc.x + objW / 2;
+        let oTop = sc.y - objH / 2, oBottom = sc.y + objH / 2;
+        let intersect = !(right < oLeft || left > oRight || bottom < oTop || top > oBottom);
+        if(intersect || (drag.moved === false && curScreenX >= oLeft && curScreenX <= oRight && curScreenY >= oTop && curScreenY <= oBottom)){
+          toDelete.push(o.id);
+        }
+      });
+      
+      if(toDelete.length > 0){
+        snapshot();
+        let delSet = new Set(toDelete);
+        state.objects = state.objects.filter(o => !delSet.has(o.id));
+        selectedIds = new Set([...selectedIds].filter(id => !delSet.has(id)));
+        markDirty();
+        render();
+        toast(`Đã xóa ${toDelete.length} mảng nền`);
+      }
+    }else if(drag.kind === 'box'){
+      if(drag.moved && selectedIds.size > 0){
+        toast(`Đã chọn ${selectedIds.size} asset`);
+      }
+      render();
+    }
+    drag = null;
+  }
+}
+
+function deleteSelected(){
+  if(selectedIds.size===0)return;
+  let count=selectedIds.size;
+  snapshot();
+  state.objects=state.objects.filter(o=>!selectedIds.has(o.id));
+  selectedIds.clear();
+  markDirty();
+  render();
+  toast(`Đã xóa ${count} asset`);
+}
+
+function duplicateSelected(){
+  if(selectedIds.size===0)return;
+  let selObjs=getSelectedObjects();
+  if(!selObjs.length)return;
+  snapshot();
+  let newIds=new Set();
+  selObjs.forEach(o=>{
+    let n={...clone(o),id:uid(),name:o.name+' copy',x:+(o.x+1).toFixed(2),z:+(o.z+1).toFixed(2)};
+    state.objects.push(n);
+    newIds.add(n.id);
+  });
+  selectedIds=newIds;
+  markDirty();
+  render();
+  toast(`Đã nhân bản ${newIds.size} asset`);
+}
+
+function undo(){if(!history.length)return;future.push(JSON.stringify(state));state=JSON.parse(history.pop());selectedIds.clear();markDirty();render()}
+function redo(){if(!future.length)return;history.push(JSON.stringify(state));state=JSON.parse(future.pop());selectedIds.clear();markDirty();render()}
 function setZoom(v,anchorX=null,anchorY=null){let r=$('#stage').getBoundingClientRect(),ax=anchorX??r.width/2,ay=anchorY??r.height/2,before=screenToWorld(ax,ay);view.zoom=Math.max(2.5,Math.min(18,v));let after=worldToScreen(before.x,before.z);view.panX+=ax-after.x;view.panY+=ay-after.y;renderWorld()}
 function resetView(){view.zoom=7;view.panX=0;view.panY=0;renderWorld()}
-function setMode(m){view.mode=m;$('#selectMode').classList.toggle('active',m==='select');$('#panMode').classList.toggle('active',m==='pan');$('#stage').style.cursor=m==='pan'?'grab':'default'}
-function bracketArray(src,marker){let at=src.indexOf(marker);if(at<0)throw new Error('Không tìm thấy '+marker);let start=src.indexOf('[',at),depth=0,quote=null,esc=false,line=false,block=false;for(let i=start;i<src.length;i++){let c=src[i],n=src[i+1];if(line){if(c==='\n')line=false;continue}if(block){if(c==='*'&&n==='/'){block=false;i++}continue}if(quote){if(esc){esc=false;continue}if(c==='\\'){esc=true;continue}if(c===quote)quote=null;continue}if(c==='/'&&n==='/'){line=true;i++;continue}if(c==='/'&&n==='*'){block=true;i++;continue}if(c==='"'||c==="'"||c==='`'){quote=c;continue}if(c==='[')depth++;if(c===']'&&--depth===0)return src.slice(start,i+1)}throw new Error('Mảng không đóng')}
-async function loadGameMap(mapId='thanh_van_thon'){try{let cfg=await fetch('./maps/'+mapId+'.json?editor='+Date.now(),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()});loadedMapConfig=clone(cfg);snapshot();state={version:1,mapId:cfg.id||mapId,mapName:cfg.name||mapId,ground:cfg.groundTexture||'assets/maps/common/grounds/ground_village_01.png',objects:(cfg.villageProps||[]).map(p=>newObject({path:p.file},p.x,p.z,{width:p.width,height:p.height,yRatio:p.yRatio,name:niceName(p.file),editorGroup:'villageProps'}))};let lantern=(cfg.decor||[])[0]||{file:'assets/maps/common/lanterns/lantern_post_village_01.png',width:2.2,height:3.2};for(let p of cfg.lanternPosts||[])state.objects.push(newObject({path:lantern.file},p.x,p.z,{width:lantern.width||2.2,height:lantern.height||3.2,yRatio:lantern.yRatio,name:'đèn đường',editorGroup:'lanternPosts'}));if((cfg.specialSpawns||[]).includes('villageCurvedWall'))addWallRing(false);selectedId=null;markDirty();resetView();render();toast('Đã nạp '+state.mapName+' từ maps/'+mapId+'.json')}catch(e){console.error(e);toast('Không nạp được map: '+e.message)}}
+
+function setMode(m){
+  view.mode=m;
+  $('#selectMode').classList.toggle('active',m==='select');
+  $('#drawGroundMode').classList.toggle('active',m==='drawGround');
+  if($('#drawVoidMode')) $('#drawVoidMode').classList.toggle('active',m==='drawVoid');
+  $('#eraseGroundMode').classList.toggle('active',m==='eraseGround');
+  if($('#drawFenceMode')) $('#drawFenceMode').classList.toggle('active',m==='drawFence');
+  $('#panMode').classList.toggle('active',m==='pan');
+  
+  let isGroundMode = (m==='drawGround' || m==='drawVoid' || m==='eraseGround');
+  let isFenceMode = (m==='drawFence');
+  let isDrawMode = (isGroundMode || isFenceMode);
+
+  if($('#exitGroundModeBtn')){
+    $('#exitGroundModeBtn').style.display = isDrawMode ? 'inline-block' : 'none';
+    $('#exitGroundModeBtn').textContent = isFenceMode ? '✓ Thoát vẽ rào (Esc)' : '✓ Thoát vẽ nền (Esc)';
+  }
+  if($('#btnExitDrawGround')){
+    $('#btnExitDrawGround').style.display = isGroundMode ? 'block' : 'none';
+  }
+  if($('#btnExitDrawFence')){
+    $('#btnExitDrawFence').style.display = isFenceMode ? 'block' : 'none';
+  }
+  
+  let stage=$('#stage');
+  stage.className='stage mode-'+m;
+  if(m==='pan') stage.style.cursor='grab';
+  else if(m==='drawGround'||m==='drawVoid'||m==='drawFence') stage.style.cursor='crosshair';
+  else if(m==='eraseGround') stage.style.cursor='no-drop';
+  else stage.style.cursor='default';
+}
+
+async function loadGameMap(mapId, forceReloadFromFile = false){
+  if(!mapId){
+    let sel = $('#gameMapSelect');
+    mapId = sel ? sel.value : 'thanh_van_thon';
+  }
+
+  // 1. Check if user has saved custom version in localStorage for this map
+  if(!forceReloadFromFile){
+    let saved = localStorage.getItem('tutien_map_editor_' + mapId);
+    if(saved){
+      try {
+        let parsed = JSON.parse(saved);
+        snapshot();
+        state = parsed;
+        state.mapId = mapId;
+        try {
+          let cfg = await fetch('./maps/' + mapId + '.json?editor=' + Date.now(), {cache:'no-store'}).then(r => r.ok ? r.json() : null);
+          if(cfg) loadedMapConfig = clone(cfg);
+        } catch(e){}
+        selectedIds.clear();
+        dirty = false;
+        $('#saveStatus').textContent = `Bản lưu máy (${state.mapName || mapId})`;
+        $('#saveStatus').classList.add('ok');
+        resetView();
+        render();
+        if($('#gameMapSelect')) $('#gameMapSelect').value = state.mapId;
+        localStorage.setItem('tutien_map_editor_last_mapId', state.mapId);
+        updateResetMapBtn();
+        initMapSelector();
+        toast(`⚡ Đã nạp bản sửa của [${state.mapName || mapId}] từ máy`);
+        return;
+      } catch(e){}
+    }
+  }
+
+  // 2. Fetch original from ./maps/${mapId}.json
+  try {
+    let cfg = await fetch('./maps/' + mapId + '.json?editor=' + Date.now(), {cache:'no-store'}).then(r => {
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+    loadedMapConfig = clone(cfg);
+    snapshot();
+    state = {
+      version: 1,
+      mapId: cfg.id || mapId,
+      mapName: cfg.name || mapId,
+      ground: cfg.groundTexture || 'assets/maps/common/grounds/ground_village_01.png',
+      objects: (cfg.villageProps || []).map(p => newObject({path:p.file}, p.x, p.z, {
+        width: p.width,
+        height: p.height,
+        yRatio: p.yRatio,
+        isGroundPatch: p.isGroundPatch || (p.file && (p.file.includes('/grounds/') || p.file === '__void__')),
+        isVoid: p.isVoid || p.file === '__void__',
+        shape: p.shape,
+        layer: p.layer,
+        name: p.isVoid || p.file === '__void__' ? 'Khoét rỗng nền' : niceName(p.file),
+        editorGroup: 'villageProps'
+      }))
+    };
+    let lantern = (cfg.decor || [])[0] || {file:'assets/maps/common/lanterns/lantern_post_village_01.png', width:2.2, height:3.2};
+    for(let p of (cfg.lanternPosts || [])){
+      state.objects.push(newObject({path:lantern.file}, p.x, p.z, {width:lantern.width||2.2, height:lantern.height||3.2, yRatio:lantern.yRatio, name:'đèn đường', editorGroup:'lanternPosts'}));
+    }
+    if((cfg.specialSpawns || []).includes('villageCurvedWall')) addWallRing(false);
+    selectedIds.clear();
+    dirty = false;
+    $('#saveStatus').textContent = `File gốc (${state.mapName || mapId})`;
+    $('#saveStatus').classList.remove('ok');
+    resetView();
+    render();
+    if($('#gameMapSelect')) $('#gameMapSelect').value = state.mapId;
+    localStorage.setItem('tutien_map_editor_last_mapId', state.mapId);
+    updateResetMapBtn();
+    initMapSelector();
+    toast(`Đã nạp file gốc: ${state.mapName} (${state.mapId}.json)`);
+  } catch(e){
+    console.error(e);
+    toast('Không nạp được map: ' + e.message);
+  }
+}
+
 function addWallRing(pushHistory=true){if(pushHistory)snapshot();const files=Array.from({length:9},(_,i)=>`assets/maps/common/fences_gates/stone_wall_50deg_${String(i).padStart(2,'0')}.png`),order=[6,5,2,1,4,0,7,3,8],rx=43,rz=40,count=240;for(let i=0;i<count;i++){let a=i/count*Math.PI*2,x=Math.cos(a)*rx,z=Math.sin(a)*rz;if(Math.abs(x)<7&&Math.abs(z)>rz-4.6)continue;let tx=-rx*Math.sin(a),tz=rz*Math.cos(a),deg=Math.atan2(tz,tx)*180/Math.PI;while(deg>90)deg-=180;while(deg<-90)deg+=180;let logical=Math.max(0,Math.min(8,Math.round((deg+90)/22.5))),fi=order[logical];state.objects.push(newObject({path:files[fi]},x,z,{name:'tường vòng '+String(fi).padStart(2,'0'),editorGroup:'generatedWall',width:3.35,height:3.35,layer:-5}))}state.objects.push(newObject({path:'assets/maps/common/fences_gates/gate_ornate_01.png'},0,-rz,{name:'cổng Bắc',editorGroup:'generatedWall',width:5.8,height:5.4,layer:2}),newObject({path:'assets/maps/common/fences_gates/gate_wood_01.png'},0,rz,{name:'cổng Nam',editorGroup:'generatedWall',width:5,height:4.6,layer:2}));if(pushHistory){markDirty();render();toast('Đã thêm vòng tường 9 góc')}}
-function newMap(){if(!confirm('Tạo map mới? Bố cục hiện tại vẫn còn trong lịch sử hoàn tác.'))return;snapshot();state={version:1,mapId:'map_moi',mapName:'Map mới',ground:'assets/maps/common/grounds/ground_village_01.png',objects:[]};selectedId=null;markDirty();resetView();render()}
-function exportData(){let data={...state,exportedAt:new Date().toISOString(),camera:{elevationDeg:50}};let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${state.mapId||'map'}_layout.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast('Đã xuất file JSON')}
-async function importFile(file){try{let data=JSON.parse(await file.text());if(!Array.isArray(data.objects))throw new Error('Thiếu danh sách objects');snapshot();state={version:1,mapId:data.mapId||'imported',mapName:data.mapName||'Map nhập',ground:data.ground||state.ground,objects:data.objects.map(o=>({...o,id:o.id||uid(),x:num(o.x),z:num(o.z),width:Math.max(.1,num(o.width,3)),height:Math.max(.1,num(o.height,3)),layer:num(o.layer),opacity:num(o.opacity,1),flipX:!!o.flipX,locked:!!o.locked}))};selectedId=null;markDirty();resetView();render();toast('Đã nhập '+state.objects.length+' asset')}catch(e){toast('File JSON không hợp lệ: '+e.message)}}
-function gameCode(){let cfg=clone(loadedMapConfig||{schemaVersion:1});cfg.id=state.mapId;cfg.name=state.mapName;cfg.groundTexture=state.ground;cfg.villageProps=state.objects.filter(o=>o.editorGroup!=='generatedWall'&&o.editorGroup!=='lanternPosts').map(o=>({file:o.file,width:+trimNum(o.width),height:+trimNum(o.height),x:+trimNum(o.x),z:+trimNum(o.z),yRatio:o.yRatio||.42}));cfg.lanternPosts=state.objects.filter(o=>o.editorGroup==='lanternPosts').map(o=>({x:+trimNum(o.x),z:+trimNum(o.z)}));return JSON.stringify(cfg,null,2)}
+
+function newMap(){if(!confirm('Tạo map mới? Bố cục hiện tại vẫn còn trong lịch sử hoàn tác.'))return;snapshot();state={version:1,mapId:'map_moi',mapName:'Map mới',ground:'assets/maps/common/grounds/ground_village_01.png',objects:[]};selectedIds.clear();markDirty();resetView();render()}
+
+function exportData(){
+  let code = gameCode();
+  let blob = new Blob([code], {type:'application/json'});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${state.mapId || 'thanh_van_thon'}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 500);
+  toast(`Đã xuất file ${state.mapId || 'map'}.json`);
+}
+
+async function importFile(file){try{let data=JSON.parse(await file.text());if(!Array.isArray(data.objects))throw new Error('Thiếu danh sách objects');snapshot();state={version:1,mapId:data.mapId||'imported',mapName:data.mapName||'Map nhập',ground:data.ground||state.ground,objects:data.objects.map(o=>({...o,id:o.id||uid(),x:num(o.x),z:num(o.z),width:Math.max(.1,num(o.width,3)),height:Math.max(.1,num(o.height,3)),layer:num(o.layer, o.isGroundPatch?-100:0),opacity:num(o.opacity,1),flipX:!!o.flipX,locked:!!o.locked,isGroundPatch:!!o.isGroundPatch,isVoid:!!o.isVoid||o.file==='__void__',shape:o.shape}))};selectedIds.clear();markDirty();resetView();render();toast('Đã nhập '+state.objects.length+' asset')}catch(e){toast('File JSON không hợp lệ: '+e.message)}}
+
+function gameCode(){
+  let cfg=clone(loadedMapConfig||{schemaVersion:1});
+  cfg.id=state.mapId;
+  cfg.name=state.mapName;
+  cfg.groundTexture=state.ground;
+
+  // Kiểm tra tường vòng tự động: nếu người dùng đã xóa tường vòng trong editor thì không spawn tự động nữa
+  let hasGeneratedWall = state.objects.some(o=>o.editorGroup==='generatedWall');
+  if(!hasGeneratedWall && Array.isArray(cfg.specialSpawns)){
+    cfg.specialSpawns = cfg.specialSpawns.filter(s=>s!=='villageCurvedWall');
+  } else if(hasGeneratedWall && Array.isArray(cfg.specialSpawns) && !cfg.specialSpawns.includes('villageCurvedWall')){
+    cfg.specialSpawns.push('villageCurvedWall');
+  }
+
+  cfg.villageProps=state.objects.filter(o=>o.editorGroup!=='generatedWall'&&o.editorGroup!=='lanternPosts').map(o=>({
+    file:o.file,
+    width:+trimNum(o.width),
+    height:+trimNum(o.height),
+    x:+trimNum(o.x),
+    z:+trimNum(o.z),
+    layer:o.layer!==0?o.layer:undefined,
+    isGroundPatch:o.isGroundPatch?true:undefined,
+    isVoid:o.isVoid?true:undefined,
+    shape:o.isGroundPatch?o.shape:undefined,
+    yRatio:o.yRatio||.42
+  }));
+  cfg.lanternPosts=state.objects.filter(o=>o.editorGroup==='lanternPosts').map(o=>({x:+trimNum(o.x),z:+trimNum(o.z)}));
+  return JSON.stringify(cfg,null,2);
+}
+
 function trimNum(n){return String(Math.round(num(n)*100)/100)}
 function showCode(){openModal('JSON map — lưu vào thư mục maps',gameCode())}
 function openModal(title,text){$('#modalTitle').textContent=title;$('#jsonText').value=text;$('#jsonModal').hidden=false}
 async function copyModal(){try{await navigator.clipboard.writeText($('#jsonText').value);toast('Đã sao chép')}catch(e){$('#jsonText').select();document.execCommand('copy');toast('Đã sao chép')}}
 function closeMobilePanels(){$('#assetPanel').classList.remove('open');$('#inspectorPanel').classList.remove('open')}
-function bindLiveInspector(){let box=$('#inspector');box.addEventListener('focusin',e=>{let i=e.target.closest('[data-prop]');if(i&&!i.dataset.historyReady){snapshot();i.dataset.historyReady='1'}});box.addEventListener('input',e=>{let i=e.target.closest('[data-prop]');if(!i)return;let o=state.objects.find(x=>x.id===selectedId),prop=i.dataset.prop,value=i.value;if(!o)return;if(['x','z','width','height','layer','opacity'].includes(prop))value=num(value,o[prop]);if(prop==='width'||prop==='height')value=Math.max(.1,value);if(prop==='opacity')value=Math.max(0,Math.min(1,value));o[prop]=value;markDirty();renderWorld()});box.addEventListener('change',e=>{if(e.target.closest('[data-prop]'))e.stopImmediatePropagation()},true)}
-function bind(){let stage=$('#stage');stage.addEventListener('pointerdown',stagePointerDown);stage.addEventListener('pointermove',pointerMove);stage.addEventListener('pointerup',pointerUp);stage.addEventListener('pointercancel',pointerUp);stage.addEventListener('wheel',e=>{e.preventDefault();let r=stage.getBoundingClientRect();setZoom(view.zoom*(e.deltaY<0?1.12:.89),e.clientX-r.left,e.clientY-r.top)},{passive:false});$('#assetSearch').oninput=renderAssets;$('#loadGameBtn').onclick=()=>loadGameMap();$('#newBtn').onclick=newMap;$('#undoBtn').onclick=undo;$('#redoBtn').onclick=redo;$('#saveBtn').onclick=()=>{saveLocal();toast('Đã lưu trên thiết bị')};$('#exportBtn').onclick=exportData;$('#importBtn').onclick=()=>$('#fileInput').click();$('#fileInput').onchange=e=>{if(e.target.files[0])importFile(e.target.files[0]);e.target.value=''};$('#copyBtn').onclick=showCode;$('#wallBtn').onclick=()=>addWallRing(true);$('#selectMode').onclick=()=>setMode('select');$('#panMode').onclick=()=>setMode('pan');$('#gridBtn').onclick=()=>{view.grid=!view.grid;$('#gridBtn').classList.toggle('active',view.grid);renderWorld()};$('#zoomIn').onclick=()=>setZoom(view.zoom*1.18);$('#zoomOut').onclick=()=>setZoom(view.zoom/1.18);$('#resetView').onclick=resetView;$('#assetsToggle').onclick=()=>{$('#assetPanel').classList.toggle('open');$('#inspectorPanel').classList.remove('open')};$('#inspectorToggle').onclick=()=>{$('#inspectorPanel').classList.toggle('open');$('#assetPanel').classList.remove('open')};$('#modalClose').onclick=()=>$('#jsonModal').hidden=true;$('#modalCopy').onclick=copyModal;$('#jsonModal').onclick=e=>{if(e.target===$('#jsonModal'))$('#jsonModal').hidden=true};window.addEventListener('resize',renderWorld);window.addEventListener('keydown',e=>{let input=/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='d'){e.preventDefault();duplicateSelected();return}if(input)return;if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteSelected();return}let o=state.objects.find(x=>x.id===selectedId);if(o&&!o.locked&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();snapshot();let step=e.shiftKey?5:1;if(e.key==='ArrowLeft')o.x-=step;if(e.key==='ArrowRight')o.x+=step;if(e.key==='ArrowUp')o.z+=step;if(e.key==='ArrowDown')o.z-=step;markDirty();render()}})}
-async function init(){bind();bindLiveInspector();renderCategories();renderAssets();let saved=localStorage.getItem(STORAGE);if(saved){try{state=JSON.parse(saved);render();toast('Đã mở bản lưu gần nhất');return}catch(e){}}await loadGameMap()}
+
+function bindLiveInspector(){
+  let box=$('#inspector');
+  box.addEventListener('focusin',e=>{
+    let i=e.target.closest('[data-prop]');
+    if(i&&!i.dataset.historyReady){snapshot();i.dataset.historyReady='1'}
+  });
+  box.addEventListener('input',e=>{
+    let i=e.target.closest('[data-prop]');
+    if(!i)return;
+    let selObjs=getSelectedObjects();
+    if(!selObjs.length)return;
+    let prop=i.dataset.prop,value=i.value;
+    selObjs.forEach(o=>{
+      let val=value;
+      if(['x','z','width','height','layer','opacity'].includes(prop))val=num(val,o[prop]);
+      if(prop==='width'||prop==='height')val=Math.max(.1,val);
+      if(prop==='opacity')val=Math.max(0,Math.min(1,val));
+      o[prop]=val;
+    });
+    markDirty();
+    renderWorld();
+  });
+  box.addEventListener('change',e=>{if(e.target.closest('[data-prop]'))e.stopImmediatePropagation()},true);
+}
+
+function bind(){
+  let stage=$('#stage');
+  stage.addEventListener('pointerdown',stagePointerDown);
+  stage.addEventListener('pointermove',pointerMove);
+  stage.addEventListener('pointerup',pointerUp);
+  stage.addEventListener('pointercancel',pointerUp);
+  stage.addEventListener('wheel',e=>{e.preventDefault();let r=stage.getBoundingClientRect();setZoom(view.zoom*(e.deltaY<0?1.12:.89),e.clientX-r.left,e.clientY-r.top)},{passive:false});
+  
+  $('#modePatchBtn').onclick=()=>{
+    groundApplyMode='patch';
+    $('#modePatchBtn').classList.add('active','primary');
+    if($('#modeVoidBtn')) $('#modeVoidBtn').classList.remove('active');
+    $('#modeEraseBtn').classList.remove('active');
+    $('#modeGlobalBtn').classList.remove('active','primary');
+    setMode('drawGround');
+    renderAssets();
+    toast('Chế độ: Quét chuột trên map để vẽ mảng nền');
+  };
+
+  if($('#modeVoidBtn')){
+    $('#modeVoidBtn').onclick=()=>{
+      groundApplyMode='patch';
+      activeGroundPath='__void__';
+      $('#modeVoidBtn').classList.add('active');
+      $('#modePatchBtn').classList.remove('active','primary');
+      $('#modeEraseBtn').classList.remove('active');
+      $('#modeGlobalBtn').classList.remove('active','primary');
+      setMode('drawVoid');
+      renderAssets();
+      toast('Chế độ: Quét chuột trên map để khoét rỗng một khu vực');
+    };
+  }
+
+  $('#modeEraseBtn').onclick=()=>{
+    groundApplyMode='erase';
+    $('#modeEraseBtn').classList.add('active');
+    if($('#modeVoidBtn')) $('#modeVoidBtn').classList.remove('active');
+    $('#modePatchBtn').classList.remove('active','primary');
+    $('#modeGlobalBtn').classList.remove('active','primary');
+    setMode('eraseGround');
+    renderAssets();
+    toast('Chế độ: Quét chuột để tẩy xóa các mảng nền');
+  };
+
+  $('#modeGlobalBtn').onclick=()=>{
+    groundApplyMode='global';
+    $('#modeGlobalBtn').classList.add('active','primary');
+    if($('#modeVoidBtn')) $('#modeVoidBtn').classList.remove('active');
+    $('#modePatchBtn').classList.remove('active','primary');
+    $('#modeEraseBtn').classList.remove('active');
+    setMode('select');
+    renderAssets();
+    toast('Chế độ: Đổi nền toàn bộ map');
+  };
+
+  if($('#groundFillTypeSelect')){
+    $('#groundFillTypeSelect').onchange=(e)=>{
+      groundFillType = e.target.value;
+      toast('Cách phủ nền: ' + e.target.selectedOptions[0].text);
+    };
+  }
+
+  if($('#groundTileSizeSelect')){
+    $('#groundTileSizeSelect').onchange=(e)=>{
+      activeTileSize = num(e.target.value, 4);
+      toast('Cỡ ô lát: ' + activeTileSize + ' × ' + activeTileSize);
+    };
+  }
+
+  $('#activeGroundShapeSelect').onchange=(e)=>{
+    activeGroundShape = e.target.value;
+    toast('Hình dạng mảng nền: ' + e.target.selectedOptions[0].text);
+  };
+
+  $('#assetSearch').oninput=renderAssets;
+  $('#loadGameBtn').onclick=()=>loadGameMap();
+  if($('#resetMapBtn')) $('#resetMapBtn').onclick=()=>resetCurrentMapToDefault();
+  $('#newBtn').onclick=newMap;
+  $('#undoBtn').onclick=undo;
+  $('#redoBtn').onclick=redo;
+  $('#saveBtn').onclick=()=>{saveLocal(true);};
+  if($('#btnConnectFolder')){
+    $('#btnConnectFolder').onclick=async()=>{
+      if(!window.showDirectoryPicker){
+        toast('Trình duyệt không hỗ trợ File System API. Hãy dùng Chrome/Edge hoặc chạy "node server.js"!');
+        return;
+      }
+      try {
+        projectDirectoryHandle = await window.showDirectoryPicker();
+        $('#btnConnectFolder').textContent = '✅ Đã kết nối ổ đĩa';
+        $('#btnConnectFolder').style.background = '#1b4a2f';
+        $('#btnConnectFolder').style.borderColor = '#4de08d';
+        $('#btnConnectFolder').style.color = '#c6ffdc';
+        toast('📁 Đã kết nối thư mục dự án! Mỗi khi ấn Lưu, map sẽ ghi đè trực tiếp vào file trên ổ đĩa!');
+      } catch(err){
+        if(err.name !== 'AbortError') toast('Không thể kết nối thư mục: ' + err.message);
+      }
+    };
+  }
+  $('#exportBtn').onclick=exportData;
+  $('#importBtn').onclick=()=>$('#fileInput').click();
+  $('#fileInput').onchange=e=>{if(e.target.files[0])importFile(e.target.files[0]);e.target.value=''};
+  $('#copyBtn').onclick=showCode;
+  $('#wallBtn').onclick=()=>addWallRing(true);
+  $('#deleteBatchBtn').onclick=deleteSelected;
+  
+  $('#selectMode').onclick=()=>{
+    setMode('select');
+    toast('Chế độ: Chọn / Quét khối (Esc / Q)');
+  };
+  if($('#drawFenceMode')){
+    $('#drawFenceMode').onclick=()=>{
+      category='fences_gates';
+      renderCategories();
+      renderAssets();
+      setMode('drawFence');
+      toast('Kéo đè chuột trái trên map để vẽ hàng rào trải dài liên tục (Phím F)');
+    };
+  }
+  if($('#btnFenceModeLine')){
+    $('#btnFenceModeLine').onclick=()=>{
+      fenceDrawMode='line';
+      $('#btnFenceModeLine').classList.add('active','primary');
+      $('#btnFenceModeFree').classList.remove('active','primary');
+      toast('Kiểu vẽ rào: Kéo thẳng hàng (A ➔ B)');
+    };
+  }
+  if($('#btnFenceModeFree')){
+    $('#btnFenceModeFree').onclick=()=>{
+      fenceDrawMode='free';
+      $('#btnFenceModeFree').classList.add('active','primary');
+      $('#btnFenceModeLine').classList.remove('active','primary');
+      toast('Kiểu vẽ rào: Rê chuột tự do (Uốn lượn)');
+    };
+  }
+  if($('#fenceAngleModeSelect')){
+    $('#fenceAngleModeSelect').onchange=(e)=>{
+      fenceAngleMode = e.target.value;
+      toast('Kiểu góc: ' + e.target.selectedOptions[0].text);
+    };
+  }
+  if($('#fenceSpacingSelect')){
+    $('#fenceSpacingSelect').onchange=(e)=>{
+      fenceSpacingRatio = num(e.target.value, 0.32);
+      toast('Độ khít hàng rào: ' + e.target.selectedOptions[0].text);
+    };
+  }
+  if($('#btnExitDrawFence')){
+    $('#btnExitDrawFence').onclick=()=>{
+      setMode('select');
+      toast('Đã thoát chế độ vẽ rào (Về chế độ Chọn / Quét khối)');
+    };
+  }
+  if($('#exitGroundModeBtn')){
+    $('#exitGroundModeBtn').onclick=()=>{
+      setMode('select');
+      toast('Đã bỏ chọn vẽ (Về chế độ Chọn / Quét khối)');
+    };
+  }
+  if($('#btnExitDrawGround')){
+    $('#btnExitDrawGround').onclick=()=>{
+      setMode('select');
+      toast('Đã bỏ chọn vẽ nền (Về chế độ Chọn / Quét khối)');
+    };
+  }
+  $('#drawGroundMode').onclick=()=>{
+    category='grounds';
+    renderCategories();
+    renderAssets();
+    setMode('drawGround');
+    toast('Kéo chuột trên map để vẽ vùng nền cục bộ');
+  };
+  if($('#drawVoidMode')){
+    $('#drawVoidMode').onclick=()=>{
+      category='grounds';
+      activeGroundPath='__void__';
+      renderCategories();
+      renderAssets();
+      setMode('drawVoid');
+      toast('Kéo chuột trên map để khoét rỗng một khu vực');
+    };
+  }
+  $('#eraseGroundMode').onclick=()=>{
+    setMode('eraseGround');
+    toast('Kéo chuột quét qua mảng nền để xóa');
+  };
+  if($('#clearDefaultGroundBtn')){
+    $('#clearDefaultGroundBtn').onclick=()=>{
+      setGround('');
+    };
+  }
+  if($('#btnRemoveDefaultGround')){
+    $('#btnRemoveDefaultGround').onclick=()=>{
+      setGround('');
+    };
+  }
+  $('#panMode').onclick=()=>setMode('pan');
+  $('#gridBtn').onclick=()=>{view.grid=!view.grid;$('#gridBtn').classList.toggle('active',view.grid);renderWorld()};
+  $('#zoomIn').onclick=()=>setZoom(view.zoom*1.18);
+  $('#zoomOut').onclick=()=>setZoom(view.zoom/1.18);
+  $('#resetView').onclick=resetView;
+  $('#assetsToggle').onclick=()=>{$('#assetPanel').classList.toggle('open');$('#inspectorPanel').classList.remove('open')};
+  $('#inspectorToggle').onclick=()=>{$('#inspectorPanel').classList.toggle('open');$('#assetPanel').classList.remove('open')};
+  $('#modalClose').onclick=()=>$('#jsonModal').hidden=true;
+  $('#modalCopy').onclick=copyModal;
+  $('#jsonModal').onclick=e=>{if(e.target===$('#jsonModal'))$('#jsonModal').hidden=true};
+  
+  if($('#btnReloadAssets')){
+    $('#btnReloadAssets').onclick=()=>reloadAssetsFromDisk(true);
+  }
+  if($('#folderScanInput')){
+    $('#folderScanInput').onchange=e=>{
+      let files = [...(e.target.files || [])];
+      if(!files.length) return;
+      let grouped = {};
+      files.forEach(f => {
+        let parts = (f.webkitRelativePath || f.name || '').split('/');
+        if(parts.length >= 2){
+          let cat = parts[parts.length - 2];
+          let fileName = parts[parts.length - 1];
+          if(/\.(png|webp|jpg|jpeg|svg)$/i.test(fileName)){
+            if(!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(fileName);
+          }
+        }
+      });
+      if(Object.keys(grouped).length > 0){
+        Object.keys(grouped).forEach(k => {
+          FILES[k] = grouped[k];
+        });
+        localStorage.setItem('tutien_scanned_files_v1', JSON.stringify(FILES));
+        ASSETS = getAllAssets();
+        renderCategories();
+        renderAssets();
+        toast(`🔄 Đã quét và nạp ${ASSETS.length} asset từ thư mục!`);
+      }
+      e.target.value = '';
+    };
+  }
+
+  if($('#importAssetBtn')){
+    $('#importAssetBtn').onclick=()=>{
+      $('#assetModal').hidden=false;
+    };
+  }
+  if($('#assetModalClose')){
+    $('#assetModalClose').onclick=()=>{
+      $('#assetModal').hidden=true;
+    };
+  }
+  if($('#assetModal')){
+    $('#assetModal').onclick=e=>{if(e.target===$('#assetModal'))$('#assetModal').hidden=true};
+  }
+  if($('#modalPickFilesBtn')){
+    $('#modalPickFilesBtn').onclick=()=>{
+      $('#assetFileInput').click();
+    };
+  }
+  if($('#assetFileInput')){
+    $('#assetFileInput').onchange=e=>{
+      let files = [...(e.target.files || [])];
+      if(!files.length) return;
+      let cat = $('#importCategorySelect') ? $('#importCategorySelect').value : 'props';
+      let loaded = 0;
+      files.forEach(file => {
+        let reader = new FileReader();
+        reader.onload = ev => {
+          addCustomAsset(ev.target.result, cat, file.name);
+          loaded++;
+          if(loaded === files.length){
+            $('#assetModal').hidden=true;
+            toast(`Đã nạp ${loaded} asset ảnh vào kho!`);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    };
+  }
+  if($('#modalAddUrlBtn')){
+    $('#modalAddUrlBtn').onclick=()=>{
+      let input = $('#importUrlInput');
+      let url = input ? input.value.trim() : '';
+      if(!url){
+        toast('Vui lòng nhập đường dẫn hoặc URL ảnh');
+        return;
+      }
+      let cat = $('#importCategorySelect') ? $('#importCategorySelect').value : 'props';
+      addCustomAsset(url, cat);
+      input.value = '';
+      $('#assetModal').hidden=true;
+    };
+  }
+  
+  stage.addEventListener('contextmenu', e => e.preventDefault());
+  
+  window.addEventListener('resize',renderWorld);
+  window.addEventListener('keydown',e=>{
+    let input=/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    if(input)return;
+    if(e.code === 'Space' && !isSpaceDown){
+      isSpaceDown = true;
+      $('#stage').style.cursor = 'grab';
+    }
+    if(e.key.toLowerCase()==='q' && !e.ctrlKey && !e.metaKey){
+      setMode('select');
+      toast('Chế độ: Chọn / Quét khối (Esc / Q)');
+    }
+    if(e.key.toLowerCase()==='f' && !e.ctrlKey && !e.metaKey){
+      category='fences_gates';
+      renderCategories();
+      renderAssets();
+      setMode('drawFence');
+      toast('Chế độ: Kéo đè chuột trái trên map để vẽ trải dài hàng rào (Phím F)');
+    }
+    if(e.key.toLowerCase()==='h'){
+      setMode('pan');
+      toast('Chế độ: Di chuyển màn hình (Kéo chuột bất kỳ đâu để di chuyển)');
+    }
+    if(e.key.toLowerCase()==='v' && !e.ctrlKey && !e.metaKey){
+      category='grounds';
+      activeGroundPath='__void__';
+      renderCategories();
+      renderAssets();
+      setMode('drawVoid');
+      toast('Chế độ: Quét chuột để khoét rỗng một khu vực');
+    }
+    if(e.key.toLowerCase()==='g' && !e.ctrlKey && !e.metaKey){
+      category='grounds';
+      renderCategories();
+      renderAssets();
+      setMode('drawGround');
+      toast('Chế độ: Quét chuột trên map để vẽ mảng nền');
+    }
+    if(e.key.toLowerCase()==='e' && !e.ctrlKey && !e.metaKey){
+      setMode('eraseGround');
+      toast('Chế độ: Quét chuột để tẩy xóa các mảng nền');
+    }
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){
+      e.preventDefault();
+      e.shiftKey?redo():undo();
+      return;
+    }
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){
+      e.preventDefault();
+      redo();
+      return;
+    }
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='a'){
+      e.preventDefault();
+      selectedIds=new Set(state.objects.map(o=>o.id));
+      render();
+      toast(`Đã chọn tất cả (${selectedIds.size} asset)`);
+      return;
+    }
+    if(e.key==='Escape'){
+      e.preventDefault();
+      if(view.mode!=='select'){
+        setMode('select');
+        toast('Đã về chế độ Chọn / Quét khối');
+      }else{
+        selectedIds.clear();
+        render();
+      }
+      return;
+    }
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='d'){
+      e.preventDefault();
+      duplicateSelected();
+      return;
+    }
+    if(e.key==='Delete'||e.key==='Backspace'){
+      e.preventDefault();
+      deleteSelected();
+      return;
+    }
+    let selObjs=getSelectedObjects().filter(o=>!o.locked);
+    if(selObjs.length&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
+      e.preventDefault();
+      snapshot();
+      let step=e.shiftKey?5:1;
+      selObjs.forEach(o=>{
+        if(e.key==='ArrowLeft')o.x-=step;
+        if(e.key==='ArrowRight')o.x+=step;
+        if(e.key==='ArrowUp')o.z+=step;
+        if(e.key==='ArrowDown')o.z-=step;
+      });
+      markDirty();
+      render();
+    }else if(!selObjs.length && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','w','a','s','d','W','A','S','D'].includes(e.key)){
+      let step = e.shiftKey ? 100 : 40;
+      if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') view.panX += step;
+      else if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') view.panX -= step;
+      else if(e.key==='ArrowUp'||e.key==='w'||e.key==='W') view.panY += step;
+      else if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') view.panY -= step;
+      renderWorld();
+    }
+  });
+
+  window.addEventListener('keyup', e=>{
+    if(e.code === 'Space'){
+      isSpaceDown = false;
+      setMode(view.mode);
+    }
+  });
+}
+
+async function init(){
+  initSidebarResizer();
+  bind();
+  bindLiveInspector();
+  await reloadAssetsFromDisk(false);
+  renderCategories();
+  renderAssets();
+  let lastMapId = localStorage.getItem('tutien_map_editor_last_mapId') || 'thanh_van_thon';
+  initMapSelector();
+  await loadGameMap(lastMapId);
+}
+
 init();
 })();
 </script>

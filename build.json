@@ -1,7 +1,12 @@
 {
-  "buildVersion": "20260918-enemy-camps-minimap-v6.4",
+  "buildVersion": "20260919-v78",
   "saveVersion": 5,
-  "shellCache": "game-shell-v19",
-  "assetCache": "game-assets-v19",
-  "mapCache": "game-maps-v19"
+  "shellCache": "game-shell-v78",
+  "assetCache": "game-assets-v78",
+  "mapCache": "game-maps-v78"
 }
+
+
+
+
+

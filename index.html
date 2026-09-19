@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Tu Tiên Chi Lộ</title>
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="style.css?v=20260918-minimap-hardfix-v6.7" />
+<link rel="stylesheet" href="style.css?v=20260918-v72" />
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
 <body>
@@ -25,64 +25,192 @@
     </div>
   </div>
   <div id="hud" hidden>
-    <section class="profile glass">
-      <div class="avatar"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/avatar.png');--ui-fallback:url('assets/ui/icons/avatar.svg')"></span></div>
-      <div class="pinfo">
-        <b id="pname">Linh Phong</b>
-        <span id="realm">Luyện Khí · Tầng 1</span>
-        <div class="hp"><i id="hpFill"></i><em id="hpText"></em></div>
-        <div class="mp"><i id="mpFill"></i></div>
+    <!-- GÓC TRÊN BÊN TRÁI: THÔNG TIN NHÂN VẬT & SINH LỰC, PHÁP LỰC, TU VI (EXP) -->
+    <section id="hudProfile" class="hudProfile glass3d" data-panel="character" style="cursor:pointer;" title="Xem Thông Tin Nhân Vật">
+      <div class="hudAvatarRing">
+        <div class="hudAvatar">
+          <img src="assets/ui/icons/nav_character.jpg" class="avatar3dImg" alt="Avatar">
+        </div>
+        <div class="hudLevelBadge">Lv.<b id="level">1</b></div>
+      </div>
+      <div class="hudPinfo">
+        <div class="hudPinfoTop">
+          <b id="pname">Linh Phong</b>
+          <span id="realm" class="hudRealmBadge">Luyện Khí · Tầng 1</span>
+        </div>
+        <!-- Sinh Lực (HP) -->
+        <div class="hudBar hudHpBar">
+          <i id="hpFill"></i>
+          <span class="hudBarLabel">HP <em id="hpText">1200/1200</em></span>
+        </div>
+        <!-- Pháp Lực (MP) -->
+        <div class="hudBar hudMpBar">
+          <i id="mpFill"></i>
+          <span class="hudBarLabel">MP</span>
+        </div>
+        <!-- Tu Vi (EXP) -->
+        <div class="hudBar hudXpBar">
+          <i id="xpFill"></i>
+          <span class="hudBarLabel">EXP</span>
+        </div>
       </div>
     </section>
-    <div class="power"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/power.png');--ui-fallback:url('assets/ui/icons/power.svg')"></span><span id="power">1,280</span></div>
-    <section class="quest glass">
-      <div class="questTitle"><span class="uiIcon questIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/quest.png');--ui-fallback:url('assets/ui/icons/quest.svg')"></span><b>NHIỆM VỤ</b></div>
-      <div id="questText">[Chính] Diệt Yêu Thú <span>0/20</span></div>
-      <small id="questSub">Phần thưởng: Linh thạch + Tu vi</small>
-    </section>
-    <div class="topMenu">
-      <button data-panel="daily" title="Phúc Lợi"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/daily.png');--ui-fallback:url('assets/ui/icons/daily.svg')"></span><span>Phúc Lợi</span></button>
-      <button data-panel="shop" title="Tiên Phường"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/shop.png');--ui-fallback:url('assets/ui/icons/shop.svg')"></span><span>Shop</span></button>
-      <button data-panel="cultivate" title="Tu Vi"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/cultivate.png');--ui-fallback:url('assets/ui/icons/cultivate.svg')"></span><span>Tu Vi</span></button>
-      <button data-panel="inventory" title="Túi Đồ"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/inventory.png');--ui-fallback:url('assets/ui/icons/inventory.svg')"></span><span>Túi Đồ</span></button>
-    </div>
-    <div class="minimap glass" id="gameMinimap" style="display:block!important;position:absolute!important;right:max(112px,calc(env(safe-area-inset-right) + 104px))!important;top:max(8px,env(safe-area-inset-top))!important;width:104px!important;padding:3px!important;z-index:80!important;visibility:visible!important;opacity:1!important;transform:none!important;pointer-events:none!important">
-      <canvas id="mini" width="150" height="110" style="display:block!important;width:96px!important;height:68px!important;visibility:visible!important;opacity:1!important"></canvas>
-      <span id="miniName">Thanh Vân Thôn</span>
-    </div>
-    <div id="bossBar" class="boss glass" hidden>
+
+    <!-- TRUNG TÂM TRÊN: BOSS BAR & THÔNG BÁO VÀO THÔN -->
+    <div id="bossBar" class="boss glass3d" hidden>
       <b id="bossName">Xích Viêm Ma Lang</b>
       <div><i id="bossFill"></i></div>
     </div>
+    <div id="villageEnterPrompt" class="villagePrompt glass3d" style="display:none;">
+      <div class="villagePromptIcon">🏰</div>
+      <div class="villagePromptInfo">
+        <b>Thanh Vân Thôn</b>
+        <span>Khu an toàn · Bấm để thao tác</span>
+      </div>
+      <button id="btnOpenVillageHub" class="villagePromptBtn">Vào Thôn</button>
+    </div>
+
+    <!-- GÓC TRÊN BÊN PHẢI: MINI MAP & CỤM NÚT TIỆN ÍCH (AUTO & ZOOM) -->
+    <div id="hudTopRight" class="hudTopRight">
+      <div class="minimap glass3d" id="gameMinimap">
+        <canvas id="mini" width="150" height="110"></canvas>
+        <span id="miniName">Thanh Vân Thôn</span>
+      </div>
+      <div class="hudUtilRow">
+        <button id="autoBtn" class="hudUtilBtn hudAutoBtn on" title="Tự Động Chiến Đấu">
+          <img src="assets/ui/icons/auto_battle.jpg" class="hudUtilIconImg" alt="Tự Động">
+          <small>TỰ ĐỘNG</small>
+        </button>
+        <button id="cameraZoomBtn" class="hudUtilBtn hudZoomBtn" title="Phóng To / Thu Nhỏ (CỰC XA / SIÊU GẦN)">
+          <img src="assets/ui/icons/camera_zoom.jpg" class="hudUtilIconImg" alt="Zoom">
+          <small id="cameraZoomLevel">1/2</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- HIỆU ỨNG TẦNG NỔI & TOAST -->
     <div id="lootToast"></div>
     <div id="floatLayer"></div>
-    <div class="joystick" id="joy"><div class="joyKnob" id="joyKnob"></div></div>
-    <div class="skills">
-      <button class="skill s1" data-skill="1" title="Chiêu 1 (Phím 1)"><b>⚡</b><span id="cd1"></span></button>
-      <button class="skill s2" data-skill="2" title="Chiêu 2 (Phím 2)"><b>❄</b><span id="cd2"></span></button>
-      <button class="skill s3" data-skill="3" title="Chiêu 3 (Phím 3)"><b>🔥</b><span id="cd3"></span></button>
-      <button class="skill ult" data-skill="4" title="Tuyệt Kỹ (Phím 4)"><b>劍</b><span id="cd4"></span></button>
-      <button class="skill dash" id="dashBtn" title="Thân Pháp Lướt (Phím Space)"><span class="uiIcon actionIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/dash.png');--ui-fallback:url('assets/ui/icons/dash.svg')"></span><span id="cdDash"></span></button>
-      <button id="autoBtn" class="auto on"><span class="uiIcon actionIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/auto.png');--ui-fallback:url('assets/ui/icons/auto.svg')"></span><small>TỰ ĐỘNG</small></button>
+
+    <!-- CẦN ĐIỀU KHIỂN ẢO ĐỘNG (Dynamic Floating Joystick) -->
+    <div class="joystick dynamicJoy" id="joy" style="display:none;">
+      <div class="joyBaseRing"></div>
+      <div class="joyKnob" id="joyKnob"></div>
     </div>
-    <div class="bottomInfo glass">
-      <span class="levelBadge"><span class="uiIcon levelIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/level.png');--ui-fallback:url('assets/ui/icons/level.svg')"></span>Lv.<b id="level">1</b></span>
-      <div class="xp"><i id="xpFill"></i></div>
-      <span class="resource"><span class="uiIcon resourceIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/stones.png');--ui-fallback:url('assets/ui/icons/stones.svg')"></span><b id="stones">500</b></span>
-      <span class="resource"><span class="uiIcon resourceIcon" aria-hidden="true" style="--ui-custom:url('assets/ui/icons/gold.png');--ui-fallback:url('assets/ui/icons/gold.svg')"></span><b id="gold">1200</b></span>
+
+    <!-- CỤM 4 Ô KỸ NĂNG (XẾP HÀNG NGANG TRÊN 4 NÚT ĐIỀU HƯỚNG DƯỚI CÙNG, CÓ MŨI TÊN ẨN/HIỆN) -->
+    <div id="hudSkillClusterWrap" class="hudRowWrap hudSkillRowWrap">
+      <div id="hudSkillCluster" class="hudSkillCluster">
+        <button class="skill s1" data-skill="1" title="Chiêu 1"><span id="cd1"></span></button>
+        <button class="skill s2" data-skill="2" title="Chiêu 2"><span id="cd2"></span></button>
+        <button class="skill s3" data-skill="3" title="Chiêu 3"><span id="cd3"></span></button>
+        <button class="skill ult" data-skill="4" title="Tuyệt Kỹ"><span id="cd4"></span></button>
+      </div>
+      <button id="btnToggleSkills" class="hudRowToggleBtn" title="Ẩn / Hiện Kỹ Năng" aria-label="Ẩn / Hiện Kỹ Năng">
+        <span class="toggleArrow">▶</span>
+      </button>
     </div>
-    <button id="menuBtn" class="menuBtn" title="Menu"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/menu.png');--ui-fallback:url('assets/ui/icons/menu.svg')"></span></button>
-    <div id="menuGrid" class="menuGrid glass" hidden>
-      <button data-panel="character"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/character.png');--ui-fallback:url('assets/ui/icons/character.svg')"></span><span>Nhân Vật</span></button>
-      <button data-panel="skills"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/skills.png');--ui-fallback:url('assets/ui/icons/skills.svg')"></span><span>Kỹ Năng</span></button>
-      <button data-panel="equipment"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/equipment.png');--ui-fallback:url('assets/ui/icons/equipment.svg')"></span><span>Trang Bị</span></button>
-      <button data-panel="pet"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/pet.png');--ui-fallback:url('assets/ui/icons/pet.svg')"></span><span>Linh Thú</span></button>
-      <button data-panel="map"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/map.png');--ui-fallback:url('assets/ui/icons/map.svg')"></span><span>Bản Đồ</span></button>
-      <button data-panel="crafting"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/equipment.png');--ui-fallback:url('assets/ui/icons/equipment.svg')"></span><span>Chế Tạo</span></button>
-      <button data-panel="formations"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/cultivate.png');--ui-fallback:url('assets/ui/icons/cultivate.svg')"></span><span>Trận Pháp</span></button>
-      <button data-panel="settings"><span class="uiIcon " aria-hidden="true" style="--ui-custom:url('assets/ui/icons/settings.png');--ui-fallback:url('assets/ui/icons/settings.svg')"></span><span>Cài Đặt</span></button>
+
+    <!-- PHÍA DƯỚI CÙNG: 4 NÚT ĐIỀU HƯỚNG 3D TIÊN HIỆP (Nhân Vật, Túi Đồ, Kỹ Năng, Trang Bị, CÓ MŨI TÊN ẨN/HIỆN) -->
+    <div id="hudBottomNavWrap" class="hudRowWrap hudNavRowWrap">
+      <nav id="hudBottomNav" class="hudBottomNav glass3d">
+        <button class="hudNavBtn" data-panel="character">
+          <img src="assets/ui/icons/nav_character.jpg" class="hudNav3dIcon" alt="Nhân Vật">
+          <span class="hudNavLabel">Nhân Vật</span>
+        </button>
+        <button class="hudNavBtn" data-panel="inventory">
+          <img src="assets/ui/icons/nav_inventory.jpg" class="hudNav3dIcon" alt="Túi Đồ">
+          <span class="hudNavLabel">Túi Đồ</span>
+        </button>
+        <button class="hudNavBtn" data-panel="skills">
+          <img src="assets/ui/icons/nav_skills.jpg" class="hudNav3dIcon" alt="Kỹ Năng">
+          <span class="hudNavLabel">Kỹ Năng</span>
+        </button>
+        <button class="hudNavBtn" data-panel="equipment">
+          <img src="assets/ui/icons/nav_equipment.jpg" class="hudNav3dIcon" alt="Trang Bị">
+          <span class="hudNavLabel">Trang Bị</span>
+        </button>
+      </nav>
+      <button id="btnToggleNav" class="hudRowToggleBtn" title="Ẩn / Hiện Menu" aria-label="Ẩn / Hiện Menu">
+        <span class="toggleArrow">▶</span>
+      </button>
     </div>
   </div>
+
+  <!-- MÀN HÌNH TOÀN CẢNH THANH VÂN THÔN (Fullscreen Village Interactive Town) -->
+  <div id="villageTownScreen" class="villageTownScreen" style="display:none;">
+    <div class="townBgWrapper">
+      <img src="assets/MAP/thanh_van_thon_town.jpg" class="townBgImg" alt="Thanh Vân Thôn">
+      
+      <!-- CÁC ĐIỂM TƯƠNG TÁC TIÊN HIỆP 3D (Interactive Hotspots) -->
+      <!-- 1. Lò Rèn / Thiết Tượng Phường (Top-Left) -->
+      <div class="townPin" style="left:20%; top:26%;" data-hub="equipment">
+        <div class="townPinBadge"><span class="townPinIcon">⚔️</span></div>
+        <div class="townPinLabel">Thiết Tượng Phường<small>Rèn đúc trang bị</small></div>
+      </div>
+
+      <!-- 2. Linh Thú Các / Dịch Trạm (Top-Right) -->
+      <div class="townPin" style="left:82%; top:22%;" data-hub="pet">
+        <div class="townPinBadge"><span class="townPinIcon">🐎</span></div>
+        <div class="townPinLabel">Linh Thú Các<small>Nuôi thú cưỡi</small></div>
+      </div>
+
+      <!-- 3. Đài Pha Lê / Tọa Thiền Tụ Khí (Center) -->
+      <div class="townPin townPinCore" style="left:50%; top:45%;" data-hub="cultivate">
+        <div class="townPinBadge townPinBadgeCore"><span class="townPinIcon">🔮</span></div>
+        <div class="townPinLabel">Linh Đài Tọa Thiền<small>Tụ khí đột phá</small></div>
+      </div>
+
+      <!-- 4. Tiên Phường / Dược Điếm (Mid-Left) -->
+      <div class="townPin" style="left:18%; top:44%;" data-hub="shop">
+        <div class="townPinBadge"><span class="townPinIcon">🏪</span></div>
+        <div class="townPinLabel">Tiên Phường<small>Mua đan dược & phù</small></div>
+      </div>
+
+      <!-- 5. Đan Phòng / Chế Tạo (Mid-Right) -->
+      <div class="townPin" style="left:82%; top:44%;" data-hub="crafting">
+        <div class="townPinBadge"><span class="townPinIcon">⚗️</span></div>
+        <div class="townPinLabel">Đan Phòng<small>Luyện chế tiên đan</small></div>
+      </div>
+
+      <!-- 6. Linh Dược Viên / Trồng Trọt (Bottom-Left) -->
+      <div class="townPin" style="left:22%; top:66%;" data-hub="farm">
+        <div class="townPinBadge"><span class="townPinIcon">🌿</span></div>
+        <div class="townPinLabel">Linh Dược Viên<small>Dược liệu linh thảo</small></div>
+      </div>
+
+      <!-- 7. Thôn Trưởng Phủ / Nhiệm Vụ (Bottom-Right) -->
+      <div class="townPin" style="left:80%; top:66%;" data-hub="daily">
+        <div class="townPinBadge"><span class="townPinIcon">🏛️</span></div>
+        <div class="townPinLabel">Thôn Trưởng Phủ<small>Phúc lợi & nhiệm vụ</small></div>
+      </div>
+    </div>
+
+    <!-- THANH HEADER THÔN TRANG TRÊN CÙNG -->
+    <header class="townTopBar glass3d">
+      <div class="townTitle">
+        <b>🏰 Thanh Vân Thôn</b>
+        <span>Đại Trận Kim Quang bảo hộ · Đạo hữu an tâm tu dưỡng</span>
+      </div>
+      <div class="townQuickBtns">
+        <button class="townHeaderBtn" data-hub="healing" title="Tiên Tuyền Tẩy Lễ">💧 Tiên Tuyền</button>
+        <button class="townHeaderBtn" data-hub="inventory" title="Túi Đồ">🎒 Túi Đồ</button>
+        <button class="townHeaderBtn" data-hub="skills" title="Kỹ Năng">📜 Kỹ Năng</button>
+      </div>
+    </header>
+
+    <!-- NÚT RỜI THÔN PHÍA DƯỚI CÙNG -->
+    <footer class="townBottomBar">
+      <button id="btnLeaveVillageTown" class="townLeaveBtn">
+        <span class="townLeaveIcon">🚪</span>
+        <div class="townLeaveText">
+          <b>RỜI KHỎI THÔN</b>
+          <small>Ra ngoại vi săn quái tu luyện</small>
+        </div>
+      </button>
+    </footer>
+  </div>
+
   <div id="panel" class="panel" hidden>
     <div class="panelBox">
       <header>
@@ -93,11 +221,10 @@
     </div>
   </div>
 </div>
-<script src="src/runtime-core.js?v=20260918-minimap-hardfix-v6.7"></script>
-<script src="src/config/render-quality.js?v=20260918-minimap-hardfix-v6.7"></script>
+<script src="src/runtime-core.js?v=20260918-v70"></script>
+<script src="src/config/render-quality.js?v=20260918-v70"></script>
 <script src="systems-progression.js?v=3"></script>
-<script src="item-master-data.js?v=1"></script>
-<script src="item-runtime.js?v=3"></script>
+<script src="item-runtime.js?v=4"></script>
 <script src="crafting-materials.js?v=2"></script>
 <script src="crafting-world-data.js?v=1"></script>
 <script src="crafting-professions.js?v=1"></script>
@@ -108,13 +235,13 @@
 <script src="artifact-growth-system.js?v=1"></script>
 <script src="refining-system.js?v=3"></script>
 <script src="crafting-gathering-patch.js?v=1"></script>
-<script src="crafting-gameplay-integration.js?v=3"></script>
+<script src="crafting-gameplay-integration.js?v=4"></script>
 <script>
 window.addEventListener('error',function(e){var m=document.getElementById('loadMsg');if(m)m.textContent='Lỗi GAME: '+(e.message||'Không xác định');});
 </script>
 <script src="skill-master-data.js?v=4"></script>
-<script src="src/skills/skill-system.js?v=20260918-minimap-hardfix-v6.7"></script>
-<script src="game.js?v=56"></script>
-<script src="src/config/mobile-camera-zoom.js?v=20260918-camera-v3"></script>
+<script src="src/skills/skill-system.js?v=20260918-v70"></script>
+<script src="game.js?v=20260918-v70"></script>
+<script src="src/config/mobile-camera-zoom.js?v=20260918-v70"></script>
 </body>
 </html>

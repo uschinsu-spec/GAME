@@ -1,5 +1,5 @@
-const BUILD='20260918-enemy-camps-minimap-v6.4';
-const CACHE={shell:'game-shell-v19',assets:'game-assets-v19',maps:'game-maps-v19'};
+const BUILD='20260918-v45';
+const CACHE={shell:'game-shell-v45',assets:'game-assets-v45',maps:'game-maps-v45'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
