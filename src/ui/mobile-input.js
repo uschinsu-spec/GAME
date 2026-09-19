@@ -1,0 +1,8 @@
+(()=>{'use strict';
+const state={x:0,y:0,active:false,pointerId:null};
+function clamp(v){return Math.max(-1,Math.min(1,v));}
+function set(x,y,active=true){state.x=clamp(Number(x)||0);state.y=clamp(Number(y)||0);state.active=!!active;window.GameEvents&&window.GameEvents.emit('mobileInputChanged',{...state});return state;}
+function reset(){state.x=0;state.y=0;state.active=false;state.pointerId=null;window.GameEvents&&window.GameEvents.emit('mobileInputChanged',{...state});}
+function bindJoystick(root,knob,{radius=46}={}){if(!root||!knob)return()=>{};const move=e=>{if(state.pointerId!==e.pointerId)return;const r=root.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,len=Math.hypot(dx,dy)||1,k=Math.min(1,radius/len),px=dx*k,py=dy*k;knob.style.transform=`translate(${px}px,${py}px)`;set(px/radius,py/radius,true);};const down=e=>{state.pointerId=e.pointerId;root.setPointerCapture&&root.setPointerCapture(e.pointerId);move(e);};const up=e=>{if(state.pointerId!==e.pointerId)return;knob.style.transform='translate(0,0)';reset();};root.addEventListener('pointerdown',down,{passive:false});root.addEventListener('pointermove',move,{passive:false});root.addEventListener('pointerup',up);root.addEventListener('pointercancel',up);return()=>{root.removeEventListener('pointerdown',down);root.removeEventListener('pointermove',move);root.removeEventListener('pointerup',up);root.removeEventListener('pointercancel',up);};}
+window.MobileInput={state,set,reset,bindJoystick};
+})();
