@@ -1,0 +1,9 @@
+(()=>{'use strict';
+const materials=new Map();
+function spriteMaterial(scene,url,id,{sampling,emissive=true,alpha=true}={}){if(!scene||!url)return null;const k=id||url;if(materials.has(k))return materials.get(k);const B=window.BABYLON;if(!B)return null;const m=new B.StandardMaterial('spr_'+String(k).replace(/[^a-z0-9_:-]/gi,'_'),scene);const t=new B.Texture(url,scene,false,true,sampling||B.Texture.TRILINEAR_SAMPLINGMODE);t.hasAlpha=alpha;m.diffuseTexture=t;if(emissive)m.emissiveTexture=t;m.useAlphaFromDiffuseTexture=alpha;m.emissiveColor=new B.Color3(1,1,1);m.specularColor=B.Color3.Black();m.disableLighting=true;m.backFaceCulling=false;m.transparencyMode=B.Material.MATERIAL_ALPHABLEND;materials.set(k,m);return m;}
+function billboard(scene,name,width,height,x,z,material){const B=window.BABYLON;if(!B||!scene)return null;const mesh=B.MeshBuilder.CreatePlane(name,{width,height},scene);mesh.billboardMode=B.Mesh.BILLBOARDMODE_ALL;mesh.position.set(x,height*.5,z);mesh.material=material||null;mesh.isPickable=false;return mesh;}
+function applyFacing(mesh,facing){if(!mesh)return;const sx=Math.abs(mesh.scaling.x)||1;mesh.scaling.x=facing==='left'?-sx:sx;}
+function setFrame(mesh,list,index=0){if(!mesh||!Array.isArray(list)||!list.length)return null;const i=Math.max(0,Math.min(list.length-1,Math.floor(index)||0));mesh.material=list[i]||list[0];return mesh.material;}
+function dispose(){for(const m of materials.values()){try{if(m.diffuseTexture)m.diffuseTexture.dispose();m.dispose();}catch(e){}}materials.clear();}
+window.SpriteRenderer={spriteMaterial,billboard,applyFacing,setFrame,dispose,materials};
+})();
