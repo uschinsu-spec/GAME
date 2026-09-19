@@ -8,6 +8,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/player/player-progression.js',
  'src/player/player-combat.js',
  'src/world/world-system.js',
+ 'src/world/map-loader.js',
  'src/enemy/enemy-system.js',
  'src/render/culling-system.js',
  'src/runtime/game-loop-system.js',
