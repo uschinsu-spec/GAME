@@ -2169,9 +2169,6 @@ function updateAlliedNpcs(dt){
         const dist = Math.max(0.01, Math.hypot(tdx, tdz));
         npc.facing = tdx < 0 ? 'left' : 'right';
 
-        npc.skillCd = (npc.skillCd || 0) - dt;
-        npc.attackCd = (npc.attackCd || 0) - dt;
-
         if(window.NpcAI){
           window.NpcAI.tickCombat(npc,bestTarget,dt,{
             bound:MAP_BOUND,
