@@ -21,6 +21,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/render/culling-system.js',
  'src/render/vfx-runtime.js',
  'src/skills/projectile-system.js',
+ 'src/skills/hoang-ha-vfx.js',
  'src/skills/skill-runtime.js',
  'src/runtime/runtime-context.js',
  'src/runtime/runtime-ownership.js',

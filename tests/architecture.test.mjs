@@ -78,5 +78,13 @@ assert.match(context.TuTienSystems.professionSummary(state),/Trận Pháp Sư/);
 run('skill-master-data.js');run('src/skills/skill-system.js');
 assert.deepEqual(JSON.parse(JSON.stringify(context.SkillSystem.validate())),{ok:true,count:144});
 assert.equal(context.SkillSystem.get('hoa_0_0').element,'Hỏa');
+run('src/skills/hoang-ha-vfx.js');
+assert.deepEqual(JSON.parse(JSON.stringify(context.HoangHaVfx.validate())),{ok:true,count:9});
+for(const id of Object.keys(context.HoangHaVfx.PROFILES)){
+  const skill=context.SkillSystem.get(id);
+  assert.ok(skill&&skill.tierIdx===0&&skill.rankIdx===0,`${id} phải là Hoàng Cấp Hạ Phẩm`);
+  assert.ok(fs.existsSync(skill.icon),`${id} thiếu icon`);
+  assert.ok(fs.existsSync(skill.vfx),`${id} thiếu VFX sheet`);
+}
 
 console.log('architecture.test: OK');
