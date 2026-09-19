@@ -14,6 +14,7 @@ function getAudio(){
   return audioCtx;
 }
 function sfx(type){
+  if(window.AudioSystem)return window.AudioSystem.sfx(type);
   try{
     const ctx=getAudio();if(!ctx)return;
     const now=ctx.currentTime;
@@ -1673,6 +1674,7 @@ function makeActor(type,x,z,elite=false){
   a.shadow.isPickable=false;
 
   actors.push(a);
+  if(window.EnemySystem)window.EnemySystem.bind(actors,boss);
   return a;
 }
 
@@ -2033,9 +2035,9 @@ function initializeAlliedNpcs(){
     const gateTarget = gates[i % gates.length];
 
     // Gán 1 bí tịch Hoàng Cấp Hạ Phẩm cố định cho từng NPC (phân bố đều toàn bộ 9 hệ)
-    const assignedSkill = ALLIED_HOANG_HA_SKILLS[i % ALLIED_HOANG_HA_SKILLS.length];
+    const assignedSkill = window.NpcSkillCatalog?window.NpcSkillCatalog.get(i):ALLIED_HOANG_HA_SKILLS[i % ALLIED_HOANG_HA_SKILLS.length];
 
-    alliedNpcs.push({
+    const npcRecord={
       id: 'ally_' + i,
       name: `【Đồng Môn · ${assignedSkill.faction}】 Tiên Hiệp [Luyện Khí · Sơ Kỳ]`,
       realm: 'Luyện Khí · Sơ Kỳ',
@@ -2064,7 +2066,9 @@ function initializeAlliedNpcs(){
       patrolWait: rnd(0.5, 2.0),
       target: null,
       mesh, shadow
-    });
+    };
+    alliedNpcs.push(npcRecord);
+    if(window.NpcSystem)window.NpcSystem.register(npcRecord);
   }
   console.info(`[AlliedNPC] Khởi tạo ${alliedNpcs.length} Đệ Tử Đồng Môn [Luyện Khí · Sơ Kỳ] sử dụng toàn bộ 9 hệ kỹ năng Hoàng Cấp Hạ Phẩm.`);
 }
@@ -2116,9 +2120,8 @@ function updateAlliedNpcs(dt){
     const distToPlayer2 = pdx * pdx + pdz * pdz;
 
     // Tối ưu hóa culling: nếu gần người chơi thì hiển thị 3D & bóng
-    const isNearPlayer = distToPlayer2 < 32400; // 180m
-    if(npc.mesh) npc.mesh.setEnabled(isNearPlayer);
-    if(npc.shadow) npc.shadow.setEnabled(distToPlayer2 < 4900); // 70m
+    const isNearPlayer = window.CullingSystem?window.CullingSystem.setActorVisible(npc,player,180,70):(distToPlayer2 < 32400);
+    if(!window.CullingSystem){if(npc.mesh)npc.mesh.setEnabled(isNearPlayer);if(npc.shadow)npc.shadow.setEnabled(distToPlayer2<4900);}
 
     // TRƯỜNG HỢP 1: ĐANG CHẠY TỪ TRONG THÔN RA NGOÀI CỔNG LÀNG
     if(npc.exitingVillage){
@@ -2169,33 +2172,24 @@ function updateAlliedNpcs(dt){
         npc.skillCd = (npc.skillCd || 0) - dt;
         npc.attackCd = (npc.attackCd || 0) - dt;
 
-        // THI TRIỂN SKILL HOÀNG CẤP HẠ PHẨM (TẦM XA 3.5m - 14m)
-        if(dist <= 14.0 && dist >= 3.2 && npc.skillCd <= 0){
-          npc.skillCd = rnd(2.2, 4.0);
-          npc.state = 'attack';
-          npc.frame = 0;
-          npc.animTimer = 0;
-          launchAlliedNpcSkill(npc, bestTarget);
-        } else if(dist > 2.6){
-          // Di chuyển áp sát quái vật
-          const nx = tdx / dist, nz = tdz / dist;
-          npc.x = clamp(npc.x + nx * npc.speed * dt, -MAP_BOUND, MAP_BOUND);
-          npc.z = clamp(npc.z + nz * npc.speed * dt, -MAP_BOUND, MAP_BOUND);
-          npc.facing = nx < -0.05 ? 'left' : 'right';
-          npc.state = 'run';
-        } else {
-          // Trong tầm cận chiến: chém kiếm khí / đao khí
-          if(npc.attackCd <= 0){
-            npc.attackCd = 0.95 + rnd(-0.15, 0.2);
-            npc.state = 'attack';
-            npc.frame = 0;
-            npc.animTimer = 0;
-            const slashColor = (npc.assignedSkill && npc.assignedSkill.color) || '#7eeaff';
-            slash(bestTarget.x, bestTarget.z, slashColor);
-            sfx(npc.assignedSkill ? npc.assignedSkill.sfx : 'slash');
-            const isCrit = Math.random() < 0.22;
-            damage(bestTarget, npc.atk, isCrit, npc.assignedSkill ? npc.assignedSkill.elem : 'physical', false, 'npc');
-          }
+        if(window.NpcAI){
+          window.NpcAI.tickCombat(npc,bestTarget,dt,{
+            bound:MAP_BOUND,
+            skillCooldown:()=>rnd(1.6,2.8),
+            attackCooldown:()=>1.05+rnd(-0.12,0.18),
+            castSkill:launchAlliedNpcSkill,
+            basicAttack:(unit,target)=>{
+              const slashColor=(unit.assignedSkill&&unit.assignedSkill.color)||'#7eeaff';
+              slash(target.x,target.z,slashColor);
+              sfx(unit.assignedSkill?unit.assignedSkill.sfx:'slash');
+              damage(target,Math.round(unit.atk*.72),Math.random()<.22,unit.assignedSkill?unit.assignedSkill.elem:'physical',false,'npc');
+            }
+          });
+        }else if(dist>2.6){
+          const nx=tdx/dist,nz=tdz/dist;
+          npc.x=clamp(npc.x+nx*npc.speed*dt,-MAP_BOUND,MAP_BOUND);
+          npc.z=clamp(npc.z+nz*npc.speed*dt,-MAP_BOUND,MAP_BOUND);
+          npc.state='run';
         }
       } else {
         // CHẠY KHẮP MAP ĐI TÌM QUÁI VẬT (MAP-WIDE EXPLORATION)
@@ -2275,6 +2269,7 @@ function spawnBoss(){
   const bossRegion=region();
   const bossType=bossRegion.bossType||'shadow';
   boss=makeActor(bossType,bx,bz,true);
+  if(window.EnemySystem)window.EnemySystem.setBoss(boss);
   const baseBossName=bossRegion.boss||'Xích Viêm Ma Lang';
   boss.name='【Thống Lĩnh】 '+baseBossName+' ['+boss.realmInfo.displayName+']';
   boss.maxHp*=5.5;
@@ -2504,6 +2499,7 @@ function kill(a,source='player'){
       toast('🏆 Đã tiêu diệt Boss!');
       sfx('breakthrough');
       boss=null;
+      if(window.EnemySystem)window.EnemySystem.setBoss(null);
       if($('#bossBar')) $('#bossBar').hidden=true;
       S.questKills=0;
     }
@@ -4333,8 +4329,8 @@ function drawMini(){
     let dx=a.x-player.x, dz=a.z-player.z;
     let d=Math.hypot(dx,dz);
     if(d<=RADAR_RANGE){
-      let px=cx+(dx/RADAR_RANGE)*rx;
-      let py=cy-(dz/RADAR_RANGE)*ry;
+      let projected=window.MinimapSystem?window.MinimapSystem.project(dx,dz,RADAR_RANGE,cx,cy,rx,ry):{x:cx+(dx/RADAR_RANGE)*rx,y:cy-(dz/RADAR_RANGE)*ry};
+      let px=projected.x,py=projected.y;
       if(a===boss){
         x.fillStyle='#ffd700';
         x.shadowColor='#ffd700';
