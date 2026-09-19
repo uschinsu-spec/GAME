@@ -1,7 +1,7 @@
 {
-  "buildVersion": "20260919-v99-hoang-ha-vfx",
+  "buildVersion": "20260919-v100-npc-combat-fix",
   "saveVersion": 5,
-  "shellCache": "game-shell-v99-hoang-ha-vfx",
-  "assetCache": "game-assets-v99-hoang-ha-vfx",
-  "mapCache": "game-maps-v99-hoang-ha-vfx"
+  "shellCache": "game-shell-v100-npc-combat-fix",
+  "assetCache": "game-assets-v100-npc-combat-fix",
+  "mapCache": "game-maps-v100-npc-combat-fix"
 }
