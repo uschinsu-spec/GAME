@@ -3,7 +3,9 @@ function appendScript(src){return new Promise((resolve,reject)=>{const s=documen
 async function load(version){const v=encodeURIComponent(version||'dev');const modules=[
  'src/audio/audio-system.js',
  'src/combat/realm-system.js',
+ 'src/combat/status-effect-system.js',
  'src/combat/damage-system.js',
+ 'src/player/player-progression.js',
  'src/world/world-system.js',
  'src/enemy/enemy-system.js',
  'src/render/culling-system.js',
