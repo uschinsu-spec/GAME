@@ -1,0 +1,8 @@
+(()=>{'use strict';
+const state={engine:null,scene:null,player:null,actors:[],npcs:[],boss:null,map:null,started:false,ready:false};
+function snapshot(){return{engine:state.engine,scene:state.scene,player:state.player,actors:state.actors,npcs:state.npcs,boss:state.boss,map:state.map,started:state.started,ready:state.ready};}
+function bind(partial={}){Object.assign(state,partial);state.ready=!!(state.engine&&state.scene);window.GameEvents&&window.GameEvents.emit('runtimeContextChanged',snapshot());return state;}
+function discover(){const B=window.BABYLON;const engine=(B&&B.EngineStore&&B.EngineStore.LastCreatedEngine)||(B&&B.Engine&&B.Engine.LastCreatedEngine)||state.engine;const scene=(B&&B.EngineStore&&B.EngineStore.LastCreatedScene)||(engine&&engine.scenes&&engine.scenes[0])||state.scene;const playerMesh=scene&&scene.getMeshByName?scene.getMeshByName('player'):null;const actors=window.EnemySystem&&window.EnemySystem.all?window.EnemySystem.all():state.actors;const npcs=window.NpcSystem&&window.NpcSystem.all?window.NpcSystem.all():state.npcs;return bind({engine,scene,player:state.player||playerMesh,actors,npcs,boss:window.EnemySystem?window.EnemySystem.boss:state.boss,map:window.WorldSystem&&window.WorldSystem.activeMap||state.map});}
+function setStarted(v=true){state.started=!!v;window.GameEvents&&window.GameEvents.emit('runtimeStartedChanged',{started:state.started});}
+window.RuntimeContext={state,bind,discover,snapshot,setStarted,get ready(){return state.ready;}};
+})();
