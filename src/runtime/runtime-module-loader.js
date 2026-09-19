@@ -34,7 +34,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/npc-identity-system.js'
  ];
  for(const path of modules){try{await appendScript(`${path}?v=${v}`);}catch(error){console.warn('[RuntimeModules]',error);}}
- if(window.RuntimeCoordinator)window.RuntimeCoordinator.start();
+ window.GameEvents&&window.GameEvents.emit('runtimeModulesReady',{version});
  return true;
 }
 window.RuntimeModuleLoader={load};
