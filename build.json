@@ -1,7 +1,7 @@
 {
-  "buildVersion": "20260919-v94",
+  "buildVersion": "20260919-v95",
   "saveVersion": 5,
-  "shellCache": "game-shell-v94",
-  "assetCache": "game-assets-v94",
-  "mapCache": "game-maps-v94"
+  "shellCache": "game-shell-v95",
+  "assetCache": "game-assets-v95",
+  "mapCache": "game-maps-v95"
 }
