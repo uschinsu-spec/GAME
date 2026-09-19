@@ -1,5 +1,5 @@
-const BUILD='20260919-v100-npc-combat-fix';
-const CACHE={shell:'game-shell-v100-npc-combat-fix',assets:'game-assets-v100-npc-combat-fix',maps:'game-maps-v100-npc-combat-fix'};
+const BUILD='20260919-v101-npc-four-sword-skills';
+const CACHE={shell:'game-shell-v101-npc-four-sword-skills',assets:'game-assets-v101-npc-four-sword-skills',maps:'game-maps-v101-npc-four-sword-skills'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
