@@ -25,6 +25,12 @@ assert.equal(state.inventory.equipment.length,1);
 assert.equal(state.inventory.artifacts.length,2);
 assert.equal(state.professions.alchemy.grade,2);
 assert.equal(state.items,state.inventory.consumables);
+assert.equal(state.craftingV2,state.crafting,'craftingV2 chỉ là alias compatibility, không được là state thứ hai');
+assert.equal(state.crafting.inventory,state.inventory.materials);
+assert.equal(state.crafting.crafted,state.inventory.consumables);
+assert.equal(state.crafting.formations,state.inventory.formations);
+assert.equal(state.crafting.artifacts,state.inventory.artifacts);
+assert.equal(state.crafting.professions,state.professions);
 const before=JSON.stringify(state.inventory);
 context.GameStateService.migrate(state);
 assert.equal(JSON.stringify(state.inventory),before,'migration phải idempotent');
@@ -36,7 +42,6 @@ assert.equal(added,1);
 assert.equal(context.InventorySystem.remove('hoa_van_thach',2,'materials'),true);
 assert.equal(context.InventorySystem.count('hoa_van_thach','materials'),1);
 
-// CraftingCore phải mutate đúng object inventory canonical, không thay reference.
 run('crafting-recipes.js');
 run('crafting-core.js');
 const craftInventory={tu_linh_tinh_hoa:3,huyet_sam_tinh_hoa:1};
@@ -52,7 +57,6 @@ assert.equal(craftResult.inventory,craftInventory,'crafting không được tạ
 assert.equal(craftInventory.tu_linh_tinh_hoa,undefined);
 assert.equal(craftInventory.huyet_sam_tinh_hoa,undefined);
 
-// Progression mới chỉ giữ progression/buff/formation compatibility; crafting legacy phải được archive và ngừng drop.
 state.progressionSystems={
  professions:{alchemy:{grade:4},forging:{grade:4},talisman:{grade:4}},
  materials:{linhThao:9,khoangThach:8,phuChi:7},
