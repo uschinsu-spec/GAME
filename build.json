@@ -1,7 +1,7 @@
 {
-  "buildVersion": "20260919-v100-npc-combat-fix",
+  "buildVersion": "20260919-v101-npc-four-sword-skills",
   "saveVersion": 5,
-  "shellCache": "game-shell-v100-npc-combat-fix",
-  "assetCache": "game-assets-v100-npc-combat-fix",
-  "mapCache": "game-maps-v100-npc-combat-fix"
+  "shellCache": "game-shell-v101-npc-four-sword-skills",
+  "assetCache": "game-assets-v101-npc-four-sword-skills",
+  "mapCache": "game-maps-v101-npc-four-sword-skills"
 }
