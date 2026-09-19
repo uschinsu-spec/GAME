@@ -1,5 +1,5 @@
-const BUILD='20260919-v99-hoang-ha-vfx';
-const CACHE={shell:'game-shell-v99-hoang-ha-vfx',assets:'game-assets-v99-hoang-ha-vfx',maps:'game-maps-v99-hoang-ha-vfx'};
+const BUILD='20260919-v100-npc-combat-fix';
+const CACHE={shell:'game-shell-v100-npc-combat-fix',assets:'game-assets-v100-npc-combat-fix',maps:'game-maps-v100-npc-combat-fix'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
@@ -23,7 +23,7 @@ self.addEventListener('fetch',event=>{
  const url=new URL(request.url);if(url.origin!==self.location.origin)return;
  if(request.mode==='navigate'||/\/index\.html$/.test(url.pathname)||/\/build\.json$/.test(url.pathname))return event.respondWith(networkFirst(request,CACHE.shell,true));
  if(/\/maps\/.*\.json$/.test(url.pathname))return event.respondWith(staleWhileRevalidate(request,CACHE.maps));
- if(/\.(png|webp|svg|jpg|jpeg|gif|mp3|ogg|wav)$/i.test(url.pathname))return event.respondWith(cacheFirst(request,CACHE.assets));
+ if(/\.(png|webp|svg|jpg|jpeg|gif|mp3|ogg|wav|glb|gltf|bin|ktx2|basis)$/i.test(url.pathname))return event.respondWith(cacheFirst(request,CACHE.assets));
  if(/\.(js|css|json|webmanifest)$/i.test(url.pathname))return event.respondWith(networkFirst(request,CACHE.shell,true));
  event.respondWith(networkFirst(request,CACHE.shell));
 });
