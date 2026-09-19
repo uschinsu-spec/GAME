@@ -1,0 +1,6 @@
+(()=>{'use strict';
+function targetFor(actor,ctx){if(!actor||!ctx)return null;let best=null,bestD2=(actor===ctx.boss?45:24)**2;const p=ctx.player;if(p&&p.x!=null){const dx=p.x-actor.x,dz=p.z-actor.z,d2=dx*dx+dz*dz;if(d2<bestD2){bestD2=d2;best={type:'player',target:p,d2};}}for(const npc of ctx.npcs||[]){if(!npc||npc.dead||npc.exitingVillage)continue;const dx=npc.x-actor.x,dz=npc.z-actor.z,d2=dx*dx+dz*dz;if(d2<bestD2){bestD2=d2;best={type:'npc',target:npc,d2};}}return best;}
+function intent(actor,ctx){const picked=targetFor(actor,ctx);if(picked){const t=picked.target,dx=t.x-actor.x,dz=t.z-actor.z,dist=Math.max(.001,Math.hypot(dx,dz));return{kind:dist>1.7?'approach':'attack',targetType:picked.type,target:t,dist,nx:dx/dist,nz:dz/dist,facingDx:dx};}if(actor&&actor.fixedSpawn){const dx=actor.homeX-actor.x,dz=actor.homeZ-actor.z,dist=Math.hypot(dx,dz);if(dist>.35)return{kind:'home',dist,nx:dx/Math.max(.001,dist),nz:dz/Math.max(.001,dist),facingDx:dx};}return{kind:'idle'};}
+function animationFrame(actor,dt){if(!actor)return null;const nextT=(actor.frameT||0)+dt;if(nextT<=.11)return{advance:false,frameT:nextT,frame:actor.frame||0};return{advance:true,frameT:0,frame:((actor.frame||0)+1)%8};}
+window.EnemyLegacyAdapter={targetFor,intent,animationFrame};
+})();
