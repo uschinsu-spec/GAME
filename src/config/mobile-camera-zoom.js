@@ -4,23 +4,15 @@
 const MOBILE=/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent||'')||(navigator.maxTouchPoints||0)>1||Math.min(innerWidth||9999,innerHeight||9999)<820;
 if(!MOBILE)return;
 
-const STORAGE_KEY='tutien_camera_zoom_mode_v2';
+const STORAGE_KEY='tutien_camera_zoom_mode_v3';
 const MIN_ASPECT=0.45;
 const MODES=[
   {id:'extreme-far', label:'CỰC XA',   portrait:54, landscape:58},
-  {id:'far',         label:'XA',       portrait:46, landscape:50},
-  {id:'wide',        label:'RỘNG',     portrait:40, landscape:44},
-  {id:'normal',      label:'VỪA',      portrait:35, landscape:39},
-  {id:'close',       label:'GẦN',      portrait:32, landscape:35},
-  {id:'very-close',  label:'RẤT GẦN',  portrait:28, landscape:31},
-  {id:'max-close',   label:'CỰC GẦN',  portrait:25, landscape:28},
-  {id:'ultra-close', label:'SIÊU GẦN', portrait:22, landscape:25},
-  {id:'portrait',    label:'CẬN CẢNH', portrait:19, landscape:22},
-  {id:'macro',       label:'SIÊU CẬN', portrait:16, landscape:19}
+  {id:'ultra-close', label:'SIÊU GẦN', portrait:22, landscape:25}
 ];
 
-// Keep the current game framing as the default on first load.
-let modeIndex=4;
+// Default to extreme-far overview on first load
+let modeIndex=0;
 try{
   const saved=Number(localStorage.getItem(STORAGE_KEY));
   if(Number.isInteger(saved)&&saved>=0&&saved<MODES.length)modeIndex=saved;
@@ -33,7 +25,7 @@ let levelText=null;
 let toast=null;
 let toastTimer=0;
 
-function currentMode(){return MODES[modeIndex]||MODES[4];}
+function currentMode(){return MODES[modeIndex]||MODES[0];}
 function desiredViewHeight(){
   const mode=currentMode();
   return innerHeight>=innerWidth?mode.portrait:mode.landscape;
@@ -54,8 +46,8 @@ function apply(camera,engine){
 function updateButton(){
   if(!button)return;
   const mode=currentMode();
-  button.setAttribute('aria-label','Zoom camera: '+mode.label+'. Nhấn để zoom gần hơn');
-  button.title='Camera '+mode.label+' — nhấn để zoom gần hơn';
+  button.setAttribute('aria-label','Zoom camera: '+mode.label+'. Nhấn để chuyển góc nhìn');
+  button.title='Camera '+mode.label+' — nhấn để đổi góc nhìn (CỰC XA / SIÊU GẦN)';
   if(levelText)levelText.textContent=(modeIndex+1)+'/'+MODES.length;
 }
 
@@ -82,50 +74,38 @@ function setMode(index,announce=true){
 }
 
 function nextMode(){
-  // Sequence is extreme far -> ... -> super close -> extreme far.
+  // Toggle between extreme far and super close
   setMode(modeIndex+1,true);
 }
 
 function makeUI(){
   if(button)return;
   const hud=document.querySelector('#hud')||document.body;
+  const existing=document.getElementById('cameraZoomBtn');
 
-  button=document.createElement('button');
-  button.id='cameraZoomBtn';
-  button.type='button';
-  button.innerHTML='<span aria-hidden="true" style="font-size:22px;line-height:1">🔍</span><b style="font-size:15px;line-height:1;margin-left:-4px;margin-top:-10px">+</b><small id="cameraZoomLevel" style="position:absolute;right:3px;bottom:2px;min-width:26px;padding:1px 4px;border-radius:9px;background:rgba(0,0,0,.64);font:700 9px/14px system-ui;color:#ffe59a">5/10</small>';
-  Object.assign(button.style,{
-    position:'absolute',
-    right:'max(10px, env(safe-area-inset-right))',
-    top:'52%',
-    transform:'translateY(-50%)',
-    width:'52px',
-    height:'52px',
-    borderRadius:'50%',
-    border:'1.5px solid rgba(255,224,132,.9)',
-    background:'radial-gradient(circle at 38% 30%,rgba(39,78,88,.96),rgba(8,25,31,.96) 68%)',
-    boxShadow:'0 3px 14px rgba(0,0,0,.42), inset 0 0 12px rgba(102,220,224,.16)',
-    color:'#fff7d0',
-    zIndex:'92',
-    display:'flex',
-    alignItems:'center',
-    justifyContent:'center',
-    gap:'0',
-    padding:'0',
-    margin:'0',
-    touchAction:'manipulation',
-    WebkitTapHighlightColor:'transparent',
-    userSelect:'none',
-    cursor:'pointer'
-  });
-  button.addEventListener('click',e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    nextMode();
-  });
-  button.addEventListener('pointerdown',e=>e.stopPropagation());
-  hud.appendChild(button);
-  levelText=button.querySelector('#cameraZoomLevel');
+  if(existing){
+    button=existing;
+    levelText=button.querySelector('#cameraZoomLevel');
+    button.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      nextMode();
+    });
+    button.addEventListener('pointerdown',e=>e.stopPropagation());
+  } else {
+    button=document.createElement('button');
+    button.id='cameraZoomBtn';
+    button.type='button';
+    button.innerHTML='<span aria-hidden="true" style="font-size:22px;line-height:1">🔍</span><b style="font-size:15px;line-height:1;margin-left:-4px;margin-top:-10px">±</b><small id="cameraZoomLevel" style="position:absolute;right:3px;bottom:2px;min-width:26px;padding:1px 4px;border-radius:9px;background:rgba(0,0,0,.64);font:700 9px/14px system-ui;color:#ffe59a">1/2</small>';
+    button.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      nextMode();
+    });
+    button.addEventListener('pointerdown',e=>e.stopPropagation());
+    hud.appendChild(button);
+    levelText=button.querySelector('#cameraZoomLevel');
+  }
 
   toast=document.createElement('div');
   toast.id='cameraZoomToast';

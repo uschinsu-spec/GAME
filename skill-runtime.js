@@ -34,7 +34,7 @@ function buildSkillCore(){
       minRealm:bal.minRealm,minLevel:bal.minLevel,mult:bal.mult,mp:bal.mp,cd:bal.cd,aoe:bal.aoe,hits:bal.hits,targetRange:bal.targetRange,
       forceCritAoE:!!bal.forceCritAoE,spiritScaling:!!edata.spiritScaling,costStones:bal.costStones,costCult:bal.costCult,upgradeCosts:bal.upgradeCosts,
       icon:'assets/skills/'+elemKey+'/'+tier.id+'_'+rank.id+'.png',
-      vfx:'assets/vfx/skills/'+elemKey+'/'+tier.id+'_'+rank.id+'.png',
+      vfx:'assets/vfx/skills/'+elemKey+'/'+tier.id+'_'+rank.id+'/vfx_sheet.png',
       role:profile.role||'',mechanicText:name+': '+(profile.mechanic||''),statusText:profile.status||'',effect:profile.effect||null
     };
   }
