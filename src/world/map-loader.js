@@ -1,0 +1,9 @@
+(()=>{'use strict';
+const cache=new Map();let manifest=null;
+function customOverride(url){if(typeof url!=='string')return null;const clean=url.split('?')[0],m=clean.match(/maps\/([^/]+)\.json$/);if(!m)return null;try{const raw=localStorage.getItem('tutien_custom_map_'+m[1]);return raw?JSON.parse(raw):null;}catch{return null;}}
+async function json(url,{reload=false}={}){const custom=customOverride(url);if(custom)return custom;if(!reload&&cache.has(url))return cache.get(url);let data;if(window.AssetManager&&window.AssetManager.loadJSON)data=await window.AssetManager.loadJSON(url);else{const res=await fetch(url,{cache:reload?'no-store':'default'});if(!res.ok)throw new Error('Không tải được '+url+' ('+res.status+')');data=await res.json();}cache.set(url,data);return data;}
+async function loadManifest(url='maps/manifest.json',{reload=false}={}){const root=await json(url,{reload});let maps=Array.isArray(root.maps)?root.maps:[];if(!maps.length&&Array.isArray(root.catalogs)&&root.catalogs.length){const catalogs=await Promise.all(root.catalogs.map(file=>json(file,{reload})));maps=catalogs.flatMap(c=>Array.isArray(c.maps)?c.maps:[]);}if(!maps.length)throw new Error('Danh mục map trống');manifest={...root,maps};window.GameEvents&&window.GameEvents.emit('mapManifestReady',{manifest});return manifest;}
+async function loadMap(meta,{reload=false}={}){if(!meta)throw new Error('Thiếu metadata map');const file=typeof meta==='string'?meta:(meta.file||`maps/${meta.id}.json`);const data=await json(file,{reload});const config=window.WorldSystem?window.WorldSystem.normalize(data,typeof meta==='object'?meta:{}):data;window.GameEvents&&window.GameEvents.emit('mapLoaded',{config,meta});return config;}
+function clear(){cache.clear();manifest=null;}
+window.MapLoader={json,loadManifest,loadMap,clear,get manifest(){return manifest;}};
+})();

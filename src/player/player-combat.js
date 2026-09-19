@@ -1,0 +1,10 @@
+(()=>{'use strict';
+const TYPES=['physical','Kim','Hỏa','Thủy','Mộc','Thổ','Phong','Lôi'];
+const normalize=t=>t==='Kiếm'||t==='Đao'?'physical':(TYPES.includes(t)?t:'physical');
+function component(state,type,techniqueMultiplier=1){type=normalize(type);return Math.max(0,Number(state&&state.damage&&state.damage[type])||0)*Math.max(0,Number(techniqueMultiplier)||1);}
+function total(state,getTechnique=()=>1){return TYPES.reduce((sum,t)=>sum+component(state,t,getTechnique(t)),0);}
+function damageStat(state,type,getTechnique=()=>1,matchingMult=1.35){type=normalize(type);const matching=component(state,type,getTechnique(type));return total(state,getTechnique)+matching*(matchingMult-1);}
+function defenseStat(state,type,{technique=1,realm=1,heart=1,system=1}={}){type=normalize(type);const base=Math.max(0,Number(state&&state.defense&&state.defense[type])||0);return base*Math.max(0,technique)*Math.max(0,realm)*Math.max(0,heart)*Math.max(0,system);}
+function skillPower(state,skill,mult=1,crit=false,ctx={}){const rawType=skill&&skill.element?skill.element:'physical',type=normalize(rawType);const base=damageStat(state,type,ctx.getTechniqueMultiplier||(()=>1),ctx.matchingMult||1.35);const heartSpirit=Math.max(0,Number(ctx.heartSpirit)||1);const spiritMult=skill&&skill.spiritScaling?1+(Math.max(0,Number(state.spiritSense)||0)*heartSpirit)/1000:1;const petMult=state&&state.pet?1.08:1;const critMult=crit?(Number(state.critDamage)||1.8):1;const swordMult=rawType==='Kiếm'?Math.max(1,Number(ctx.swordMultiplier)||1):1;const variance=ctx.variance==null?(.92+Math.random()*.16):Number(ctx.variance);return base*Math.max(0,Number(ctx.realmMultiplier)||1)*Math.max(0,Number(mult)||1)*spiritMult*petMult*critMult*swordMult*variance;}
+window.PlayerCombatSystem={TYPES,normalize,component,total,damageStat,defenseStat,skillPower};
+})();

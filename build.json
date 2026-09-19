@@ -1,7 +1,7 @@
 {
-  "buildVersion": "20260919-v82",
+  "buildVersion": "20260919-v83",
   "saveVersion": 5,
-  "shellCache": "game-shell-v82",
-  "assetCache": "game-assets-v82",
-  "mapCache": "game-maps-v82"
+  "shellCache": "game-shell-v83",
+  "assetCache": "game-assets-v83",
+  "mapCache": "game-maps-v83"
 }
