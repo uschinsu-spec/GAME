@@ -1,7 +1,7 @@
 {
-  "buildVersion": "20260919-v86",
+  "buildVersion": "20260919-v87",
   "saveVersion": 5,
-  "shellCache": "game-shell-v86",
-  "assetCache": "game-assets-v86",
-  "mapCache": "game-maps-v86"
+  "shellCache": "game-shell-v87",
+  "assetCache": "game-assets-v87",
+  "mapCache": "game-maps-v87"
 }
