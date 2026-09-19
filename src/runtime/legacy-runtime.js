@@ -3389,10 +3389,6 @@ function launchSkillProjectile(skill, targetX, targetZ, isAoe, aoeRange, targetO
   });
 }
 
-function launchAoeProjectile(skill, targetX, targetZ, aoeRange){
-  launchSkillProjectile(skill, targetX, targetZ, true, aoeRange);
-}
-
 function explodeSkillVfx(skill, tx, tz, isAoe, aoeRange){
   explodeVltkSwordImpact(skill, tx, tz, isAoe, aoeRange);
 }
