@@ -14,6 +14,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/enemy/enemy-spawn-system.js',
  'src/enemy/enemy-system.js',
  'src/enemy/enemy-ai.js',
+ 'src/enemy/enemy-legacy-adapter.js',
  'src/enemy/boss-system.js',
  'src/render/sprite-renderer.js',
  'src/render/animation-system.js',
