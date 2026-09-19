@@ -21,6 +21,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/render/vfx-runtime.js',
  'src/skills/projectile-system.js',
  'src/skills/skill-runtime.js',
+ 'src/runtime/runtime-context.js',
  'src/runtime/game-loop-system.js',
  'src/runtime/runtime-coordinator.js',
  'src/ui/floating-text-system.js',
@@ -31,7 +32,8 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/npc/npc-skills.js',
  'src/npc/npc-ai.js',
  'src/npc/npc-system.js',
- 'src/npc-identity-system.js'
+ 'src/npc-identity-system.js',
+ 'src/runtime/modern-runtime-bridge.js'
  ];
  for(const path of modules){try{await appendScript(`${path}?v=${v}`);}catch(error){console.warn('[RuntimeModules]',error);}}
  window.GameEvents&&window.GameEvents.emit('runtimeModulesReady',{version});
