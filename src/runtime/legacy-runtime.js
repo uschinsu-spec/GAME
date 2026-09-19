@@ -6100,6 +6100,9 @@ async function init(){
   await loadMapManifest();
 
   progress(10,'Khởi tạo Babylon.js Engine…');
+  if(!window.BABYLON||!BABYLON.Engine){
+    throw new Error('Babylon.js không tải được');
+  }
   engine=new BABYLON.Engine(canvas,true,{
     preserveDrawingBuffer:false,
     stencil:false,
@@ -6168,13 +6171,24 @@ async function init(){
       localStorage.setItem('tutien_last_build',event.data.build);
       if(previous&&previous!==event.data.build){save(true);toast('✨ Đã cập nhật bản GAME mới. Bản mới dùng khi tải lại trang.');}
     });
-    navigator.serviceWorker.register('./sw.js?v=20260918-enemy-camps-minimap-v6.4').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=20260919-v98').then(reg=>reg.update()).catch(()=>{});
   }
 }
 
 init().catch(e=>{
   console.error(e);
-  loadMsg.textContent='Lỗi khởi tạo: '+e.message;
-  startBtn.hidden=true;
+  const message=String(e&&e.message||e||'Không xác định');
+  const graphicsError=/webgl|canvas context|graphics context/i.test(message);
+  const libraryError=/babylon\.js không tải được/i.test(message);
+  if(graphicsError){
+    loadMsg.textContent='Trình duyệt chưa cấp WebGL. Hãy tắt chế độ tiết kiệm pin, đóng tab rồi mở lại bằng Safari hoặc Chrome mới nhất.';
+  }else if(libraryError){
+    loadMsg.textContent='Không tải được bộ máy đồ họa. Hãy kiểm tra mạng rồi thử lại.';
+  }else{
+    loadMsg.textContent='Lỗi khởi tạo: '+message;
+  }
+  startBtn.textContent='THỬ LẠI';
+  startBtn.hidden=false;
+  startBtn.onclick=()=>location.reload();
 });
 })();
