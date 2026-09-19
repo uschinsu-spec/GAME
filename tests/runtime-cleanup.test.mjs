@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const legacy=fs.readFileSync('src/runtime/legacy-runtime.js','utf8');
 const npcIdentity=fs.readFileSync('src/npc-identity-system.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
+for(const dead of ['skill-runtime.js','world-runtime.js','styles.css']) assert.equal(fs.existsSync(dead),false,`${dead} phải được xóa sau khi xác nhận không còn load/reference`);
 
 const count=(text,re)=>[...text.matchAll(re)].length;
 assert.equal(count(legacy,/function\s+launchAoeProjectile\s*\(/g),1,'launchAoeProjectile không được khai báo trùng');
