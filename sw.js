@@ -1,5 +1,5 @@
-const BUILD='20260919-v79';
-const CACHE={shell:'game-shell-v79',assets:'game-assets-v79',maps:'game-maps-v79'};
+const BUILD='20260919-v80';
+const CACHE={shell:'game-shell-v80',assets:'game-assets-v80',maps:'game-maps-v80'};
 const OWN=new Set(Object.values(CACHE));
 const SHELL=['./','./index.html','./style.css','./manifest.webmanifest','./build.json'];
 
