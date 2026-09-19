@@ -36,6 +36,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/npc/npc-skills.js',
  'src/npc/npc-ai.js',
  'src/npc/npc-system.js',
+ 'src/npc/npc-combat-fallback.js',
  'src/npc-identity-system.js',
  'src/runtime/modern-runtime-bridge.js'
  ];
