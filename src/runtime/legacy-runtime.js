@@ -3427,130 +3427,43 @@ function toast(t){
 }
 
 function updateActor(a,dt){
-  if(a.dead)return;
-  processActorSkillEffects(a);
-  if(a.dead)return;
-  if((a.stunT||0)>0){
-    a.stunT=Math.max(0,(a.stunT||0)-dt);
-    return;
-  }
-
-  // Khu an toàn tuyệt đối: actor nào lọt vào sẽ bị đẩy ra ngoài ngay.
-  ejectEnemyFromVillage(a);
-
-  let playerSafe=isVillageSafe(player.x,player.z);
-  let moveMult=getActorMoveMultiplier(a);
-  a.attackCd-=dt;
-  a.bossSkillCd=(a.bossSkillCd||4.5)-dt;
-
-  // Boss AoE Attack
-  if(a===boss&&a.bossSkillCd<=0){
-    a.bossSkillCd=6.0;
-    ring(player.x,player.z,'#ff3322',5);
-    toast('⚠ Boss phát động Xích Viêm Trận!');
-    setTimeout(()=>{
-      if(!a.dead&&!isVillageSafe(player.x,player.z)&&dist(player,{x:player.x,z:player.z})<4.5){
-        if(player.invuln<=0){
-          takePlayerDamage(a.atk*1.6,'Hỏa',a);
+  if(!window.EnemyLegacyAdapter||!window.EnemyLegacyAdapter.updateActor)return;
+  const ctx={player,actors,npcs:alliedNpcs||[],boss,playerSafe:isVillageSafe(player.x,player.z)};
+  window.EnemyLegacyAdapter.updateActor(a,dt,ctx,{
+    processEffects:processActorSkillEffects,
+    ejectSafe:ejectEnemyFromVillage,
+    moveMultiplier:getActorMoveMultiplier,
+    attackIntervalMultiplier:getActorAttackIntervalMultiplier,
+    isSafe:isVillageSafe,
+    random:rnd,
+    bossSkill(actor){
+      ring(player.x,player.z,'#ff3322',5);
+      toast('⚠ Boss phát động Xích Viêm Trận!');
+      setTimeout(()=>{
+        if(!actor.dead&&!isVillageSafe(player.x,player.z)&&dist(actor,player)<4.5&&player.invuln<=0){
+          takePlayerDamage(actor.atk*1.6,'Hỏa',actor);
         }
+      },1100);
+    },
+    attack(actor,targetType,target){
+      if(targetType==='player'){
+        if(player.invuln<=0)takePlayerDamage(actor.atk,actor.damageType||'physical',actor);
+      }else if(targetType==='npc'){
+        damageAlliedNpc(target,actor.atk,actor.damageType||'physical');
       }
-    },1100);
-  }
-
-  // TÌM MỤC TIÊU CHO QUÁI VẬT: Player hoặc Đệ Tử Đồng Môn (Allied NPC) gần nhất
-  let targetType = null; // 'player' | 'npc'
-  let targetObj = null;
-  let minD2 = 24.0 * 24.0; // Tầm aggro quái vật 24m (Boss toàn màn hình)
-  if(a === boss) minD2 = 45.0 * 45.0;
-
-  // 1. Xét Player
-  if(!playerSafe){
-    const pdx = player.x - a.x, pdz = player.z - a.z;
-    const pd2 = pdx * pdx + pdz * pdz;
-    if(pd2 < minD2){
-      minD2 = pd2;
-      targetType = 'player';
-      targetObj = player;
+    },
+    applyFrame(actor){
+      const facingDx=actor._facingDx!=null?actor._facingDx:(player.x-actor.x);
+      const frameIdx=facingDx<0?(actor.frame+8):actor.frame;
+      if(spriteMats[actor.type+frameIdx])actor.mesh.material=spriteMats[actor.type+frameIdx];
+      else if(spriteMats[actor.type+actor.frame])actor.mesh.material=spriteMats[actor.type+actor.frame];
+    },
+    syncTransform(actor){
+      actor.mesh.position.x=actor.x;actor.mesh.position.z=actor.z;actor.mesh.position.y=actor.size*.48;
+      if(actor.shadow){actor.shadow.position.x=actor.x;actor.shadow.position.z=actor.z;}
+      actor.mesh.scaling.setAll(1);
     }
-  }
-
-  // 2. Xét Đệ Tử Đồng Môn NPC 1 lân cận
-  if(alliedNpcs && alliedNpcs.length > 0){
-    for(let j = 0; j < alliedNpcs.length; j++){
-      const ally = alliedNpcs[j];
-      if(!ally || ally.dead || ally.exitingVillage || isVillageSafe(ally.x, ally.z)) continue;
-      const adx = ally.x - a.x, adz = ally.z - a.z;
-      const ad2 = adx * adx + adz * adz;
-      if(ad2 < minD2){
-        minD2 = ad2;
-        targetType = 'npc';
-        targetObj = ally;
-      }
-    }
-  }
-
-  // NẾU CÓ MỤC TIÊU (Player hoặc Allied NPC)
-  if(targetObj){
-    const tx = targetObj.x, tz = targetObj.z;
-    const tdx = tx - a.x, tdz = tz - a.z;
-    const td = Math.max(0.01, Math.hypot(tdx, tdz));
-
-    if(td > 1.7){
-      let oldX = a.x, oldZ = a.z;
-      let nextX = a.x + (tdx / td) * a.speed * moveMult * dt;
-      let nextZ = a.z + (tdz / td) * a.speed * moveMult * dt;
-
-      if(!isVillageSafe(nextX, nextZ)){
-        a.x = nextX;
-        a.z = nextZ;
-      }else{
-        a.x = oldX;
-        a.z = oldZ;
-      }
-    } else if(a.attackCd <= 0){
-      a.attackCd = (1.15 + rnd(0, 0.35)) * getActorAttackIntervalMultiplier(a);
-      if(targetType === 'player'){
-        if(player.invuln <= 0){
-          takePlayerDamage(a.atk, a.damageType || 'physical', a);
-        }
-      } else if(targetType === 'npc'){
-        damageAlliedNpc(targetObj, a.atk, a.damageType || 'physical');
-      }
-    }
-
-    // Cập nhật hướng quay mặt theo mục tiêu
-    a._facingDx = tdx;
-  } else {
-    // KHÔNG CÓ MỤC TIÊU: Quái quay về lãnh địa gốc (homeX, homeZ)
-    if(a.fixedSpawn){
-      const hdx = a.homeX - a.x, hdz = a.homeZ - a.z;
-      const hd = Math.hypot(hdx, hdz);
-      if(hd > 0.35){
-        const homeStep = Math.min(hd, a.speed * 0.65 * dt);
-        a.x += (hdx / Math.max(0.001, hd)) * homeStep;
-        a.z += (hdz / Math.max(0.001, hd)) * homeStep;
-        a._facingDx = hdx;
-      }
-    }
-  }
-
-  a.frameT += dt;
-  if(a.frameT > 0.11){
-    a.frameT = 0;
-    a.frame = (a.frame + 1) % 8;
-    let facingDx = a._facingDx != null ? a._facingDx : (player.x - a.x);
-    let frameIdx = facingDx < 0 ? (a.frame + 8) : a.frame;
-    if(spriteMats[a.type + frameIdx]) a.mesh.material = spriteMats[a.type + frameIdx];
-    else if(spriteMats[a.type + a.frame]) a.mesh.material = spriteMats[a.type + a.frame];
-  }
-  a.mesh.position.x = a.x;
-  a.mesh.position.z = a.z;
-  a.mesh.position.y = a.size * 0.48;
-  if(a.shadow){
-    a.shadow.position.x = a.x;
-    a.shadow.position.z = a.z;
-  }
-  a.mesh.scaling.setAll(1);
+  });
 }
 
 function playerDeath(){
