@@ -25,6 +25,7 @@ async function load(version){const v=encodeURIComponent(version||'dev');const mo
  'src/runtime/runtime-ownership.js',
  'src/runtime/game-loop-system.js',
  'src/runtime/runtime-coordinator.js',
+ 'src/runtime/migration-shadow.js',
  'src/ui/floating-text-system.js',
  'src/ui/minimap-system.js',
  'src/ui/hud-system.js',
