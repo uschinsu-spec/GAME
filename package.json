@@ -1,0 +1,12 @@
+{
+  "name": "thanh-van-kiem-khach",
+  "version": "1.0.0",
+  "description": "Thanh Van Kiem Khach - ARPG HTML5 Canvas Game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js --open"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5"
+  }
+}

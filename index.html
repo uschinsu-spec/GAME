@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Thanh Vân Kiếm Khách - Tiên Hiệp ARPG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Nunito:wght@600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=10">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Game Canvas Rendering Layer -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Top Left: Hero Status & Quest -->
+    <header class="hud-top-left">
+      <div class="player-card">
+        <div class="avatar-box">
+          <img id="avatar-img" src="assets/ui/hero_avatar_icon.webp" alt="Avatar">
+          <div class="level-badge">Lv.<span id="ui-level">12</span></div>
+        </div>
+        <div class="bars-container">
+          <!-- HP Bar -->
+          <div class="bar-row">
+            <div class="bar hp-bar">
+              <div class="bar-fill" id="hp-fill" style="width: 100%;"></div>
+              <span class="bar-text"><span id="ui-hp-cur">620</span>/<span id="ui-hp-max">620</span></span>
+            </div>
+          </div>
+          <!-- MP / Qi Bar -->
+          <div class="bar-row">
+            <div class="bar mp-bar">
+              <div class="bar-fill" id="mp-fill" style="width: 100%;"></div>
+              <span class="bar-text"><span id="ui-mp-cur">280</span>/<span id="ui-mp-max">280</span></span>
+            </div>
+          </div>
+          <!-- EXP Bar -->
+          <div class="bar-row">
+            <div class="bar exp-bar">
+              <div class="bar-fill" id="exp-fill" style="width: 0%;"></div>
+              <span class="bar-text">EXP <span id="ui-exp-cur">0</span>/<span id="ui-exp-max">1000</span></span>
+            </div>
+          </div>
+          <!-- Combat Power -->
+          <div class="power-row">
+            <span class="power-label">Chiến Lực:</span>
+            <span class="power-val" id="ui-power">8636</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quest Card -->
+      <div class="quest-card" id="quest-card" onclick="game.onQuestClick()">
+        <div class="quest-header">
+          <div class="quest-icon">❖</div>
+          <span class="quest-title" id="quest-type">Nhiệm vụ chính</span>
+        </div>
+        <div class="quest-content">
+          <div class="quest-desc" id="quest-desc">Đánh bại yêu thú ở ngoại ô</div>
+          <div class="quest-progress">
+            (<span id="quest-cur">12</span>/<span id="quest-target">30</span>)
+          </div>
+          <div class="quest-arrow">❯</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Top Right: Minimap Box (Radar Nền Đen - Chấm Vàng Player, Chấm Đỏ Enemy) -->
+    <header class="hud-top-right">
+      <div class="minimap-box" id="minimap-toggle" title="Nhấp để mở Bản đồ toàn cảnh thế giới">
+        <div class="minimap-header" id="ui-map-name">Thanh Vân Thôn</div>
+        <div class="minimap-canvas-wrapper">
+          <canvas id="minimap-radar"></canvas>
+        </div>
+      </div>
+    </header>
+
+    <!-- Floating Banner Notification / Level Up / Quest Banner -->
+    <div id="banner-notification" class="banner-notification">
+      <div class="banner-inner" id="banner-text">CẤP ĐỘ MỚI ĐẠT ĐƯỢC!</div>
+    </div>
+
+    <!-- Dedicated Non-blocking Quest Reward Toast Notification -->
+    <div id="quest-toast-hud" class="quest-toast-hud">
+      <div class="quest-toast-inner">
+        <div class="quest-toast-title">⚔️ HOÀN THÀNH NHIỆM VỤ! ⚔️</div>
+        <div class="quest-toast-desc" id="quest-toast-desc">Quét sạch yêu thú ngoại ô</div>
+        <div class="quest-toast-pills" id="quest-toast-pills">
+          <div class="q-pill q-exp">+1,000 EXP</div>
+          <div class="q-pill q-gold">+500 Vàng</div>
+          <div class="q-pill q-pot">+3 Huyết Đan</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Virtual Joystick (Khắp màn hình & Tự ẩn) -->
+    <div class="joystick-base" id="joystick-base">
+      <div class="joystick-thumb" id="joystick-thumb"></div>
+    </div>
+
+    <!-- Bottom Center: 4 Skill Slots & Bottom System Navigation Bar (TÚI, NHÂN VẬT, KỸ NĂNG, MENU) -->
+    <div class="hud-bottom-center">
+      <!-- 4 ô Kỹ Năng (Đè lâu để chọn kỹ năng đã học) -->
+      <div class="skills-bar" id="skills-bar">
+        <!-- Ô Skill 1 (Mặc định: Đánh Thường) -->
+        <button class="skill-btn" id="skill-slot-1" data-slot="1" title="Nhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng">
+          <div class="skill-icon-wrap s1-icon">
+            <img src="assets/ui/skill_attack_icon.webp" alt="Skill 1" id="slot-icon-1" class="skill-icon-img">
+          </div>
+          <div class="cooldown-overlay" id="cd-1"></div>
+          <div class="cd-number" id="cd-text-1"></div>
+          <div class="key-badge">1</div>
+          <div class="mp-cost-badge" id="mp-cost-1" style="display:none;">0</div>
+        </button>
+
+        <!-- Ô Skill 2 -->
+        <button class="skill-btn" id="skill-slot-2" data-slot="2" title="Nhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng">
+          <div class="skill-icon-wrap s2-icon">
+            <img src="assets/ui/skill_1_icon.webp" alt="Skill 2" id="slot-icon-2" class="skill-icon-img">
+          </div>
+          <div class="cooldown-overlay" id="cd-2"></div>
+          <div class="cd-number" id="cd-text-2"></div>
+          <div class="key-badge">2</div>
+          <div class="mp-cost-badge" id="mp-cost-2">25</div>
+        </button>
+
+        <!-- Ô Skill 3 -->
+        <button class="skill-btn" id="skill-slot-3" data-slot="3" title="Nhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng">
+          <div class="skill-icon-wrap s3-icon">
+            <img src="assets/ui/skill_3_icon.webp" alt="Skill 3" id="slot-icon-3" class="skill-icon-img">
+          </div>
+          <div class="cooldown-overlay" id="cd-3"></div>
+          <div class="cd-number" id="cd-text-3"></div>
+          <div class="key-badge">3</div>
+          <div class="mp-cost-badge" id="mp-cost-3">35</div>
+        </button>
+
+        <!-- Ô Skill 4 (Ultimate) -->
+        <button class="skill-btn ult-btn" id="skill-slot-4" data-slot="4" title="Nhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng">
+          <div class="skill-icon-wrap s4-icon">
+            <img src="assets/ui/skill_4_icon.webp" alt="Skill 4" id="slot-icon-4" class="skill-icon-img">
+          </div>
+          <div class="cooldown-overlay" id="cd-4"></div>
+          <div class="cd-number" id="cd-text-4"></div>
+          <div class="key-badge">4</div>
+          <div class="mp-cost-badge" id="mp-cost-4">70</div>
+        </button>
+      </div>
+
+      <!-- UI 5 Ô HỆ THỐNG: NHÂN VẬT, TÚI ĐỒ, KỸ NĂNG, MENU, CÀI ĐẶT -->
+      <nav class="bottom-system-bar">
+        <!-- 1. Nhân Vật -->
+        <button class="bottom-nav-btn" id="nav-character" onclick="ui.openMainModal('character')" title="Thuộc tính Nhân Vật">
+          <img src="assets/ui/nav_avatar_btn.png?v=3" alt="Nhân Vật" class="nav-btn-icon">
+          <span class="nav-btn-text">Nhân Vật</span>
+        </button>
+
+        <!-- 2. Túi Đồ -->
+        <button class="bottom-nav-btn" id="nav-bag" onclick="ui.openMainModal('bag')" title="Túi Đồ & Trang Bị">
+          <img src="assets/ui/nav_bag_btn.png?v=3" alt="Túi Đồ" class="nav-btn-icon">
+          <span class="nav-btn-text">Túi Đồ</span>
+          <span class="notif-dot" id="bag-notif" style="display:none;"></span>
+        </button>
+
+        <!-- 3. Kỹ Năng -->
+        <button class="bottom-nav-btn" id="nav-skills" onclick="ui.openMainModal('skills')" title="Bí Kịp Võ Công">
+          <img src="assets/ui/nav_skills_btn.png?v=3" alt="Kỹ Năng" class="nav-btn-icon">
+          <span class="nav-btn-text">Kỹ Năng</span>
+        </button>
+
+        <!-- 4. Menu -->
+        <button class="bottom-nav-btn" id="nav-menu" onclick="ui.openMainModal('menu')" title="Menu Hệ Thống">
+          <img src="assets/ui/nav_menu_btn.png?v=3" alt="Menu" class="nav-btn-icon">
+          <span class="nav-btn-text">Menu</span>
+        </button>
+
+        <!-- 5. Cài Đặt -->
+        <button class="bottom-nav-btn" id="nav-settings" onclick="ui.openMainModal('settings')" title="Cài Đặt Trò Chơi">
+          <img src="assets/ui/nav_settings_btn.png?v=3" alt="Cài Đặt" class="nav-btn-icon">
+          <span class="nav-btn-text">Cài Đặt</span>
+        </button>
+      </nav>
+    </div>
+
+
+
+    <!-- Bottom Right: Auto Combat Button (Nút Auto góc phải bên dưới) -->
+    <div class="hud-bottom-right">
+      <button class="auto-btn" id="btn-auto" onclick="game.toggleAuto()" title="Tự Động Chiến Đấu [R]">
+        <div class="auto-icon">⚔️</div>
+        <div class="auto-text">Auto</div>
+      </button>
+    </div>
+
+    <!-- Modals -->
+    <!-- 1. Inventory Modal -->
+    <!-- 1. Inventory & Equipment Modal (Phong cách ARPG Chuẩn 100% Theo Mẫu Thiết Kế Mới) -->
+    <div class="modal-backdrop" id="modal-bag">
+      <div class="modal-box bag-modal-box-v2">
+        <!-- Ornate Golden Corners -->
+        <div class="gold-corner corner-tl"></div>
+        <div class="gold-corner corner-tr"></div>
+        <div class="gold-corner corner-bl"></div>
+        <div class="gold-corner corner-br"></div>
+
+        <!-- Header: Tiêu đề bên trái, Vàng & nút Đóng bên phải -->
+        <div class="modal-header bag-modal-header-v2">
+          <div class="bag-title-wrap">
+            <span class="gold-ornament-left">❖</span>
+            <h2 class="bag-title-v2" id="unified-modal-title">TÚI ĐỒ &amp; TRANG BỊ</h2>
+            <span class="gold-ornament-right">❖</span>
+          </div>
+          <div class="bag-header-right-v2">
+            <div class="bag-gold-display-v2">
+              <span class="gold-lbl">Vàng:</span>
+              <span class="gold-val" id="ui-coins">1,250</span>
+              <img src="assets/ui/gold_coin_icon.png" alt="Vàng" class="gold-coin-img">
+            </div>
+            <button class="modal-close bag-modal-close-v2" onclick="ui.closeModals()" title="Đóng">✕</button>
+          </div>
+        </div>
+
+        <div class="modal-body bag-vertical-layout-v2 unified-modal-body">
+          <!-- ================= TAB 1: NHÂN VẬT ================= -->
+          <div class="unified-tab-pane" id="tab-pane-character">
+            <!-- 1. Hero Summary Card -->
+            <div class="char-tab-hero-card">
+              <div class="char-avatar-ring">
+                <img src="assets/ui/hero_avatar_icon.webp" alt="Avatar" class="char-avatar-img">
+                <span class="char-class-badge">Kiếm Sĩ</span>
+              </div>
+              <div class="char-hero-title">
+                <div class="char-hero-name-row">
+                  <span class="char-hero-name">Thanh Vân Kiếm Sĩ</span>
+                  <span class="char-hero-level" id="char-level-badge">Lv.12</span>
+                </div>
+                <div class="char-hero-title-sub">Danh hiệu: <span class="val-gold">Vô Song Kiếm Khách</span></div>
+                <div class="char-hero-power">Chiến Lực: <span class="val-gold" id="char-power-val">8,666</span> ⚔️</div>
+              </div>
+              <button class="btn-char-promote" onclick="ui.promoteHero()">Đột Phá</button>
+            </div>
+
+            <!-- 2. EXP Bar -->
+            <div class="char-tab-exp-box">
+              <div class="exp-box-header">
+                <span class="exp-title">Tiến Độ Tu Luyện (EXP)</span>
+                <span class="exp-nums" id="char-tab-exp-text">750 / 1,000 EXP (75%)</span>
+              </div>
+              <div class="char-exp-bar-bg">
+                <div class="char-exp-bar-fill" id="char-tab-exp-fill" style="width: 75%;"></div>
+              </div>
+            </div>
+
+            <!-- 3. RPG Attributes Grid (6 Stats with custom icons) -->
+            <div class="char-tab-stats-panel">
+              <div class="char-panel-heading">THUỘC TÍNH BẢN THÂN</div>
+              <div class="char-tab-stats-grid">
+                <!-- HP -->
+                <div class="char-stat-card">
+                  <img src="assets/ui/stat_hp.png" alt="HP" class="char-stat-icon">
+                  <div class="char-stat-meta">
+                    <span class="stat-name">Sinh Mệnh (HP)</span>
+                    <span class="stat-val val-green" id="char-stat-hp">620 / 620</span>
+                  </div>
+                </div>
+                <!-- MP -->
+                <div class="char-stat-card">
+                  <img src="assets/ui/stat_mp.png" alt="MP" class="char-stat-icon">
+                  <div class="char-stat-meta">
+                    <span class="stat-name">Chân Khí (MP)</span>
+                    <span class="stat-val val-blue" id="char-stat-mp">180 / 180</span>
+                  </div>
+                </div>
+                <!-- ATK -->
+                <div class="char-stat-card">
+                  <img src="assets/ui/stat_atk.png" alt="ATK" class="char-stat-icon">
+                  <div class="char-stat-meta">
+                    <span class="stat-name">Công Kích (ATK)</span>
+                    <span class="stat-val val-gold" id="char-stat-atk">185</span>
+                  </div>
+                </div>
+                <!-- DEF -->
+                <div class="char-stat-card">
+                  <img src="assets/ui/stat_def.png" alt="DEF" class="char-stat-icon">
+                  <div class="char-stat-meta">
+                    <span class="stat-name">Phòng Ngự (DEF)</span>
+                    <span class="stat-val val-blue" id="char-stat-def">82</span>
+                  </div>
+                </div>
+                <!-- CRIT -->
+                <div class="char-stat-card">
+                  <img src="assets/ui/stat_crit.png" alt="CRIT" class="char-stat-icon">
+                  <div class="char-stat-meta">
+                    <span class="stat-name">Bạo Kích (CRIT)</span>
+                    <span class="stat-val val-orange" id="char-stat-crit">25%</span>
+                  </div>
+                </div>
+                <!-- ATK SPEED -->
+                <div class="char-stat-card">
+                  <img src="assets/ui/stat_speed.png" alt="Tốc Đánh" class="char-stat-icon">
+                  <div class="char-stat-meta">
+                    <span class="stat-name">Tốc Độ Đánh</span>
+                    <span class="stat-val val-cyan" id="char-stat-aspeed">1.25 /s</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Quick Equip Summary -->
+            <div class="char-quick-equip-wrap">
+              <div class="char-quick-equip-header">
+                <span>TRANG BỊ ĐANG MẶC</span>
+                <button class="btn-goto-bag" onclick="ui.switchMainTab('bag')">Quản lý túi đồ ➔</button>
+              </div>
+              <div class="char-quick-equip-icons" id="char-quick-equip-row">
+                <!-- Rendered by JS -->
+              </div>
+            </div>
+
+            <!-- 5. Actions -->
+            <div class="char-tab-actions">
+              <button class="btn-char-action btn-char-reset" onclick="ui.resetPlayerStats()">Tẩy Điểm</button>
+              <button class="btn-char-action btn-char-auto" onclick="ui.autoAllocateStats()">Tự Động Cộng Điểm</button>
+            </div>
+          </div>
+
+          <!-- ================= TAB 2: TÚI ĐỒ (ACTIVE MẶC ĐỊNH) ================= -->
+          <div class="unified-tab-pane active" id="tab-pane-bag">
+            <!-- PHẦN 1: SHOWCASE NHÂN VẬT & 10 Ô TRANG BỊ (5 TRÁI, 5 PHẢI) -->
+            <div class="bag-showcase-section">
+              <!-- Cột trái: 5 Ô Trang Bị (Vũ Khí, Áo Giáp, Quần, Giày, Thắt Lưng) -->
+              <div class="equip-column equip-column-left">
+                <!-- 1. Vũ Khí -->
+                <div class="equip-slot-item" id="slot-wrap-weapon">
+                  <div class="equip-slot-box" id="equip-slot-weapon"></div>
+                  <span class="equip-slot-label">Vũ Khí</span>
+                </div>
+                <!-- 2. Áo Giáp -->
+                <div class="equip-slot-item" id="slot-wrap-armor">
+                  <div class="equip-slot-box" id="equip-slot-armor"></div>
+                  <span class="equip-slot-label">Áo Giáp</span>
+                </div>
+                <!-- 3. Quần -->
+                <div class="equip-slot-item" id="slot-wrap-pants">
+                  <div class="equip-slot-box" id="equip-slot-pants"></div>
+                  <span class="equip-slot-label">Quần</span>
+                </div>
+                <!-- 4. Giày -->
+                <div class="equip-slot-item" id="slot-wrap-boots">
+                  <div class="equip-slot-box" id="equip-slot-boots"></div>
+                  <span class="equip-slot-label">Giày</span>
+                </div>
+                <!-- 5. Thắt Lưng -->
+                <div class="equip-slot-item" id="slot-wrap-belt">
+                  <div class="equip-slot-box" id="equip-slot-belt"></div>
+                  <span class="equip-slot-label">Thắt Lưng</span>
+                </div>
+              </div>
+
+              <!-- Ở giữa: Nhân vật toàn thân + Vòng ma trận thiên văn phát sáng xanh -->
+              <div class="hero-showcase-center">
+                <img src="assets/ui/hero_showcase_blue.png" alt="Nhân vật kiếm khách" class="hero-blue-showcase-img">
+              </div>
+
+              <!-- Cột phải: 5 Ô Trang Bị (Nón, Dây Chuyền, Nhẫn, 2 Ô Trống +) -->
+              <div class="equip-column equip-column-right">
+                <!-- 1. Nón -->
+                <div class="equip-slot-item" id="slot-wrap-helmet">
+                  <div class="equip-slot-box" id="equip-slot-helmet"></div>
+                  <span class="equip-slot-label">Nón</span>
+                </div>
+                <!-- 2. Dây Chuyền -->
+                <div class="equip-slot-item" id="slot-wrap-amulet">
+                  <div class="equip-slot-box" id="equip-slot-amulet"></div>
+                  <span class="equip-slot-label">Dây Chuyền</span>
+                </div>
+                <!-- 3. Nhẫn -->
+                <div class="equip-slot-item" id="slot-wrap-ring">
+                  <div class="equip-slot-box" id="equip-slot-ring"></div>
+                  <span class="equip-slot-label">Nhẫn</span>
+                </div>
+                <!-- 4. Ô phụ 1 (+) -->
+                <div class="equip-slot-item slot-item-empty-plus" id="slot-wrap-extra1">
+                  <div class="equip-slot-box empty-plus-box" title="Ô phụ kiện">
+                    <span class="plus-icon">+</span>
+                  </div>
+                </div>
+                <!-- 5. Ô phụ 2 (+) -->
+                <div class="equip-slot-item slot-item-empty-plus" id="slot-wrap-extra2">
+                  <div class="equip-slot-box empty-plus-box" title="Ô phụ kiện">
+                    <span class="plus-icon">+</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PHẦN 2: TÚI ĐỒ 40 Ô (LƯỚI 8 CỘT x 5 HÀNG TRONG KHUNG HOÀNG KIM) -->
+            <div class="inventory-outer-panel">
+              <div class="inv-panel-header">
+                <span class="inv-capacity-counter-v2" id="inv-count-badge">5/40</span>
+              </div>
+              <div class="inventory-slots-grid-40" id="inventory-slots-container">
+                <!-- 40 ô túi đồ sinh động bởi JS (8 cột x 5 hàng) -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ================= TAB 3: KỸ NĂNG ================= -->
+          <div class="unified-tab-pane" id="tab-pane-skills">
+            <div class="skills-tab-topbar">
+              <div class="skills-sp-badge">
+                <span class="sp-lbl">Điểm Kỹ Năng:</span>
+                <span class="sp-val" id="skills-sp-val">3 SP</span>
+              </div>
+              <span class="skills-hint">Chạm giữ phím tắt ngoài trận đấu để gán ô chiêu thức</span>
+            </div>
+            <div class="skills-tab-list" id="skills-tab-list-container">
+              <!-- Rendered by JS: Cards with upgrade buttons, cooldown, MP cost -->
+            </div>
+          </div>
+
+          <!-- ================= TAB 4: MENU HỆ THỐNG (THAY NHIỆM VỤ) ================= -->
+          <div class="unified-tab-pane" id="tab-pane-menu">
+            <div class="menu-tab-intro">
+              <span>HỆ THỐNG TÍNH NĂNG &amp; HOẠT ĐỘNG THẾ GIỚI</span>
+            </div>
+            <div class="menu-tab-grid">
+              <!-- 1. Nhiệm Vụ -->
+              <div class="menu-feature-card" onclick="ui.onMenuFeatureClick('quest')">
+                <div class="menu-icon-wrap">
+                  <img src="assets/ui/menu_quest_icon.png" alt="Nhiệm Vụ" class="menu-card-img">
+                  <span class="menu-badge-dot">!</span>
+                </div>
+                <div class="menu-card-title">Nhiệm Vụ</div>
+                <div class="menu-card-desc">Cốt truyện &amp; Nhiệm vụ hàng ngày</div>
+              </div>
+
+              <!-- 2. Phụ Bản / Boss -->
+              <div class="menu-feature-card" onclick="ui.onMenuFeatureClick('dungeon')">
+                <div class="menu-icon-wrap">
+                  <img src="assets/ui/menu_dungeon_icon.png" alt="Phụ Bản" class="menu-card-img">
+                </div>
+                <div class="menu-card-title">Phụ Bản</div>
+                <div class="menu-card-desc">Tháp Kiếm Ma &amp; Boss Cổ Đại</div>
+              </div>
+
+              <!-- 3. Bảng Xếp Hạng -->
+              <div class="menu-feature-card" onclick="ui.onMenuFeatureClick('rank')">
+                <div class="menu-icon-wrap">
+                  <img src="assets/ui/menu_rank_icon.png" alt="Xếp Hạng" class="menu-card-img">
+                </div>
+                <div class="menu-card-title">Xếp Hạng</div>
+                <div class="menu-card-desc">Top cao thủ lực chiến server</div>
+              </div>
+
+              <!-- 4. Hòm Thư -->
+              <div class="menu-feature-card" onclick="ui.onMenuFeatureClick('mail')">
+                <div class="menu-icon-wrap">
+                  <img src="assets/ui/menu_mail_icon.png" alt="Hòm Thư" class="menu-card-img">
+                  <span class="menu-badge-num">1</span>
+                </div>
+                <div class="menu-card-title">Hòm Thư</div>
+                <div class="menu-card-desc">Thư hệ thống &amp; quà tặng</div>
+              </div>
+
+              <!-- 5. Thành Tựu -->
+              <div class="menu-feature-card" onclick="ui.onMenuFeatureClick('achievement')">
+                <div class="menu-icon-wrap">
+                  <img src="assets/ui/menu_achievement_icon.png" alt="Thành Tựu" class="menu-card-img">
+                </div>
+                <div class="menu-card-title">Thành Tựu</div>
+                <div class="menu-card-desc">Mở khóa danh hiệu cao quý</div>
+              </div>
+
+              <!-- 6. Điểm Danh -->
+              <div class="menu-feature-card" onclick="ui.onMenuFeatureClick('daily')">
+                <div class="menu-icon-wrap">
+                  <img src="assets/ui/menu_daily_icon.png" alt="Điểm Danh" class="menu-card-img">
+                  <span class="menu-badge-dot">!</span>
+                </div>
+                <div class="menu-card-title">Điểm Danh</div>
+                <div class="menu-card-desc">Điểm danh 7 ngày nhận vàng</div>
+              </div>
+
+              <!-- 7. Giftcode -->
+              <div class="menu-feature-card" onclick="ui.onMenuFeatureClick('giftcode')">
+                <div class="menu-icon-wrap">
+                  <img src="assets/ui/menu_giftcode_icon.png" alt="Giftcode" class="menu-card-img">
+                </div>
+                <div class="menu-card-title">Đổi Giftcode</div>
+                <div class="menu-card-desc">Nhập mã nhận trang bị VIP</div>
+              </div>
+
+              <!-- 8. Hướng Dẫn -->
+              <div class="menu-feature-card" onclick="ui.onMenuFeatureClick('guide')">
+                <div class="menu-icon-wrap">
+                  <img src="assets/ui/menu_guide_icon.png" alt="Hướng Dẫn" class="menu-card-img">
+                </div>
+                <div class="menu-card-title">Hướng Dẫn</div>
+                <div class="menu-card-desc">Cẩm nang phím tắt &amp; tân thủ</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ================= TAB 5: CÀI ĐẶT TRÒ CHƠI ================= -->
+          <div class="unified-tab-pane" id="tab-pane-settings">
+            <!-- 1. Âm Thanh -->
+            <div class="settings-group-box">
+              <div class="settings-group-title">🔊 ÂM THANH &amp; NHẠC NỀN</div>
+              <div class="settings-tab-row">
+                <div class="setting-text">
+                  <span class="setting-title">Âm thanh chiến đấu (SFX)</span>
+                  <span class="setting-sub">Hiệu ứng chém kiếm, kỹ năng, va chạm</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-sound" checked onchange="audioManager.toggleSound(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="settings-tab-row">
+                <div class="setting-text">
+                  <span class="setting-title">Nhạc nền thế giới (BGM)</span>
+                  <span class="setting-sub">Giai điệu tiên hiệp thanh tịnh</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-bgm" checked onchange="audioManager.toggleBGM(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 2. Auto Combat -->
+            <div class="settings-group-box">
+              <div class="settings-group-title">⚔️ CHIẾN ĐẤU TỰ ĐỘNG (AUTO COMBAT)</div>
+              <div class="settings-tab-row">
+                <div class="setting-text">
+                  <span class="setting-title">Tự động tung kỹ năng (Auto Skill)</span>
+                  <span class="setting-sub">Tự xuất chiêu khi đủ mana và hồi chiêu</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-auto-skill" checked onchange="if(window.game) window.game.autoUseSkills = this.checked">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="settings-tab-row">
+                <div class="setting-text">
+                  <span class="setting-title">Tự động nhặt đồ rơi (Auto Loot)</span>
+                  <span class="setting-sub">Tự hút vàng và vật phẩm quái rơi</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-auto-loot" checked onchange="if(window.game) window.game.autoLoot = this.checked">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 3. Đồ Họa & Hiệu Ứng -->
+            <div class="settings-group-box">
+              <div class="settings-group-title">🖥️ ĐỒ HỌA &amp; HIỆU ỨNG</div>
+              <div class="settings-tab-row">
+                <div class="setting-text">
+                  <span class="setting-title">Rung màn hình (Screen Shake)</span>
+                  <span class="setting-sub">Tạo cảm giác uy lực khi tung đại chiêu</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-shake" checked onchange="if(window.game) window.game.screenShakeEnabled = this.checked">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="settings-tab-row">
+                <div class="setting-text">
+                  <span class="setting-title">Hiện số sát thương bay</span>
+                  <span class="setting-sub">Hiển thị sát thương và bạo kích khi đánh trúng</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-damage-num" checked onchange="if(window.game) window.game.showDamageNumbers = this.checked">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 4. Dữ Liệu & Tài Khoản -->
+            <div class="settings-group-box">
+              <div class="settings-group-title">💾 HỆ THỐNG &amp; DỮ LIỆU</div>
+              <div class="settings-actions-row">
+                <button class="btn-settings-action btn-save" onclick="ui.saveGameData()">Lưu Dữ Liệu Game</button>
+                <button class="btn-settings-action btn-restart" onclick="ui.resetGameData()">Chơi Lại Từ Đầu</button>
+              </div>
+              <div class="settings-ver-info">Phiên bản: v2.5.0 • Canvas HTML5 Engine • Auto-Save Enabled</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHẦN 3: THANH ĐIỀU HƯỚNG 5 NÚT DƯỚI CÙNG (CHUYỂN TAB TRỰC TIẾP TRONG KHUNG) -->
+        <nav class="bag-bottom-nav-v2">
+          <!-- 1. Nhân Vật -->
+          <div class="bag-nav-item-v2" id="nav-item-character" onclick="ui.switchMainTab('character')" title="Nhân Vật">
+            <img src="assets/ui/nav_avatar_btn.png?v=3" alt="Nhân Vật" class="bag-nav-btn-img" id="nav-img-character">
+            <span class="bag-nav-lbl" id="nav-lbl-character">Nhân Vật</span>
+          </div>
+
+          <!-- 2. Túi Đồ (ACTIVE Mặc Định) -->
+          <div class="bag-nav-item-v2 active" id="nav-item-bag" onclick="ui.switchMainTab('bag')" title="Túi Đồ &amp; Trang Bị">
+            <img src="assets/ui/nav_bag_btn.png?v=3" alt="Túi Đồ" class="bag-nav-btn-img nav-btn-active" id="nav-img-bag">
+            <span class="bag-nav-lbl active-lbl" id="nav-lbl-bag">Túi Đồ</span>
+          </div>
+
+          <!-- 3. Kỹ Năng -->
+          <div class="bag-nav-item-v2" id="nav-item-skills" onclick="ui.switchMainTab('skills')" title="Kỹ Năng">
+            <img src="assets/ui/nav_skills_btn.png?v=3" alt="Kỹ Năng" class="bag-nav-btn-img" id="nav-img-skills">
+            <span class="bag-nav-lbl" id="nav-lbl-skills">Kỹ Năng</span>
+          </div>
+
+          <!-- 4. Menu (Thay Nhiệm Vụ) -->
+          <div class="bag-nav-item-v2" id="nav-item-menu" onclick="ui.switchMainTab('menu')" title="Menu Hệ Thống">
+            <img src="assets/ui/nav_menu_btn.png?v=3" alt="Menu" class="bag-nav-btn-img" id="nav-img-menu">
+            <span class="bag-nav-lbl" id="nav-lbl-menu">Menu</span>
+          </div>
+
+          <!-- 5. Cài Đặt -->
+          <div class="bag-nav-item-v2" id="nav-item-settings" onclick="ui.switchMainTab('settings')" title="Cài Đặt">
+            <img src="assets/ui/nav_settings_btn.png?v=3" alt="Cài Đặt" class="bag-nav-btn-img" id="nav-img-settings">
+            <span class="bag-nav-lbl" id="nav-lbl-settings">Cài Đặt</span>
+          </div>
+        </nav>
+      </div>
+    </div>
+
+    <!-- 1.5 Item Detail Inspection Modal (Ấn vào đồ sẽ hiện thông tin món đồ) -->
+    <div class="modal-backdrop" id="modal-item-detail" style="z-index: 100;">
+      <div class="modal-box item-detail-box">
+        <div class="modal-header">
+          <h2 id="item-detail-title">THÔNG TIN VẬT PHẨM</h2>
+          <button class="modal-close" onclick="ui.closeItemDetail()">✕</button>
+        </div>
+        <div class="modal-body item-detail-body">
+          <div class="item-detail-header">
+            <div class="item-detail-icon-wrap" id="item-detail-icon-wrap">
+              <img src="assets/items/item_sword.webp" alt="Item" id="item-detail-icon">
+            </div>
+            <div class="item-detail-main-info">
+              <div class="item-detail-name" id="item-detail-name">Thanh Phong Kiếm +3</div>
+              <div class="item-detail-badges">
+                <span class="badge-type" id="item-detail-type">Vũ Khí</span>
+                <span class="badge-quality" id="item-detail-quality">Cực Phẩm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item-detail-stats-box">
+            <div class="stats-box-title">CHỈ SỐ THUỘC TÍNH</div>
+            <div class="stats-box-content" id="item-detail-stats">+165 Công Kích, +0.06 Tốc Đánh</div>
+          </div>
+
+          <div class="item-detail-desc-box">
+            <div class="desc-box-title">MÔ TẢ VẬT PHẨM</div>
+            <div class="desc-box-content" id="item-detail-desc">Thần kiếm Thanh Vân...</div>
+          </div>
+
+          <div class="item-detail-actions" id="item-detail-actions">
+            <!-- Buttons injected by JS: Trang Bị / Tháo Ra / Sử Dụng / Cường Hóa / Đóng -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1.8 Character Attributes Modal (Thuộc Tính Nhân Vật) -->
+    <div class="modal-backdrop" id="modal-character">
+      <div class="modal-box character-modal-box">
+        <div class="modal-header">
+          <h2>THUỘC TÍNH NHÂN VẬT</h2>
+          <button class="modal-close" onclick="ui.closeModals()">✕</button>
+        </div>
+        <div class="modal-body character-modal-body">
+          <div class="char-hero-card">
+            <div class="char-avatar-ring">
+              <img src="assets/ui/hero_avatar_icon.webp" alt="Thanh Vân Kiếm Sĩ" class="char-avatar-img">
+            </div>
+            <div class="char-hero-title">
+              <div class="char-hero-name">Thanh Vân Kiếm Sĩ</div>
+              <div class="char-hero-level" id="modal-stat-level">Lv.12</div>
+              <div class="char-hero-power">Chiến Lực: <span class="val-gold" id="modal-stat-power">8,666</span> ⚔️</div>
+            </div>
+          </div>
+
+          <div class="char-stats-grid">
+            <div class="char-stat-cell">
+              <span class="lbl">Sinh Mệnh (HP):</span>
+              <span class="val val-green" id="modal-stat-hp">620 / 620</span>
+            </div>
+            <div class="char-stat-cell">
+              <span class="lbl">Chân Khí (MP):</span>
+              <span class="val val-blue" id="modal-stat-mp">180 / 180</span>
+            </div>
+            <div class="char-stat-cell">
+              <span class="lbl">Công Kích (ATK):</span>
+              <span class="val val-gold" id="modal-stat-atk">185</span>
+            </div>
+            <div class="char-stat-cell">
+              <span class="lbl">Phòng Ngự (DEF):</span>
+              <span class="val val-blue" id="modal-stat-def">82</span>
+            </div>
+            <div class="char-stat-cell">
+              <span class="lbl">Bạo Kích (CRIT):</span>
+              <span class="val val-gold" id="modal-stat-crit">25%</span>
+            </div>
+            <div class="char-stat-cell">
+              <span class="lbl">Tốc Đánh:</span>
+              <span class="val val-blue" id="modal-stat-aspeed">1.25 lần/s</span>
+            </div>
+          </div>
+
+          <div class="char-exp-box">
+            <div class="exp-box-header">
+              <span>Tiến Độ Cấp Độ</span>
+              <span id="char-exp-text">750 / 1000 EXP</span>
+            </div>
+            <div class="char-exp-bar-bg">
+              <div class="char-exp-bar-fill" id="char-exp-fill" style="width: 75%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Skills Modal -->
+    <div class="modal-backdrop" id="modal-skills">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2>BÍ KỊP VÕ CÔNG</h2>
+          <button class="modal-close" onclick="ui.closeModals()">✕</button>
+        </div>
+        <div class="modal-body skills-list" id="skills-detail-list">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 2.5. Skill Select Modal (Chọn kỹ năng cho từng ô phím tắt) -->
+    <div class="modal-backdrop" id="modal-skill-select">
+      <div class="modal-box skill-select-box">
+        <div class="modal-header">
+          <h2 id="skill-select-title">CHỌN KỸ NĂNG CHO Ô 1</h2>
+          <button class="modal-close" onclick="ui.closeModals()">✕</button>
+        </div>
+        <div class="modal-body skills-list" id="skill-select-list">
+          <!-- Injected by JS: Danh sách kỹ năng có thể trang bị -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Settings Modal -->
+    <div class="modal-backdrop" id="modal-settings">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2>CÀI ĐẶT TRÒ CHƠI</h2>
+          <button class="modal-close" onclick="ui.closeModals()">✕</button>
+        </div>
+        <div class="modal-body settings-body">
+          <div class="setting-row">
+            <span>Âm thanh chiến đấu:</span>
+            <input type="checkbox" id="setting-sound" checked onchange="audioManager.toggleSound(this.checked)">
+          </div>
+          <div class="setting-row">
+            <span>Nhạc nền (BGM):</span>
+            <input type="checkbox" id="setting-bgm" checked onchange="audioManager.toggleBGM(this.checked)">
+          </div>
+          <div class="setting-row">
+            <span>Rung màn hình (Screen Shake):</span>
+            <input type="checkbox" id="setting-shake" checked onchange="game.screenShakeEnabled = this.checked">
+          </div>
+          <div class="setting-row">
+            <span>Hiện số sát thương:</span>
+            <input type="checkbox" id="setting-damage-num" checked onchange="game.showDamageNumbers = this.checked">
+          </div>
+          <div class="setting-row">
+            <span>Chế độ tự động đánh:</span>
+            <button class="gold-action-btn small-btn" onclick="game.toggleAuto()">Bật / Tắt Auto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. World Map Modal (Bản Đồ Toàn Bộ Khu Vực - 10 Vùng Thanh Vân Giới) -->
+    <div class="modal-backdrop" id="modal-world-map">
+      <div class="modal-box world-map-box">
+        <div class="modal-header">
+          <h2>BẢN ĐỒ THẾ GIỚI - THANH VÂN GIỚI</h2>
+          <button class="modal-close" onclick="ui.closeModals()">✕</button>
+        </div>
+        <div class="modal-body world-map-body">
+          <!-- Bản đồ toàn cảnh đại lục với các mốc địa danh tương tác -->
+          <div class="world-map-atlas-container">
+            <div class="atlas-header-tag">🌐 TOÀN CẢNH ĐẠI LỤC THANH VÂN (10 KHU VỰC LIÊN THÔNG)</div>
+            <div class="world-map-canvas-wrap">
+              <canvas id="world-map-canvas" width="480" height="260"></canvas>
+            </div>
+            <!-- Thanh thông tin vùng đất đang được chọn & Nút Ngự Kiếm Đến -->
+            <div id="world-map-selected-bar" class="world-map-selected-bar">
+            </div>
+          </div>
+
+          <div class="world-map-banner-tip">
+            <span class="icon">✨</span> Bạn có thể nhấp trực tiếp vào các điểm mốc trên bản đồ đại lục phía trên hoặc chọn nhanh trong danh sách 10 bí cảnh bên dưới để <b>Ngự Kiếm Dịch Chuyển</b> tức thì!
+          </div>
+          <div class="world-map-grid" id="world-map-grid">
+            <!-- Injected by JS: 10 Map Cards -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Victory / Quest Complete Modal -->
+    <div class="modal-backdrop" id="modal-quest-complete">
+      <div class="modal-box quest-complete-box">
+        <div class="quest-clear-icon">⚔️ HOÀN THÀNH NHIỆM VỤ! ⚔️</div>
+        <p class="quest-clear-sub">Bạn đã quét sạch bầy yêu thú ngoại ô Thanh Vân Thôn!</p>
+        <div class="quest-reward-list">
+          <div class="reward-pill">+1,000 EXP</div>
+          <div class="reward-pill">+500 Vàng</div>
+          <div class="reward-pill">+3 Huyết Đan</div>
+        </div>
+        <button class="gold-action-btn giant-btn" onclick="game.nextQuest()">Nhận Thưởng & Tiếp Tục</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio, Sprite Loader, and Modular Game Subsystem Scripts -->
+  <script src="js/audio.js?v=6"></script>
+  <script src="js/sprites.js?v=10"></script>
+  <script src="js/maps.js?v=6"></script>
+  <script src="js/player.js?v=10"></script>
+  <script src="js/skills.js?v=10"></script>
+  <script src="js/enemies.js?v=10"></script>
+  <script src="js/ui.js?v=8"></script>
+  <script src="js/game.js?v=12"></script>
+</body>
+</html>
