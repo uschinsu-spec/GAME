@@ -55,8 +55,8 @@ class Game {
     this.quest = {
       type: 'Nhiệm vụ chính',
       desc: 'Đánh bại yêu thú ở ngoại ô',
-      cur: 12,
-      target: 30,
+      cur: 0,
+      target: 10,
       completed: false,
       bossSpawned: false
     };

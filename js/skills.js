@@ -12,18 +12,9 @@ const ALL_SKILLS = {
     curCd: 0,
     mp: 0,
     level: 1,
+    reqLv: 1,
+    unlocked: true,
     desc: 'Kiếm pháp cơ bản liên hoàn kích, tung đòn chém dũng mãnh, không tiêu hao Chân khí.'
-  },
-  'phi_kiem': {
-    id: 'phi_kiem',
-    name: 'Phi Kiếm Thuật',
-    subName: 'Ngự Kiếm Thuật',
-    icon: 'assets/ui/skill_2_van_kiem_quy_tong_icon.webp',
-    cd: 0.8,
-    curCd: 0,
-    mp: 2,
-    level: 2,
-    desc: 'Ngự kiếm chi thuật, phóng luồng phi kiếm thần tốc theo tốc độ đánh.'
   },
   'kiem_khi': {
     id: 'kiem_khi',
@@ -33,8 +24,23 @@ const ALL_SKILLS = {
     cd: 3.0,
     curCd: 0,
     mp: 25,
-    level: 3,
+    level: 1,
+    reqLv: 3,
+    unlocked: false,
     desc: 'Phóng ra luồng kiếm khí hình bán nguyệt bay nhanh chém xuyên kẻ địch.'
+  },
+  'phi_kiem': {
+    id: 'phi_kiem',
+    name: 'Phi Kiếm Thuật',
+    subName: 'Ngự Kiếm Thuật',
+    icon: 'assets/ui/skill_2_van_kiem_quy_tong_icon.webp',
+    cd: 0.8,
+    curCd: 0,
+    mp: 2,
+    level: 1,
+    reqLv: 5,
+    unlocked: false,
+    desc: 'Ngự kiếm chi thuật, phóng luồng phi kiếm thần tốc theo tốc độ đánh.'
   },
   'loi_dinh': {
     id: 'loi_dinh',
@@ -44,7 +50,9 @@ const ALL_SKILLS = {
     cd: 5.0,
     curCd: 0,
     mp: 35,
-    level: 3,
+    level: 1,
+    reqLv: 8,
+    unlocked: false,
     desc: 'Triệu hồi Cửu Thiên Lôi Kiếm giáng thế, sấm sét oanh tạc gây sát thương diện rộng và làm choáng.'
   },
   'kiem_tran': {
@@ -56,6 +64,8 @@ const ALL_SKILLS = {
     curCd: 0,
     mp: 70,
     level: 1,
+    reqLv: 12,
+    unlocked: false,
     desc: 'Thi triển đại trận hộ tông, vạn kiếm từ trời giáng xuống sấm sét oanh tạc uy lực vô song.'
   }
 };
@@ -64,12 +74,52 @@ class SkillManager {
   constructor(game) {
     this.game = game;
     this.allSkills = ALL_SKILLS;
+    // Khởi đầu Level 1: CHỈ CÓ 1 SKILL ĐÁNH THƯỜNG Ở Ô 1
     this.slotAssignments = {
       1: 'normal_attack',
-      2: 'kiem_khi',
-      3: 'loi_dinh',
-      4: 'kiem_tran'
+      2: null,
+      3: null,
+      4: null
     };
+
+    // Kiểm tra mở khóa kỹ năng dựa theo cấp hiện tại
+    this.checkUnlockSkills(false);
+  }
+
+  // Tự động kiểm tra và mở khóa kỹ năng khi người chơi thăng cấp
+  checkUnlockSkills(showNotification = true) {
+    const p = this.game.player;
+    if (!p) return;
+    const lvl = p.level || 1;
+    let unlockedAny = false;
+
+    for (let skillId in this.allSkills) {
+      const s = this.allSkills[skillId];
+      if (s.reqLv && lvl >= s.reqLv && !s.unlocked) {
+        s.unlocked = true;
+        unlockedAny = true;
+        if (showNotification) {
+          this.game.showBanner(`🎉 MỞ KHÓA KỸ NĂNG MỚI: [${s.name.toUpperCase()}]!`);
+        }
+
+        // Tự động gán vào ô tương ứng nếu ô đó còn trống
+        if (skillId === 'kiem_khi' && !this.slotAssignments[2]) {
+          this.slotAssignments[2] = 'kiem_khi';
+        } else if (skillId === 'loi_dinh' && !this.slotAssignments[3]) {
+          this.slotAssignments[3] = 'loi_dinh';
+        } else if (skillId === 'kiem_tran' && !this.slotAssignments[4]) {
+          this.slotAssignments[4] = 'kiem_tran';
+        }
+      }
+    }
+
+    if (unlockedAny) {
+      if (showNotification && window.audioManager) window.audioManager.playLevelUp();
+      if (window.ui) {
+        window.ui.updateSkillSlotsDisplay();
+        window.ui.renderSkillsList();
+      }
+    }
   }
 
   // Nâng cấp kỹ năng
@@ -87,6 +137,12 @@ class SkillManager {
 
   assignSkillToSlot(slot, skillId) {
     if (!this.allSkills[skillId]) return;
+    const sObj = this.allSkills[skillId];
+    if (sObj.reqLv && (this.game.player?.level || 1) < sObj.reqLv) {
+      this.game.showBanner(`KỸ NĂNG [${sObj.name.toUpperCase()}] YÊU CẦU CẤP ĐỘ ${sObj.reqLv}!`);
+      return;
+    }
+
     for (let s = 1; s <= 4; s++) {
       if (s !== slot && this.slotAssignments[s] === skillId) {
         this.slotAssignments[s] = this.slotAssignments[slot];
@@ -106,7 +162,11 @@ class SkillManager {
 
   castSkill(slot) {
     const skillId = this.slotAssignments ? this.slotAssignments[slot] : null;
-    if (!skillId) return;
+    if (!skillId) {
+      const reqLvForSlot = slot === 2 ? 3 : (slot === 3 ? 8 : (slot === 4 ? 12 : 1));
+      this.game.showBanner(`Ô KỸ NĂNG ${slot} SẼ MỞ KHÓA TẠI CẤP ${reqLvForSlot}!`);
+      return;
+    }
     const s = this.allSkills[skillId];
     if (!s) return;
 
@@ -286,6 +346,7 @@ class SkillManager {
 
     const speed = 375 * aspdMult;
     const life = 2.2 / aspdMult;
+    const sLv = this.allSkills['phi_kiem']?.level || 1;
     this.game.projectiles.push({
       type: 'flying_sword',
       x: spawnX,
@@ -295,7 +356,7 @@ class SkillManager {
       radius: 24,
       facing: Math.cos(angle) >= 0 ? 1 : -1,
       angle: angle,
-      damage: Math.floor(this.game.player.atk * 1.35),
+      damage: Math.floor(this.game.player.atk * (1.1 + sLv * 0.15)),
       life: life,
       hitList: new Set()
     });
@@ -330,6 +391,7 @@ class SkillManager {
       });
     }
 
+    const sLv = this.allSkills['kiem_khi']?.level || 1;
     this.game.projectiles.push({
       type: 'sword_qi',
       x: hand.x,
@@ -341,7 +403,7 @@ class SkillManager {
       angle: angle,
       radius: 90, // Tầm quét phủ trọn hình bán nguyệt VFX 195px
       facing: Math.cos(angle) >= 0 ? 1 : -1,
-      damage: Math.floor(this.game.player.atk * 1.5),
+      damage: Math.floor(this.game.player.atk * (1.3 + sLv * 0.2)),
       life: life,
       maxLife: life,
       hitList: new Set()
@@ -360,6 +422,7 @@ class SkillManager {
     }
     const life = 1.6 / aspdMult;
 
+    const sLv = this.allSkills['loi_dinh']?.level || 1;
     this.game.lightningStrikes.push({
       x: strikeX,
       y: strikeY,
@@ -367,7 +430,7 @@ class SkillManager {
       life: life,
       maxLife: life,
       radius: 145,
-      damage: Math.floor(this.game.player.atk * 2.5),
+      damage: Math.floor(this.game.player.atk * (2.2 + sLv * 0.3)),
       hasHit: false
     });
 
@@ -588,8 +651,9 @@ class SkillManager {
           if (enemy.hp <= 0) return;
           const dist = Math.hypot(enemy.x - arr.x, enemy.y - arr.y);
           if (dist <= arr.radius + enemy.radius) {
-            const isCrit = Math.random() < 0.3;
-            const dmg = Math.floor((this.game.player.atk * 0.6) * (isCrit ? 1.5 : 1.0));
+            const sLv = this.allSkills['kiem_tran']?.level || 1;
+            const isCrit = Math.random() < this.game.player.critChance;
+            const dmg = Math.floor((this.game.player.atk * (0.65 + sLv * 0.12)) * (isCrit ? this.game.player.critMulti : 1.0));
             if (this.game.enemyManager) {
               this.game.enemyManager.damageEnemy(enemy, dmg, isCrit, 0, 0);
             }

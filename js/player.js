@@ -14,138 +14,138 @@ function createDefaultPlayer() {
     width: 143,
     height: 143,
 
-    // Stats
-    level: 12,
+    // Stats - Khởi đầu chuẩn Level 1 (Tân Thủ Sơ Nhập)
+    level: 1,
     exp: 0,
-    maxExp: 1000,
-    hp: 620,
-    maxHp: 620,
-    mp: 280,
-    maxMp: 280,
-    power: 8636,
-    atk: 185,
-    def: 82,
-    critChance: 0.25,
-    critMulti: 1.8,
-    attackSpeed: 1.25, // Tốc độ đánh: 1.25 lần/giây
-    coins: 1250,
+    maxExp: 100,
+    hp: 750,
+    maxHp: 750,
+    mp: 190,
+    maxMp: 190,
+    power: 2320,
+    atk: 77,
+    def: 65,
+    critChance: 0.10,
+    critMulti: 1.65,
+    attackSpeed: 1.24, // Tốc độ đánh: 1.24 lần/giây
+    coins: 300,
     potions: 5,
-    mpPotions: 3,
-    weaponLevel: 3,
+    mpPotions: 5,
+    weaponLevel: 1,
 
-    // 8 Ô Trang bị đang mặc (Khớp chuẩn 100% hình mẫu: Vũ Khí, Áo Giáp, Quần, Giày, Thắt Lưng, Nón, Dây Chuyền, Nhẫn)
+    // 8 Ô Trang bị đang mặc (Bộ Trang Bị Khởi Đầu Cấp 1: Thanh Vân Môn Sơ Khởi)
     equipped: {
       weapon: {
-        id: 'weapon_lam_quang',
+        id: 'weapon_thanh_van',
         slot: 'weapon',
-        name: 'Lam Quang Thần Kiếm',
+        name: 'Thanh Vân Bảo Kiếm',
         type: 'Vũ Khí',
         slotName: 'Vũ Khí',
-        level: 3,
-        quality: 'epic',
+        level: 1,
+        quality: 'rare',
         icon: 'assets/items/item_sword.png',
-        atk: 185,
-        aspeed: 0.08,
-        statDesc: '+185 Công Kích, +0.08 Tốc Đánh',
-        desc: 'Bảo kiếm Thanh Vân đúc từ huyền thiết lam ngọc, lưỡi kiếm tỏa lam quang sắc bén xé gió.'
+        atk: 25,
+        aspeed: 0.04,
+        statDesc: '+25 Công Kích, +0.04 Tốc Đánh',
+        desc: 'Bảo kiếm đúc từ thép lam ngọc của đệ tử Thanh Vân Môn, lưỡi kiếm sáng trong sắc bén.'
       },
       armor: {
         id: 'armor_thanh_van',
         slot: 'armor',
-        name: 'Lam Tinh Chiến Giáp',
+        name: 'Thanh Vân Đạo Bào',
         type: 'Áo Giáp',
         slotName: 'Áo Giáp',
-        level: 2,
-        quality: 'epic',
+        level: 1,
+        quality: 'rare',
         icon: 'assets/items/item_armor.png',
-        def: 75,
-        hp: 280,
-        statDesc: '+75 Phòng Ngự, +280 Sinh Mệnh',
-        desc: 'Chiến giáp nạm ngọc lam tinh hộ thể kiên cố, chống đỡ sát khí yêu thú.'
+        def: 18,
+        hp: 100,
+        statDesc: '+18 Phòng Ngự, +100 Sinh Mệnh',
+        desc: 'Đạo bào thanh nhã thêu vân phù hộ thân, giúp đệ tử chống đỡ vuốt sắc yêu ma.'
       },
       pants: {
-        id: 'pants_lam_ngoc',
+        id: 'pants_thanh_van',
         slot: 'pants',
-        name: 'Huyền Thiết Chiến Quần',
+        name: 'Thanh Vân Chiến Khố',
         type: 'Quần',
         slotName: 'Quần',
-        level: 2,
+        level: 1,
         quality: 'rare',
         icon: 'assets/items/item_pants.png',
-        def: 45,
-        hp: 190,
-        statDesc: '+45 Phòng Ngự, +190 Sinh Mệnh',
-        desc: 'Chiến quần dệt từ tơ huyền thiết, bảo vệ hạ thân vững chắc linh hoạt.'
+        def: 12,
+        hp: 70,
+        statDesc: '+12 Phòng Ngự, +70 Sinh Mệnh',
+        desc: 'Chiến khố dệt từ tơ tằm thanh ngọc bền chắc, bảo vệ hạ thân linh hoạt trong giao đấu.'
       },
       boots: {
         id: 'boots_phong_hanh',
         slot: 'boots',
-        name: 'Băng Lam Chiến Hài',
+        name: 'Phong Hành Chiến Hài',
         type: 'Giày',
         slotName: 'Giày',
-        level: 2,
+        level: 1,
         quality: 'rare',
         icon: 'assets/items/item_boots.png',
-        speed: 50,
-        dodge: 6,
-        statDesc: '+50 Tốc Độ Chạy, +6% Né Tránh',
-        desc: 'Đôi chiến hài luyện từ băng tinh, bước chân thoăn thoắt nhẹ tựa phù vân.'
+        speed: 30,
+        dodge: 4,
+        statDesc: '+30 Tốc Độ Chạy, +4% Né Tránh',
+        desc: 'Đôi hài nhẹ bước tựa gió thu, giúp thân thủ di chuyển nhanh nhẹn thoát hiểm.'
       },
       belt: {
         id: 'belt_tinh_van',
         slot: 'belt',
-        name: 'Tinh Vân Đai Lưng',
+        name: 'Huyền Thiết Đai Lưng',
         type: 'Thắt Lưng',
         slotName: 'Thắt Lưng',
         level: 1,
-        quality: 'epic',
+        quality: 'rare',
         icon: 'assets/items/item_belt.png',
-        hp: 210,
-        def: 35,
-        statDesc: '+210 Sinh Mệnh, +35 Phòng Ngự',
-        desc: 'Thắt lưng nạm ngọc tinh vân, ngưng tụ chân khí gia tăng phòng thủ toàn diện.'
+        hp: 80,
+        def: 10,
+        statDesc: '+80 Sinh Mệnh, +10 Phòng Ngự',
+        desc: 'Thắt lưng khóa sắt rèn nguội gia hộ huyệt đan điền, tụ khí kiện thể.'
       },
       helmet: {
-        id: 'helmet_tu_van',
+        id: 'helmet_thanh_van',
         slot: 'helmet',
-        name: 'Băng Tinh Chiến Mão',
+        name: 'Thanh Vân Đạo Mão',
         type: 'Nón',
         slotName: 'Nón',
-        level: 2,
-        quality: 'epic',
+        level: 1,
+        quality: 'rare',
         icon: 'assets/items/item_helmet.png',
-        def: 40,
-        mp: 130,
-        statDesc: '+40 Phòng Ngự, +130 Chân Khí',
-        desc: 'Mũ chiến binh nạm lam ngọc giúp ngưng thần tĩnh khí, khai thông kinh mạch.'
+        def: 10,
+        mp: 40,
+        statDesc: '+10 Phòng Ngự, +40 Chân Khí',
+        desc: 'Mão tiên sinh nạm ngọc thanh tĩnh, giúp an thần dưỡng khí khi vận công niệm chú.'
       },
       amulet: {
-        id: 'amulet_linh_lung',
+        id: 'amulet_linh_ngoc',
         slot: 'amulet',
-        name: 'Lam Bảo Dây Chuyền',
+        name: 'Linh Ngọc Hộ Phù',
         type: 'Dây Chuyền',
         slotName: 'Dây Chuyền',
-        level: 2,
-        quality: 'epic',
+        level: 1,
+        quality: 'rare',
         icon: 'assets/items/item_necklace.png',
-        atk: 60,
-        hp: 180,
-        statDesc: '+60 Công Kích, +180 Sinh Mệnh',
-        desc: 'Dây chuyền nạm bảo ngọc sapphire, linh khí luân chuyển hộ tâm cho kiếm khách.'
+        atk: 12,
+        hp: 50,
+        statDesc: '+12 Công Kích, +50 Sinh Mệnh',
+        desc: 'Hộ thân phù điêu khắc cổ tự trừ tà, hấp thu linh khí thiên địa bảo hộ người đeo.'
       },
       ring: {
-        id: 'ring_can_khon',
+        id: 'ring_bich_ngoc',
         slot: 'ring',
-        name: 'Lam Tinh Giới Chỉ',
+        name: 'Bích Ngọc Giới Chỉ',
         type: 'Nhẫn',
         slotName: 'Nhẫn',
-        level: 2,
-        quality: 'epic',
+        level: 1,
+        quality: 'rare',
         icon: 'assets/items/item_ring.png',
-        crit: 0.10,
-        critDmg: 0.25,
-        statDesc: '+10% Tỷ Lệ Bạo Kích, +25% Sát Thương Bạo',
-        desc: 'Nhẫn bạch kim nạm lam ngọc thượng cổ, gia tăng sát thương chí mạng cực lớn.'
+        crit: 0.05,
+        critDmg: 0.15,
+        statDesc: '+5% Tỷ Lệ Bạo Kích, +15% Sát Thương Bạo',
+        desc: 'Chiếc nhẫn ngọc bích chạm khắc hoa văn kiếm tông, kích phát sát thương chí mạng.'
       }
     },
 
@@ -211,14 +211,15 @@ class PlayerManager {
     if (!p) return;
 
     const lvl = p.level || 1;
-    let baseHp = 400 + (lvl - 1) * 35;
-    let baseMp = 180 + (lvl - 1) * 15;
-    let baseAtk = 65 + (lvl - 1) * 10;
-    let baseDef = 30 + (lvl - 1) * 6;
-    let baseCrit = 0.12;
-    let baseCritDmg = 1.5;
-    let baseSpeed = 220;
-    let baseAtkSpeed = 1.25;
+    // Chỉ số gốc của nhân vật theo cấp độ (Cấp 1 -> Cấp 100)
+    let baseHp = 450 + (lvl - 1) * 45;
+    let baseMp = 150 + (lvl - 1) * 15;
+    let baseAtk = 40 + (lvl - 1) * 6;
+    let baseDef = 15 + (lvl - 1) * 3;
+    let baseCrit = 0.05 + Math.floor((lvl - 1) / 10) * 0.01;
+    let baseCritDmg = 1.50;
+    let baseSpeed = 180 + Math.min(30, (lvl - 1) * 0.5);
+    let baseAtkSpeed = 1.20 + (lvl - 1) * 0.004;
 
     // Cộng thuộc tính từ bộ trang bị đang mặc
     if (p.equipped) {
@@ -226,10 +227,10 @@ class PlayerManager {
         const item = p.equipped[slotKey];
         if (!item) continue;
         const itemLv = item.level || 1;
-        if (item.atk) baseAtk += item.atk + (itemLv - 1) * 18;
-        if (item.def) baseDef += item.def + (itemLv - 1) * 12;
-        if (item.hp) baseHp += item.hp + (itemLv - 1) * 50;
-        if (item.mp) baseMp += item.mp + (itemLv - 1) * 25;
+        if (item.atk) baseAtk += item.atk + (itemLv - 1) * 6;
+        if (item.def) baseDef += item.def + (itemLv - 1) * 4;
+        if (item.hp) baseHp += item.hp + (itemLv - 1) * 25;
+        if (item.mp) baseMp += item.mp + (itemLv - 1) * 10;
         if (item.crit) baseCrit += item.crit;
         if (item.critDmg) baseCritDmg += item.critDmg;
         if (item.speed) baseSpeed += item.speed;
@@ -271,15 +272,15 @@ class PlayerManager {
     p.potions = hpCount;
     p.mpPotions = mpCount;
 
-    // Công thức tính Lực Chiến tổng
+    // Công thức tính Lực Chiến chuẩn
     p.power = Math.round(
-      p.atk * 14 +
-      p.def * 10 +
-      p.maxHp * 2.2 +
-      p.maxMp * 1.6 +
-      p.critChance * 2000 +
-      p.attackSpeed * 800 +
-      (p.speed - 200) * 5
+      p.atk * 12 +
+      p.def * 8 +
+      p.maxHp * 1.5 +
+      p.maxMp * 1.0 +
+      p.critChance * 1500 +
+      p.attackSpeed * 600 +
+      (p.speed - 160) * 3
     );
 
     this.game.updateHUD();
@@ -399,44 +400,54 @@ class PlayerManager {
     }
   }
 
+  getMaxExpForLevel(lvl) {
+    // Công thức EXP chuẩn theo cấp độ (Cấp 1 cần 100 EXP)
+    return Math.floor(75 * Math.pow(Math.max(1, lvl), 1.35) + 25);
+  }
+
   addExp(amount) {
     const p = this.game.player;
     p.exp = (p.exp || 0) + amount;
-    p.maxExp = p.maxExp || 1000;
+    p.maxExp = this.getMaxExpForLevel(p.level || 1);
 
     let leveledUp = false;
     while (p.exp >= p.maxExp) {
       p.exp -= p.maxExp;
-      p.level++;
-      p.maxExp = Math.floor(p.maxExp * 1.35);
-      p.maxHp += 50;
-      p.hp = p.maxHp;
-      p.maxMp += 20;
-      p.mp = p.maxMp;
-      p.atk += 12;
-      p.def += 6;
-      p.attackSpeed = Math.round(((p.attackSpeed || 1.25) + 0.02) * 100) / 100;
-      p.power += 480;
+      p.level = (p.level || 1) + 1;
+      p.maxExp = this.getMaxExpForLevel(p.level);
       leveledUp = true;
     }
 
     if (leveledUp) {
+      // Tái tính toán toàn bộ chỉ số theo cấp mới
+      this.recalcStats();
+      // Hồi phục toàn bộ Sinh Mệnh & Chân Khí khi thăng cấp
+      p.hp = p.maxHp;
+      p.mp = p.maxMp;
+      // Kiểm tra và tự động mở khóa kỹ năng mới theo cấp độ
+      if (this.game.skills) {
+        this.game.skills.checkUnlockSkills(true);
+      }
       audioManager.playLevelUp();
-      this.game.showBanner(`THĂNG CẤP! LEVEL ${p.level}`);
-      if (window.ui) window.ui.updateModalStats();
+      this.game.showBanner(`🔥 THĂNG CẤP! ĐẠT LEVEL ${p.level} (${p.power.toLocaleString()} LỰC CHIẾN)`);
+      if (window.ui) {
+        window.ui.updateModalStats();
+      }
     }
+    this.game.updateHUD();
   }
 
   damagePlayer(damage) {
     const p = this.game.player;
     if (p.invulnerable) return;
 
-    const defFactor = p.def / (p.def + 100);
+    // Giảm sát thương chuẩn dựa theo chỉ số Phòng Ngự (DEF)
+    const defFactor = p.def / (p.def + 150);
     const reducedDamage = Math.max(1, Math.round(damage * (1 - defFactor)));
 
     p.hp = Math.max(0, p.hp - reducedDamage);
     p.invulnerable = true;
-    p.invulnerableTimer = 0.6;
+    p.invulnerableTimer = 0.55;
     audioManager.playHit(false);
 
     if (this.game.screenShakeEnabled) this.game.triggerShake(4);
@@ -446,9 +457,10 @@ class PlayerManager {
     }
 
     if (p.hp <= 0) {
-      const lostCoins = Math.floor(p.coins * 0.1);
+      const lostCoins = Math.floor(p.coins * 0.05);
       p.coins = Math.max(0, p.coins - lostCoins);
       p.hp = p.maxHp;
+      p.mp = p.maxMp;
       p.x = 540;
       p.y = 1350;
       p.invulnerable = true;

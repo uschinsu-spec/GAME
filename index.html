@@ -6,7 +6,7 @@
   <title>Thanh Vân Kiếm Khách - Tiên Hiệp ARPG</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Nunito:wght@600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=10">
+  <link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
   <div id="game-container">
@@ -18,34 +18,34 @@
       <div class="player-card">
         <div class="avatar-box">
           <img id="avatar-img" src="assets/ui/hero_avatar_icon.webp" alt="Avatar">
-          <div class="level-badge">Lv.<span id="ui-level">12</span></div>
+          <div class="level-badge">Lv.<span id="ui-level">1</span></div>
         </div>
         <div class="bars-container">
           <!-- HP Bar -->
           <div class="bar-row">
             <div class="bar hp-bar">
               <div class="bar-fill" id="hp-fill" style="width: 100%;"></div>
-              <span class="bar-text"><span id="ui-hp-cur">620</span>/<span id="ui-hp-max">620</span></span>
+              <span class="bar-text"><span id="ui-hp-cur">750</span>/<span id="ui-hp-max">750</span></span>
             </div>
           </div>
           <!-- MP / Qi Bar -->
           <div class="bar-row">
             <div class="bar mp-bar">
               <div class="bar-fill" id="mp-fill" style="width: 100%;"></div>
-              <span class="bar-text"><span id="ui-mp-cur">280</span>/<span id="ui-mp-max">280</span></span>
+              <span class="bar-text"><span id="ui-mp-cur">190</span>/<span id="ui-mp-max">190</span></span>
             </div>
           </div>
           <!-- EXP Bar -->
           <div class="bar-row">
             <div class="bar exp-bar">
               <div class="bar-fill" id="exp-fill" style="width: 0%;"></div>
-              <span class="bar-text">EXP <span id="ui-exp-cur">0</span>/<span id="ui-exp-max">1000</span></span>
+              <span class="bar-text">EXP <span id="ui-exp-cur">0</span>/<span id="ui-exp-max">100</span></span>
             </div>
           </div>
           <!-- Combat Power -->
           <div class="power-row">
             <span class="power-label">Chiến Lực:</span>
-            <span class="power-val" id="ui-power">8636</span>
+            <span class="power-val" id="ui-power">2320</span>
           </div>
         </div>
       </div>
@@ -59,7 +59,7 @@
         <div class="quest-content">
           <div class="quest-desc" id="quest-desc">Đánh bại yêu thú ở ngoại ô</div>
           <div class="quest-progress">
-            (<span id="quest-cur">12</span>/<span id="quest-target">30</span>)
+            (<span id="quest-cur">0</span>/<span id="quest-target">10</span>)
           </div>
           <div class="quest-arrow">❯</div>
         </div>
@@ -114,37 +114,49 @@
           <div class="mp-cost-badge" id="mp-cost-1" style="display:none;">0</div>
         </button>
 
-        <!-- Ô Skill 2 -->
-        <button class="skill-btn" id="skill-slot-2" data-slot="2" title="Nhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng">
+        <!-- Ô Skill 2 (Mở khóa tại Cấp 3) -->
+        <button class="skill-btn skill-slot-locked" id="skill-slot-2" data-slot="2" title="Mở khóa tại Cấp 3">
           <div class="skill-icon-wrap s2-icon">
-            <img src="assets/ui/skill_1_icon.webp" alt="Skill 2" id="slot-icon-2" class="skill-icon-img">
+            <img src="assets/ui/skill_1_icon.webp" alt="Skill 2" id="slot-icon-2" class="skill-icon-img" style="opacity:0.2; filter:grayscale(100%) brightness(0.6);">
+          </div>
+          <div class="skill-lock-overlay" id="lock-overlay-2">
+            <span class="skill-lock-icon">🔒</span>
+            <span class="skill-lock-text">Lv.3</span>
           </div>
           <div class="cooldown-overlay" id="cd-2"></div>
           <div class="cd-number" id="cd-text-2"></div>
           <div class="key-badge">2</div>
-          <div class="mp-cost-badge" id="mp-cost-2">25</div>
+          <div class="mp-cost-badge" id="mp-cost-2" style="display:none;">25</div>
         </button>
 
-        <!-- Ô Skill 3 -->
-        <button class="skill-btn" id="skill-slot-3" data-slot="3" title="Nhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng">
+        <!-- Ô Skill 3 (Mở khóa tại Cấp 8) -->
+        <button class="skill-btn skill-slot-locked" id="skill-slot-3" data-slot="3" title="Mở khóa tại Cấp 8">
           <div class="skill-icon-wrap s3-icon">
-            <img src="assets/ui/skill_3_icon.webp" alt="Skill 3" id="slot-icon-3" class="skill-icon-img">
+            <img src="assets/ui/skill_3_icon.webp" alt="Skill 3" id="slot-icon-3" class="skill-icon-img" style="opacity:0.2; filter:grayscale(100%) brightness(0.6);">
+          </div>
+          <div class="skill-lock-overlay" id="lock-overlay-3">
+            <span class="skill-lock-icon">🔒</span>
+            <span class="skill-lock-text">Lv.8</span>
           </div>
           <div class="cooldown-overlay" id="cd-3"></div>
           <div class="cd-number" id="cd-text-3"></div>
           <div class="key-badge">3</div>
-          <div class="mp-cost-badge" id="mp-cost-3">35</div>
+          <div class="mp-cost-badge" id="mp-cost-3" style="display:none;">35</div>
         </button>
 
-        <!-- Ô Skill 4 (Ultimate) -->
-        <button class="skill-btn ult-btn" id="skill-slot-4" data-slot="4" title="Nhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng">
+        <!-- Ô Skill 4 (Ultimate - Mở khóa tại Cấp 12) -->
+        <button class="skill-btn ult-btn skill-slot-locked" id="skill-slot-4" data-slot="4" title="Tuyệt Kỹ - Mở khóa tại Cấp 12">
           <div class="skill-icon-wrap s4-icon">
-            <img src="assets/ui/skill_4_icon.webp" alt="Skill 4" id="slot-icon-4" class="skill-icon-img">
+            <img src="assets/ui/skill_4_icon.webp" alt="Skill 4" id="slot-icon-4" class="skill-icon-img" style="opacity:0.2; filter:grayscale(100%) brightness(0.6);">
+          </div>
+          <div class="skill-lock-overlay" id="lock-overlay-4">
+            <span class="skill-lock-icon">🔒</span>
+            <span class="skill-lock-text">Lv.12</span>
           </div>
           <div class="cooldown-overlay" id="cd-4"></div>
           <div class="cd-number" id="cd-text-4"></div>
           <div class="key-badge">4</div>
-          <div class="mp-cost-badge" id="mp-cost-4">70</div>
+          <div class="mp-cost-badge" id="mp-cost-4" style="display:none;">70</div>
         </button>
       </div>
 

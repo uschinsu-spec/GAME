@@ -518,6 +518,50 @@ html, body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 10px rgba(129, 140, 248, 0.45);
 }
 
+.skill-btn.skill-slot-locked {
+  opacity: 0.65;
+  filter: grayscale(80%);
+  border-color: rgba(148, 163, 184, 0.4) !important;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8) !important;
+  cursor: pointer;
+}
+
+.skill-btn.skill-slot-locked:hover {
+  transform: scale(1.03);
+  border-color: rgba(248, 113, 113, 0.6) !important;
+}
+
+.skill-lock-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 6;
+  border-radius: 50%;
+}
+
+.skill-lock-icon {
+  font-size: 13px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9));
+}
+
+.skill-lock-text {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #fca5a5;
+  text-shadow: 0 1px 3px #000;
+  margin-top: 2px;
+  letter-spacing: 0.3px;
+}
+
 .skill-icon-wrap {
   width: 100%;
   height: 100%;

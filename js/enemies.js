@@ -37,8 +37,7 @@ class EnemyManager {
 
   spawnEnemy(x, y, isBoss = false, type = null, customName = null) {
     const curMap = this.game.mapManager ? this.game.mapManager.getCurrentMap() : (WORLD_MAPS[this.game.currentMapId] || WORLD_MAPS['thanh_van_thon']);
-    const mapLv = curMap.reqLv || 1;
-    const lvScale = Math.max(1, mapLv / 10);
+    const mapReqLv = curMap.reqLv || 1;
 
     let enemyType = type;
     let enemyName = customName;
@@ -62,6 +61,28 @@ class EnemyManager {
       enemyName = picked.name;
     }
 
+    // Xác định cấp độ chuẩn của yêu thú theo bản đồ
+    let enemyLevel = 1;
+    if (isBoss) {
+      enemyLevel = mapReqLv === 1 ? 5 : (mapReqLv + 5);
+    } else {
+      // Quái thường dao động cấp độ quanh mức yêu cầu của map (Ví dụ thôn làng: Lv.1 - Lv.3)
+      const variance = Math.floor(Math.random() * 3);
+      enemyLevel = Math.max(1, mapReqLv + variance);
+    }
+
+    // Chỉ số chuẩn theo cấp độ quái vật (Level 1 -> 100)
+    const eLv = enemyLevel;
+    const baseNormalHp = Math.round(140 + eLv * 25 + Math.pow(eLv, 1.28) * 6);
+    const maxHp = isBoss ? Math.round(baseNormalHp * 7.5) : baseNormalHp;
+
+    const baseNormalAtk = Math.round(18 + eLv * 4.2 + Math.pow(eLv, 1.12) * 1.2);
+    const atk = isBoss ? Math.round(baseNormalAtk * 1.75) : (baseNormalAtk + Math.floor(Math.random() * 4));
+
+    const def = isBoss ? Math.round(15 + eLv * 3.5) : Math.round(6 + eLv * 2.0);
+    const exp = isBoss ? Math.round((20 + eLv * 6) * 7.5) : Math.round(20 + eLv * 5.5 + Math.pow(eLv, 1.05) * 1.5);
+    const coins = isBoss ? Math.round((10 + eLv * 4) * 8) : Math.round(8 + eLv * 3.5 + Math.random() * 4);
+
     const enemy = {
       type: enemyType,
       rawName: enemyName,
@@ -76,12 +97,14 @@ class EnemyManager {
       facing: x > this.game.player.x ? -1 : 1,
 
       isBoss: isBoss,
-      name: `${enemyName} [Lv.${mapLv + (isBoss ? 5 : Math.floor(Math.random() * 3))}]`,
-      hp: Math.floor((isBoss ? 3500 : (480 + Math.floor(Math.random() * 80))) * lvScale),
-      maxHp: Math.floor((isBoss ? 3500 : 520) * lvScale),
-      atk: Math.floor((isBoss ? 55 : (20 + Math.floor(Math.random() * 8))) * lvScale),
-      exp: Math.floor((isBoss ? 500 : 50) * lvScale),
-      coins: Math.floor((isBoss ? 350 : 30) * lvScale),
+      level: enemyLevel,
+      name: `${enemyName} [Lv.${enemyLevel}]`,
+      hp: maxHp,
+      maxHp: maxHp,
+      atk: atk,
+      def: def,
+      exp: exp,
+      coins: coins,
 
       state: 'ROAM',
       isAttacking: false,
@@ -231,7 +254,12 @@ class EnemyManager {
   }
 
   damageEnemy(enemy, damage, isCrit, kx, ky) {
-    enemy.hp -= damage;
+    // Tính toán giảm trừ sát thương dựa theo Phòng Ngự (DEF) của quái
+    const eDef = enemy.def || (enemy.level ? enemy.level * 2 : 6);
+    const defFactor = eDef / (eDef + 150);
+    const actualDamage = Math.max(1, Math.round(damage * (1 - defFactor)));
+
+    enemy.hp -= actualDamage;
     enemy.hitFlashTimer = 0;
     enemy.staggerTimer = 0;
     audioManager.playHit(isCrit);
@@ -240,7 +268,7 @@ class EnemyManager {
     enemy.vx = 0;
     enemy.vy = 0;
 
-    this.spawnDamageNumber(enemy.x, enemy.y - enemy.radius, damage, isCrit);
+    this.spawnDamageNumber(enemy.x, enemy.y - enemy.radius, actualDamage, isCrit);
     this.spawnHitSparks(enemy.x, enemy.y, isCrit ? 12 : 7);
 
     if (enemy.hp <= 0) {

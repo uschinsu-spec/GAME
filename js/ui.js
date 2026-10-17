@@ -137,8 +137,9 @@ class UIManager {
         }
       }
 
+      const isLocked = s.reqLv && (p.level || 1) < s.reqLv;
       const card = document.createElement('div');
-      card.className = `skill-tab-card ${equippedInSlot ? 'equipped-active' : ''}`;
+      card.className = `skill-tab-card ${equippedInSlot ? 'equipped-active' : ''} ${isLocked ? 'skill-card-locked' : ''}`;
 
       const cdText = skillId === 'normal_attack'
         ? 'Không hồi chiêu'
@@ -150,7 +151,7 @@ class UIManager {
       const upgradeCost = (s.level || 1) * 250;
 
       card.innerHTML = `
-        <div class="skill-tab-icon">
+        <div class="skill-tab-icon" style="${isLocked ? 'filter:grayscale(100%); opacity:0.5;' : ''}">
           <img src="${s.icon}" alt="${s.name}">
         </div>
         <div class="skill-tab-info">
@@ -159,6 +160,7 @@ class UIManager {
             <span class="skill-tab-level">Lv.${s.level || 1}</span>
             <span class="skill-tab-sub">${s.subName || 'Bí Kíp'}</span>
             ${equippedInSlot ? `<span class="equipped-slot-tag" style="position:static; margin-left:4px;">Ô ${equippedInSlot}</span>` : ''}
+            ${isLocked ? `<span class="equipped-slot-tag" style="position:static; margin-left:4px; background:rgba(239,68,68,0.25); border-color:#ef4444; color:#fca5a5;">🔒 Cần Cấp ${s.reqLv}</span>` : ''}
           </div>
           <div class="skill-tab-desc">${s.desc || ''}</div>
           <div class="skill-tab-stats">
@@ -166,12 +168,16 @@ class UIManager {
           </div>
         </div>
         <div class="skill-tab-actions">
-          <button class="btn-skill-upgrade" onclick="ui.upgradeSkill('${skillId}')">
-            Nâng Cấp (${upgradeCost.toLocaleString()} Vàng)
-          </button>
-          ${equippedInSlot 
-            ? `<button class="btn-skill-equip" style="background:rgba(30,41,59,0.8); border-color:#64748b;" disabled>Đang Dùng</button>`
-            : `<button class="btn-skill-equip" onclick="ui.openSkillSelectModal(1)">Gán Phím</button>`
+          ${isLocked 
+            ? `<button class="btn-skill-upgrade" style="background:rgba(30,41,59,0.7); border-color:#64748b; color:#94a3b8;" disabled>Chưa Mở Khóa</button>
+               <button class="btn-skill-equip" style="background:rgba(30,41,59,0.7); border-color:#64748b; color:#94a3b8;" disabled>🔒 Cần Cấp ${s.reqLv}</button>`
+            : `<button class="btn-skill-upgrade" onclick="ui.upgradeSkill('${skillId}')">
+                 Nâng Cấp (${upgradeCost.toLocaleString()} Vàng)
+               </button>
+               ${equippedInSlot 
+                 ? `<button class="btn-skill-equip" style="background:rgba(30,41,59,0.8); border-color:#64748b;" disabled>Đang Dùng</button>`
+                 : `<button class="btn-skill-equip" onclick="ui.openSkillSelectModal(2)">Gán Phím</button>`
+               }`
           }
         </div>
       `;
@@ -283,38 +289,45 @@ class UIManager {
   promoteHero() {
     if (!window.game || !window.game.player) return;
     const p = window.game.player;
-    if ((p.coins || 0) < 1000) {
-      window.game.showBanner('CẦN 1,000 VÀNG ĐỂ ĐỘT PHÁ CẢNH GIỚI!');
+    const cost = Math.max(200, (p.level || 1) * 150);
+    if ((p.coins || 0) < cost) {
+      window.game.showBanner(`CẦN ${cost.toLocaleString()} VÀNG ĐỂ ĐỘT PHÁ CẢNH GIỚI!`);
       return;
     }
-    p.coins -= 1000;
+    p.coins -= cost;
     p.level = (p.level || 1) + 1;
-    p.atk = (p.atk || 180) + 20;
-    p.def = (p.def || 80) + 10;
-    p.maxHp = (p.maxHp || 600) + 50;
-    p.hp = p.maxHp;
-    p.power = (p.power || 8600) + 500;
+    if (window.game.playerManager) {
+      window.game.playerManager.recalcStats();
+      p.hp = p.maxHp;
+      p.mp = p.maxMp;
+      p.maxExp = window.game.playerManager.getMaxExpForLevel(p.level);
+    }
+    if (window.game.skills) {
+      window.game.skills.checkUnlockSkills(true);
+    }
     if (window.audioManager) window.audioManager.playLevelUp();
-    window.game.showBanner(`🔥 ĐỘT PHÁ THÀNH CÔNG! ĐẠT CẤP ${p.level} (+500 LỰC CHIẾN)`);
+    window.game.showBanner(`🔥 ĐỘT PHÁ THÀNH CÔNG! ĐẠT CẤP ${p.level} (${p.power.toLocaleString()} LỰC CHIẾN)`);
     this.updateModalStats();
+    if (window.game) window.game.updateHUD(true);
   }
 
   resetPlayerStats() {
-    if (window.game && window.game.showBanner) {
-      window.game.showBanner('ĐÃ TẨY ĐIỂM THUỘC TÍNH! BẠN CÓ THỂ PHÂN PHỐI LẠI ĐIỂM.');
+    if (window.game && window.game.playerManager) {
+      window.game.playerManager.recalcStats();
+      window.game.showBanner('ĐÃ TẨY ĐIỂM THUỘC TÍNH! THIẾT LẬP LẠI CHỈ SỐ CHUẨN.');
+      this.updateModalStats();
     }
   }
 
   autoAllocateStats() {
     if (!window.game || !window.game.player) return;
-    const p = window.game.player;
-    p.atk = (p.atk || 180) + 5;
-    p.def = (p.def || 80) + 3;
-    p.maxHp = (p.maxHp || 600) + 15;
-    p.power = (p.power || 8600) + 120;
+    if (window.game.playerManager) {
+      window.game.playerManager.recalcStats();
+    }
     if (window.audioManager) window.audioManager.playLevelUp();
-    window.game.showBanner('⚡ ĐÃ TỰ ĐỘNG CỘNG ĐIỂM TỐI ƯU CÔNG & THỦ!');
+    window.game.showBanner('⚡ ĐÃ ĐỒNG BỘ & TỐI ƯU HÓA CHỈ SỐ CÔNG & THỦ!');
     this.updateModalStats();
+    if (window.game) window.game.updateHUD(true);
   }
 
   saveGameData() {
@@ -428,6 +441,13 @@ class UIManager {
   }
 
   openSkillSelectModal(slot) {
+    const reqLvForSlot = slot === 2 ? 3 : (slot === 3 ? 8 : (slot === 4 ? 12 : 1));
+    if (window.game && window.game.player && (window.game.player.level || 1) < reqLvForSlot) {
+      if (window.game.showBanner) {
+        window.game.showBanner(`Ô KỸ NĂNG ${slot} SẼ MỞ KHÓA TẠI CẤP ${reqLvForSlot}!`);
+      }
+      return;
+    }
     this.closeModals();
     this.currentSelectSlot = slot;
     const modal = document.getElementById('modal-skill-select');
@@ -445,6 +465,7 @@ class UIManager {
 
     const allSkills = window.game.allSkills || ALL_SKILLS;
     const assignments = window.game.slotAssignments || {};
+    const playerLv = window.game.player?.level || 1;
 
     for (let skillId in allSkills) {
       const s = allSkills[skillId];
@@ -457,11 +478,14 @@ class UIManager {
       }
 
       const isCurrent = (equippedInSlot === targetSlot);
+      const isLocked = s.reqLv && playerLv < s.reqLv;
       const div = document.createElement('div');
-      div.className = `skill-select-item ${isCurrent ? 'selected' : ''}`;
+      div.className = `skill-select-item ${isCurrent ? 'selected' : ''} ${isLocked ? 'locked' : ''}`;
 
       let actionBtn = '';
-      if (isCurrent) {
+      if (isLocked) {
+        actionBtn = `<button class="equip-action-btn" style="background:rgba(30,41,59,0.7); border-color:#64748b; color:#94a3b8;" disabled>🔒 Cần Cấp ${s.reqLv}</button>`;
+      } else if (isCurrent) {
         actionBtn = `<button class="equip-action-btn active" disabled>Đang Dùng</button>`;
       } else if (equippedInSlot) {
         actionBtn = `<button class="equip-action-btn swap" onclick="window.game.assignSkillToSlot(${targetSlot}, '${skillId}')">Đổi từ Ô ${equippedInSlot}</button>`;
@@ -759,27 +783,63 @@ class UIManager {
     if (!window.game) return;
     for (let slot = 1; slot <= 4; slot++) {
       const skillId = window.game.slotAssignments ? window.game.slotAssignments[slot] : null;
-      if (!skillId) continue;
-      const s = window.game.allSkills ? window.game.allSkills[skillId] : null;
-      if (!s) continue;
-
+      const slotBtn = document.getElementById(`skill-slot-${slot}`);
       const iconImg = document.getElementById(`slot-icon-${slot}`);
-      if (iconImg) {
-        iconImg.src = s.icon;
-        iconImg.alt = s.name;
-      }
       const mpBadge = document.getElementById(`mp-cost-${slot}`);
-      if (mpBadge) {
-        if (s.mp > 0) {
-          mpBadge.innerText = s.mp;
-          mpBadge.style.display = 'block';
-        } else {
+      let lockOverlay = document.getElementById(`lock-overlay-${slot}`);
+
+      if (!skillId) {
+        // Ô Kỹ năng bị khoá
+        const reqLvForSlot = slot === 2 ? 3 : (slot === 3 ? 8 : (slot === 4 ? 12 : 1));
+        if (slotBtn) {
+          slotBtn.classList.add('skill-slot-locked');
+          slotBtn.title = `Ô Kỹ Năng ${slot} (Mở khóa tại Cấp ${reqLvForSlot})`;
+        }
+        if (iconImg) {
+          iconImg.style.opacity = '0.2';
+          iconImg.style.filter = 'grayscale(100%) brightness(0.6)';
+        }
+        if (mpBadge) {
           mpBadge.style.display = 'none';
         }
-      }
-      const slotBtn = document.getElementById(`skill-slot-${slot}`);
-      if (slotBtn) {
-        slotBtn.title = `${s.name} (${s.subName})\nNhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng`;
+        if (!lockOverlay && slotBtn) {
+          lockOverlay = document.createElement('div');
+          lockOverlay.className = 'skill-lock-overlay';
+          lockOverlay.id = `lock-overlay-${slot}`;
+          lockOverlay.innerHTML = `
+            <span class="skill-lock-icon">🔒</span>
+            <span class="skill-lock-text">Lv.${reqLvForSlot}</span>
+          `;
+          slotBtn.appendChild(lockOverlay);
+        } else if (lockOverlay) {
+          lockOverlay.style.display = 'flex';
+        }
+      } else {
+        // Ô Kỹ năng đã mở khóa và có gán chiêu
+        const s = window.game.allSkills ? window.game.allSkills[skillId] : null;
+        if (!s) continue;
+
+        if (slotBtn) {
+          slotBtn.classList.remove('skill-slot-locked');
+          slotBtn.title = `${s.name} (${s.subName})\nNhấp: Xuất chiêu | Đè lâu: Đổi kỹ năng`;
+        }
+        if (lockOverlay) {
+          lockOverlay.style.display = 'none';
+        }
+        if (iconImg) {
+          iconImg.src = s.icon;
+          iconImg.alt = s.name;
+          iconImg.style.opacity = '1';
+          iconImg.style.filter = 'none';
+        }
+        if (mpBadge) {
+          if (s.mp > 0) {
+            mpBadge.innerText = s.mp;
+            mpBadge.style.display = 'block';
+          } else {
+            mpBadge.style.display = 'none';
+          }
+        }
       }
     }
   }
